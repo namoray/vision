@@ -123,7 +123,8 @@ class ClipValidator(BaseValidator):
         response_embeddings = np.array(response_embeddings)
         
         if expected_embeddings.shape != response_embeddings.shape:
-            bt.logging.warning(f"Expected embeddings shape is {expected_embeddings.shape} but the response embeddings shape is {response_embeddings.shape}")
+            if response_embeddings.shape is not None:
+                bt.logging.warning(f"Expected embeddings shape is {expected_embeddings.shape} but the response embeddings shape is {response_embeddings.shape}")
             return 0
         
         if expected_embeddings.size == 0:
