@@ -6,3 +6,7 @@ bittensor
 git+https://github.com/facebookresearch/segment-anything.git
 diskcache
 wandb
+ftfy 
+regex
+tqdm
+git+https://github.com/openai/CLIP.git
