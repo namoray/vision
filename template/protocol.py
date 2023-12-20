@@ -15,12 +15,12 @@ class IsAlive(bt.Synapse):
 class ClipEmbeddingImages(bt.Synapse):
     """Generates a clip embedding for images"""
 
-    images_b64: List[str] = Field(..., description="The base64 encoded images", title="images")
+    image_b64s: List[str] = Field(..., description="The base64 encoded images", title="images")
     image_embeddings: Optional[List[List[float]]] = Field(
         default=None, description="The image embeddings", title="image_embeddings"
     )
 
-    @validator('images_b64', pre=True)
+    @validator('image_b64s', pre=True)
     def check_number_of_images(cls, values):
         if len(values) > 5:
             raise ValueError('Number of images should not exceed 10 please')
@@ -29,7 +29,7 @@ class ClipEmbeddingImages(bt.Synapse):
     @root_validator(pre=True)
     def check_total_image_size(cls, values):
         max_size_mb = 10 
-        total_size_mb = sum((len(base64.b64decode(img)) for img in values.get('images_b64', []))) / (1024*1024)
+        total_size_mb = sum((len(base64.b64decode(img)) for img in values.get('image_b64s', []))) / (1024*1024)
         if total_size_mb > max_size_mb:
             raise ValueError(f'Total image size should not exceed {max_size_mb} MB, we are not made of bandwith')
         return values

@@ -231,8 +231,8 @@ class MinerBoi():
         
         return synapse
     
-    def get_image_embeddings(self, synapse: ClipEmbeddingImages) -> List[List[float]]:
-        images = [Image.open(io.BytesIO(base64.b64decode(img_b64))) for img_b64 in synapse.images_b64]
+    def get_image_embeddings(self, synapse: ClipEmbeddingImages) -> ClipEmbeddingImages:
+        images = [Image.open(io.BytesIO(base64.b64decode(img_b64))) for img_b64 in synapse.image_b64s]
         images = [self.clip_preprocess(image) for image in images]
         images_tensor = torch.stack(images).to(self.device)
         with torch.no_grad():
@@ -241,7 +241,7 @@ class MinerBoi():
         synapse.image_embeddings = image_embeddings.cpu().numpy().tolist()
         return synapse
 
-    def get_text_embeddings(self, synapse: ClipEmbeddingTexts) -> List[List[float]]:
+    def get_text_embeddings(self, synapse: ClipEmbeddingTexts) -> ClipEmbeddingTexts:
         texts = synapse.texts
         texts = [self.clip_preprocess(text) for text in texts]
         texts_tensor = torch.stack(texts).to(self.device)

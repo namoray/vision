@@ -13,9 +13,10 @@ import torch
 import wandb
 from core import constants as cst
 from core import utils
-from template.protocol import IsAlive
+from template.protocol import IsAlive, SegmentingSynapse, ClipEmbeddingImages, ClipEmbeddingTexts
 from validators.segmentation_validator import SegmentationValidator
 import template
+from validators.clip_validator import ClipValidator
 
 moving_average_scores = torch.zeros(256)
 wandb_runs = {}
@@ -92,7 +93,8 @@ def initialize_components(config):
 
 def initialize_validators(vali_config):
     segmentation_vali = SegmentationValidator(**vali_config)
-    return segmentation_vali
+    clip_vali = ClipValidator(**vali_config)
+    return segmentation_vali, clip_vali
 
 
 async def check_uid(dendrite: bt.dendrite, axon: bt.axon, uid: int) -> Union[bt.axon, None]:
@@ -166,7 +168,7 @@ def update_weights(total_scores: torch.tensor, config: Any, subtensor: bt.subten
 
 async def get_random_images(uids: Dict[int, bt.axon]) -> Tuple[Dict[int, str], Dict[int, int]]:
     """Returns the unique images with labels, and a dict of which uid gets what image"""
-    number_of_images_to_generate = math.ceil(len(uids) / 50)
+    number_of_images_to_generate = math.ceil(len(uids) / 24)
     tasks = []
     for _ in range(number_of_images_to_generate):
         # These are subject to change, I know what you're thinking, miners.
@@ -246,6 +248,7 @@ async def score_cache_responses_for_hotkey(
     return hotkey, average_score, average_time
 
 
+
 async def query_and_score_miners(
     dendrite: bt.dendrite,
     subtensor: bt.subtensor,
@@ -254,8 +257,8 @@ async def query_and_score_miners(
     wallet: bt.wallet,
     validators: Tuple[SegmentationValidator],
 ):
-    steps_passed = 0
-    segmenting_vali: SegmentationValidator = validators
+    segmenting_vali: SegmentationValidator = validators[0]
+    clip_vali: ClipValidator = validators[1]
     hotkeys_to_uids = utils.get_hotkeys_to_uids(metagraph)
     uids_to_hotkeys = utils.get_uids_to_hotkeys(metagraph)
     while True:
@@ -264,6 +267,8 @@ async def query_and_score_miners(
             metagraph = subtensor.metagraph(config.netuid)
             available_uids = await get_available_uids(dendrite, metagraph)
 
+
+            ############ SCORING WITH THE CACHE ############
             images_with_labels, miners_and_image_b64_labels = await get_random_images(
                 uids=available_uids
             )
@@ -284,6 +289,8 @@ async def query_and_score_miners(
             }
             bt.logging.info(f"\nscores from non cache part: {segmentation_scores} \n")
             total_scores = utils.update_total_scores(total_scores, segmentation_scores)
+
+            ############ SCORING WITHOUT THE CACHE ############
 
             miner_hotkeys_to_image_uuid_and_image = (
                 segmenting_vali.update_and_clear_and_fetch_uuid_from_cache(
@@ -325,14 +332,38 @@ async def query_and_score_miners(
 
             total_scores = utils.update_total_scores(total_scores, scores)
 
+            ############ SCORING IMAGE EMBEDDINGS ############
+            
+            image_b64s = list(images_with_labels.values())
+
+
+            scores = {}
+            for uid in available_uids:
+                random_number_of_images_to_score_on = random.randint(1, 10)
+                if len(image_b64s) >= random_number_of_images_to_score_on:
+                    selected_image_b64s = random.sample(image_b64s, random_number_of_images_to_score_on)
+                else:
+                    selected_image_b64s = image_b64s
+                
+                response = await clip_vali.query_miner_with_images(metagraph, uid, selected_image_b64s)
+                expected_response = clip_vali.get_expected_image_embeddings(selected_image_b64s)
+                score = clip_vali.score_dot_embeddings(expected_response, response[1].image_embeddings)
+                bt.logging.info(f"Image embeddings similarity score for uid {uid}: {score}")
+                scores[uid] = score
+                
+            total_scores = utils.update_total_scores(total_scores, scores)
+
+            ############ SCORING TEXT EMBEDDINGS ############
+
+
+
             bt.logging.info(f"Updating weights !")
             update_weights(
                 total_scores, config, subtensor, wallet, metagraph
             )
 
-            steps_passed += 1
             bt.logging.info("Bout to sleep for a bit, done scoring for now :)")
-            await asyncio.sleep(random.random() * 1 * 10)
+            await asyncio.sleep(random.random() *  10)
 
         except Exception as e:
             bt.logging.error(f"General exception: {e}\n{traceback.format_exc()}")
