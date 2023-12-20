@@ -48,6 +48,6 @@ wandb login
 ```
 
 ```bash
-pm2 start validators/validator.py --interpreter python3 --name 19_validator -- --netuid 19 --subtensor.network finney --wallet.name YOUR_WALLET_NAME_HERE --wallet.hotkey YOUR_HOTKEY_NAME_HERE --logging.debug
+pm2 start validators/validator.py --interpreter python3 --name 19_validator -- --netuid 19 --subtensor.network finney --wallet.name YOUR_WALLET_NAME_HERE --wallet.hotkey YOUR_HOTKEY_NAME_HERE --logging.info
 ```
 Feel free to change this as you desire, e.g. changing the subtensor config to use a local subtensor
