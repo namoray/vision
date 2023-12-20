@@ -332,7 +332,7 @@ async def query_and_score_miners(
 
             steps_passed += 1
             bt.logging.info("Bout to sleep for a bit, done scoring for now :)")
-            await asyncio.sleep(random.random() * 1 * 10)
+            await asyncio.sleep(random.random() * 120)
 
         except Exception as e:
             bt.logging.error(f"General exception: {e}\n{traceback.format_exc()}")
