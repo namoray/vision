@@ -22,7 +22,7 @@ class ClipEmbeddingImages(bt.Synapse):
 
     @validator('image_b64s', pre=True)
     def check_number_of_images(cls, values):
-        if len(values) > 5:
+        if len(values) > 10:
             raise ValueError('Number of images should not exceed 10 please')
         return values
         

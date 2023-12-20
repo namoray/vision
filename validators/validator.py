@@ -288,7 +288,7 @@ async def query_and_score_miners(
                 for uid, image_uuid in miner_uids_to_image_uuid.items()
             }
             bt.logging.info(f"\nscores from non cache part: {segmentation_scores} \n")
-            total_scores = utils.update_total_scores(total_scores, segmentation_scores)
+            total_scores = utils.update_total_scores(total_scores, segmentation_scores, weight=0.5)
 
             ############ SCORING WITHOUT THE CACHE ############
 
@@ -330,19 +330,23 @@ async def query_and_score_miners(
 
             bt.logging.info(f"\nscores from cache part: {scores} \n")
 
-            total_scores = utils.update_total_scores(total_scores, scores)
+            total_scores = utils.update_total_scores(total_scores, scores, weight=1)
 
             ############ SCORING IMAGE EMBEDDINGS ############
             image_b64s = list(images_with_labels.values())
             clip_image_embedding_scores = await clip_vali.get_scores_for_image_embeddings(image_b64s, metagraph, available_uids)
+
+            bt.logging.info(f"\nscores from image embedding part: {clip_image_embedding_scores} \n")
             
-            total_scores = utils.update_total_scores(total_scores, clip_image_embedding_scores)
+            total_scores = utils.update_total_scores(total_scores, clip_image_embedding_scores, weight=0.2)
 
             ############ SCORING TEXT EMBEDDINGS ############
 
             clip_text_embedding_scores = await clip_vali.get_scores_for_text_embeddings(metagraph, available_uids)
+
+            bt.logging.info(f"\nscores from text embedding part: {clip_text_embedding_scores} \n")
             
-            total_scores = utils.update_total_scores(total_scores, clip_text_embedding_scores)
+            total_scores = utils.update_total_scores(total_scores, clip_text_embedding_scores, weight=0.2)
 
             bt.logging.info(f"Updating weights !")
             update_weights(
@@ -350,7 +354,7 @@ async def query_and_score_miners(
             )
 
             bt.logging.info("Bout to sleep for a bit, done scoring for now :)")
-            await asyncio.sleep(random.random() *  10)
+            await asyncio.sleep(random.random() * 4)
 
         except Exception as e:
             bt.logging.error(f"General exception: {e}\n{traceback.format_exc()}")

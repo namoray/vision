@@ -281,14 +281,23 @@ class SegmentationValidator(BaseValidator):
             return 0
 
         cosine_similarities = []
-        
         for i in range(len(expected_masks)):
-            dot_product = np.dot(
-                expected_masks[i].flatten().astype(float),
-                response_masks[i].flatten().astype(float),
-            )
-            cos_sim = dot_product / (np.linalg.norm(expected_masks[i]) * np.linalg.norm(response_masks[i]))
+        
+            if np.count_nonzero(expected_masks[i]) == 0 and np.count_nonzero(response_masks[i]) == 0:
+                cos_sim = 1
+            elif np.count_nonzero(expected_masks[i]) == 0 or np.count_nonzero(response_masks[i]) == 0:
+                cos_sim = 0
+            else:
+                dot_product = np.dot(
+                    expected_masks[i].flatten().astype(float),
+                    response_masks[i].flatten().astype(float),
+                )
+                cos_sim = dot_product / (np.linalg.norm(expected_masks[i]) * np.linalg.norm(response_masks[i]))
+        
             cosine_similarities.append(cos_sim)
 
-        avg = sum(cosine_similarities) / len(cosine_similarities)
+        if len(cosine_similarities) == 0:
+            avg = 0
+        else:
+            avg = sum(cosine_similarities) / len(cosine_similarities)
         return avg
