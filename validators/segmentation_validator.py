@@ -275,14 +275,13 @@ class SegmentationValidator(BaseValidator):
         expected_masks = utils.rle_decode_masks(expected_masks_encoded, shape)
         response_masks = utils.rle_decode_masks(response_masks_encoded, shape)
 
-        assert len(expected_masks) == len(
-            response_masks
-        ), f"Expected {len(expected_masks)} masks and response {len(response_masks)} masks must be the same length"
+        if len(expected_masks) != len(response_masks):
+            if len(expected_masks) == 0:
+                bt.logging.error(f"Why do we have 0 expected masks? Tis probably an error, please look into it")
+            return 0
 
         cosine_similarities = []
-        if len(expected_masks) == 0:
-            bt.logging.error(f"Why do we have 0 expected masks?")
-            return None
+        
         for i in range(len(expected_masks)):
             dot_product = np.dot(
                 expected_masks[i].flatten().astype(float),

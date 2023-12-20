@@ -19,6 +19,9 @@ import base64
 from core import utils
 from template.protocol import ClipEmbeddingImages, ClipEmbeddingTexts
 from validators.base_validator import BaseValidator
+from datasets import load_dataset
+import markovify
+
 
 
 class ClipValidator(BaseValidator):
@@ -28,6 +31,10 @@ class ClipValidator(BaseValidator):
         self.cache = diskcache.Cache(
             "validator_cache", 
         )
+        dataset = load_dataset('multi-train/coco_captions_1107')
+        text = [i["query"] for i in dataset["train"]]
+        self.markov_text_generation_model = markovify.Text(" ".join(text))
+
 
     async def query_miner_with_images(
         self,
@@ -44,10 +51,10 @@ class ClipValidator(BaseValidator):
         self,
         metagraph: bt.metagraph,
         uid: int,
-        texts: list[str],
+        text_prompts: list[str],
     ) -> Tuple[int, ClipEmbeddingTexts]:
         query = ClipEmbeddingTexts(
-           texts=texts
+           text_prompts=text_prompts
         )
         return await self.query_miner(metagraph.axons[uid], uid, query)
     
@@ -60,14 +67,16 @@ class ClipValidator(BaseValidator):
         
         return image_embeddings.cpu().numpy().tolist()
     
-    def get_expected_text_embeddings(self, texts: list[str]) -> List[List[float]]:
-        texts = [self.clip_preprocess(text) for text in texts]
-        texts_tensor = torch.stack(texts).to(self.device)
+    def get_expected_text_embeddings(self, text_prompts: list[str]) -> List[List[float]]:
+        texts_tensor = clip.tokenize(text_prompts).to(self.device)
         with torch.no_grad():
             text_embeddings = self.clip_model.encode_text(texts_tensor)
         
         text_embeddings = text_embeddings.cpu().numpy().tolist()
         return text_embeddings
+
+    def generate_n_random_text_prompts(self, x: int) -> list[str]:
+        return [self.markov_text_generation_model.make_short_sentence(max_chars=200) for _ in range(x)]
     
     @staticmethod
     def score_dot_embeddings(
@@ -96,3 +105,4 @@ class ClipValidator(BaseValidator):
         
         avg = np.mean(cosine_similarities)    
         return avg
+    

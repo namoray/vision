@@ -242,9 +242,8 @@ class MinerBoi():
         return synapse
 
     def get_text_embeddings(self, synapse: ClipEmbeddingTexts) -> ClipEmbeddingTexts:
-        texts = synapse.texts
-        texts = [self.clip_preprocess(text) for text in texts]
-        texts_tensor = torch.stack(texts).to(self.device)
+        text_prompts = synapse.text_prompts
+        texts_tensor = clip.tokenize(text_prompts).to(self.device)
         with torch.no_grad():
             text_embeddings = self.clip_model.encode_text(texts_tensor)
         

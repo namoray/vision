@@ -259,10 +259,10 @@ async def query_and_score_miners(
 ):
     segmenting_vali: SegmentationValidator = validators[0]
     clip_vali: ClipValidator = validators[1]
-    hotkeys_to_uids = utils.get_hotkeys_to_uids(metagraph)
-    uids_to_hotkeys = utils.get_uids_to_hotkeys(metagraph)
     while True:
         try:
+            hotkeys_to_uids = utils.get_hotkeys_to_uids(metagraph)
+            uids_to_hotkeys = utils.get_uids_to_hotkeys(metagraph)
             total_scores = torch.zeros(256)
             metagraph = subtensor.metagraph(config.netuid)
             available_uids = await get_available_uids(dendrite, metagraph)
@@ -335,8 +335,6 @@ async def query_and_score_miners(
             ############ SCORING IMAGE EMBEDDINGS ############
             
             image_b64s = list(images_with_labels.values())
-
-
             scores = {}
             for uid in available_uids:
                 random_number_of_images_to_score_on = random.randint(1, 10)
@@ -354,6 +352,19 @@ async def query_and_score_miners(
             total_scores = utils.update_total_scores(total_scores, scores)
 
             ############ SCORING TEXT EMBEDDINGS ############
+            
+            scores = {}
+            for uid in available_uids:
+                text_prompts = clip_vali.generate_n_random_text_prompts(random.randint(1, 10))
+                
+                response = await clip_vali.query_miner_with_texts(metagraph, uid, text_prompts)
+                expected_response = clip_vali.get_expected_text_embeddings(text_prompts)
+                score = clip_vali.score_dot_embeddings(expected_response, response[1].text_embeddings)
+                bt.logging.info(f"Image embeddings similarity score for uid {uid}: {score}")
+                scores[uid] = score
+                
+            total_scores = utils.update_total_scores(total_scores, scores)
+
 
 
 
