@@ -265,6 +265,8 @@ async def query_and_score_miners(
             uids_to_hotkeys = utils.get_uids_to_hotkeys(metagraph)
             total_scores = torch.zeros(256)
             metagraph = subtensor.metagraph(config.netuid)
+            hotkeys_to_uids = utils.get_hotkeys_to_uids(metagraph)
+            uids_to_hotkeys = utils.get_uids_to_hotkeys(metagraph)
             available_uids = await get_available_uids(dendrite, metagraph)
 
 

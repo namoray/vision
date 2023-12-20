@@ -150,8 +150,6 @@ class SegmentationValidator(BaseValidator):
         if image_shape is None or response_masks is None:
             return 0
         score = self.masks_score_dot(expected_masks, response_masks, shape=image_shape)
-        if score is None:
-            bt.logging.error(f"Why do we have 0 masks? respone synapse {response_synapse}")
         return score
 
     async def process_image_label(
