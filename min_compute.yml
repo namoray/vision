@@ -34,8 +34,8 @@ compute_spec:
       ram_type: "DDR4"     
 
     storage:  # The more storage you have, the bigger your cache is, and potentially the quicker your responses will be 
-      min_space: 20   
-      recommended_space: 40   # If you have this, I would recommend changing the cache to be larger in core/constants.py MINER_CACHE_SIZE
+      min_space: 30   # GB
+      recommended_space: 40   # GB. If you have this, I would recommend changing the cache to be larger in core/constants.py MINER_CACHE_SIZE
       type: "SSD"             
       min_iops: 1000          
       recommended_iops: 5000  

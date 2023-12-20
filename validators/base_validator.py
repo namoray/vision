@@ -3,7 +3,7 @@ from typing import Tuple
 
 import bittensor as bt
 from segment_anything import SamPredictor, sam_model_registry
-
+import clip
 from core import constants as cst
 
 
@@ -19,8 +19,11 @@ class BaseValidator(ABC):
         sam.to(device="cuda")
         self.predictor = SamPredictor(sam)
 
+        self.device = "cuda"
+        self.clip_model, self.clip_preprocess = clip.load("ViT-B/32", device=self.device)
+
+
     async def query_miner(self, axon: bt.axon, uid: int, syn: bt.Synapse) -> Tuple[int, bt.Synapse]:
-        bt.logging.info(f"Querying miner with uid {uid} and axon {axon}")
         try:
             responses = await self.dendrite(
                 [axon],

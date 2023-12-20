@@ -6,18 +6,21 @@ import threading
 import time
 import traceback
 from abc import ABC
-from typing import Any, Dict, Tuple
-
+from typing import Any, Dict, Tuple, List
+import torch
+import clip
+from PIL import Image
+import base64
 import bittensor as bt
 import diskcache
 import numpy as np
 import torch
 from segment_anything import SamPredictor, sam_model_registry
-
+import io
 from core import constants as cst
 from core import utils
 from miners.config import check_config, get_config
-from template.protocol import IsAlive, SegmentingSynapse
+from template.protocol import IsAlive, SegmentingSynapse, ClipEmbeddingImages, ClipEmbeddingTexts
 
 # import base miner class which takes care of most of the boilerplate
 
@@ -63,6 +66,9 @@ class MinerBoi():
         sam.to(device="cuda")
         self.predictor = SamPredictor(sam)
 
+        self.device = "cuda"
+        self.clip_model, self.clip_preprocess = clip.load("ViT-B/32", device=self.device)
+
         self.axon = axon or bt.axon(wallet=self.wallet, port=self.config.axon.port)
 
         bt.logging.info(f"Attaching Embeddings and Segmenting functions to axon.")
@@ -75,6 +81,14 @@ class MinerBoi():
             forward_fn=self._is_alive,
             blacklist_fn=self.blacklist_isalive,
             priority_fn=self.priority_isalive
+        ).attach(
+            forward_fn=self.get_image_embeddings,
+            blacklist_fn=self.blacklist_image_embeddings,
+            priority_fn=self.priority_image_embeddings
+        ).attach(
+            forward_fn=self.get_text_embeddings,
+            blacklist_fn=self.blacklist_text_embeddings,
+            priority_fn=self.priority_text_embeddings,
         )
         bt.logging.info(
             f"Serving attached axons on network:"
@@ -216,6 +230,26 @@ class MinerBoi():
         synapse.image_shape = list(image_cv2.shape)[:2]
         
         return synapse
+    
+    def get_image_embeddings(self, synapse: ClipEmbeddingImages) -> ClipEmbeddingImages:
+        images = [Image.open(io.BytesIO(base64.b64decode(img_b64))) for img_b64 in synapse.image_b64s]
+        images = [self.clip_preprocess(image) for image in images]
+        images_tensor = torch.stack(images).to(self.device)
+        with torch.no_grad():
+            image_embeddings = self.clip_model.encode_image(images_tensor)
+        
+        synapse.image_embeddings = image_embeddings.cpu().numpy().tolist()
+        return synapse
+
+    def get_text_embeddings(self, synapse: ClipEmbeddingTexts) -> ClipEmbeddingTexts:
+        text_prompts = synapse.text_prompts
+        texts_tensor = clip.tokenize(text_prompts).to(self.device)
+        with torch.no_grad():
+            text_embeddings = self.clip_model.encode_text(texts_tensor)
+        
+        synapse.text_embeddings = text_embeddings.cpu().numpy().tolist()
+        return synapse
+
 
     async def blacklist_isalive(self, synapse: IsAlive) -> Tuple[bool, str]:
         if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
@@ -230,6 +264,32 @@ class MinerBoi():
 
     async def blacklist_segmentation(
         self, synapse: SegmentingSynapse
+    ) -> Tuple[bool, str]:
+        if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
+            bt.logging.trace(
+                f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
+            )
+            return True, synapse.dendrite.hotkey
+        bt.logging.trace(
+            f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}"
+        )
+        return False, synapse.dendrite.hotkey
+
+    async def blacklist_image_embeddings(
+        self, synapse: ClipEmbeddingImages
+    ) -> Tuple[bool, str]:
+        if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
+            bt.logging.trace(
+                f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
+            )
+            return True, synapse.dendrite.hotkey
+        bt.logging.trace(
+            f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}"
+        )
+        return False, synapse.dendrite.hotkey
+
+    async def blacklist_text_embeddings(
+        self, synapse: ClipEmbeddingTexts
     ) -> Tuple[bool, str]:
         if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
             bt.logging.trace(
@@ -262,6 +322,29 @@ class MinerBoi():
             f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority
         )
         return prirority
+
+    async def priority_image_embeddings(self, synapse: ClipEmbeddingImages) -> float:
+        """
+        The priority function determines the order in which requests are handled.
+        """
+        caller_uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
+        prirority = float(self.metagraph.S[caller_uid])
+        bt.logging.trace(
+            f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority
+        )
+        return prirority
+    
+    async def priority_text_embeddings(self, synapse: ClipEmbeddingTexts) -> float:
+        """
+        The priority function determines the order in which requests are handled.
+        """
+        caller_uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
+        prirority = float(self.metagraph.S[caller_uid])
+        bt.logging.trace(
+            f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority
+        )
+        return prirority
+
 
 
     def run(self):

@@ -201,7 +201,7 @@ def rle_decode_masks(rles: List[List[List[int]]], shape: Tuple[int, int]):
 
 
 def update_total_scores(
-    total_scores: torch.tensor, scores: Dict[int, float]
+    total_scores: torch.tensor, scores: Dict[int, float], weight=1
 ) -> torch.tensor:
     """
     Updates the total scores by adding the given scores to the existing total scores.
@@ -216,7 +216,7 @@ def update_total_scores(
     """
     
     for uid, segmentation_score in scores.items():
-        total_scores[uid] += segmentation_score
+        total_scores[uid] += segmentation_score * weight
     return total_scores
 
 

@@ -273,21 +273,29 @@ class SegmentationValidator(BaseValidator):
         expected_masks = utils.rle_decode_masks(expected_masks_encoded, shape)
         response_masks = utils.rle_decode_masks(response_masks_encoded, shape)
 
-        assert len(expected_masks) == len(
-            response_masks
-        ), f"Expected {len(expected_masks)} masks and response {len(response_masks)} masks must be the same length"
+        if len(expected_masks) != len(response_masks):
+            if len(expected_masks) == 0:
+                bt.logging.error(f"Why do we have 0 expected masks? Tis probably an error, please look into it")
+            return 0
 
         cosine_similarities = []
-        if len(expected_masks) == 0:
-            bt.logging.error(f"Why do we have 0 expected masks? Please look into this, tis an error")
-            return 0
         for i in range(len(expected_masks)):
-            dot_product = np.dot(
-                expected_masks[i].flatten().astype(float),
-                response_masks[i].flatten().astype(float),
-            )
-            cos_sim = dot_product / (np.linalg.norm(expected_masks[i]) * np.linalg.norm(response_masks[i]))
+        
+            if np.count_nonzero(expected_masks[i]) == 0 and np.count_nonzero(response_masks[i]) == 0:
+                cos_sim = 1
+            elif np.count_nonzero(expected_masks[i]) == 0 or np.count_nonzero(response_masks[i]) == 0:
+                cos_sim = 0
+            else:
+                dot_product = np.dot(
+                    expected_masks[i].flatten().astype(float),
+                    response_masks[i].flatten().astype(float),
+                )
+                cos_sim = dot_product / (np.linalg.norm(expected_masks[i]) * np.linalg.norm(response_masks[i]))
+        
             cosine_similarities.append(cos_sim)
 
-        avg = sum(cosine_similarities) / len(cosine_similarities)
+        if len(cosine_similarities) == 0:
+            avg = 0
+        else:
+            avg = sum(cosine_similarities) / len(cosine_similarities)
         return avg
