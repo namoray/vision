@@ -1,0 +1,85 @@
+# PLEASE READ THIS 
+# THE FASTER YOU CAN DO THE COMPUTATION, THE MORE INCENTIVE YOUR MINER WILL RECEIVE
+# IT'S UP TO YOU HOW MUCH YOU WANT TO SPEND, AND WHERE YOU THINK THE COST / REWARD THRESHOLD IS
+
+# RTX 4090'S PERFORM VERY WELL. YOU MIGHT BE ABLE TO GET AWAY WITH A 4000 ADA TOO :)
+
+version: '1.0' # update this version key as needed, ideally should match your release version
+
+compute_spec:
+
+  miner:
+
+    cpu:
+      min_cores: 4            
+      min_speed: 2.5          
+      recommended_cores: 8    
+      recommended_speed: 3.5  
+      architecture: "x86_64"  
+
+    gpu:
+      required: True
+      min_vram: 12
+      recommended_vram: 20
+      cuda_cores: 6000                     
+      min_compute_capability: 6.0
+      recommended_compute_capability: 7.0
+      minimum_gpu: "4000 ADA"
+      recommended_gpu: "RTX 4090"       
+
+    memory:  # Doesn't matter too much
+      min_ram: 16          
+      min_swap: 4          
+      recommended_swap: 8  
+      ram_type: "DDR4"     
+
+    storage:  # The more storage you have, the bigger your cache is, and potentially the quicker your responses will be 
+      min_space: 20   
+      recommended_space: 40   # If you have this, I would recommend changing the cache to be larger in core/constants.py MINER_CACHE_SIZE
+      type: "SSD"             
+      min_iops: 1000          
+      recommended_iops: 5000  
+
+    os:
+      name: "Ubuntu"  
+      version: 20.04  
+
+  validator:
+
+    cpu:
+      min_cores: 4            
+      min_speed: 2.5          
+      recommended_cores: 8    
+      recommended_speed: 3.5  
+      architecture: "x86_64"  
+
+    gpu:  # Slightly lower requirements than a miner as you don't need to worry as much about speed, but it still needs to be on GPU
+      required: True                       
+      min_vram: 8                          
+      recommended_vram: 20             
+      cuda_cores: 1024                    
+      min_compute_capability: 6.0          
+      recommended_compute_capability: 7.0  
+      recommended_gpu: "RTX 4090"       
+
+    memory:
+      min_ram: 16         
+      min_swap: 4         
+      recommended_swap: 8 
+      ram_type: "DDR4"    
+
+    storage:
+      min_space: 20          
+      recommended_space: 30 
+      type: "SSD"            
+      min_iops: 1000         
+      recommended_iops: 5000 
+
+    os:
+      name: "Ubuntu" 
+      version: 20.04 
+
+network_spec:
+  bandwidth:  # THIS WILL ALSO IMPACT YOUR SCORE. THE QUICKER YOU DOWNLOAD THE BETTER. UPLOAD IS NOT AS IMPORTANT
+    download: 1000
+    upload: 20    
