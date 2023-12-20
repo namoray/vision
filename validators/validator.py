@@ -333,40 +333,16 @@ async def query_and_score_miners(
             total_scores = utils.update_total_scores(total_scores, scores)
 
             ############ SCORING IMAGE EMBEDDINGS ############
-            
             image_b64s = list(images_with_labels.values())
-            scores = {}
-            for uid in available_uids:
-                random_number_of_images_to_score_on = random.randint(1, 10)
-                if len(image_b64s) >= random_number_of_images_to_score_on:
-                    selected_image_b64s = random.sample(image_b64s, random_number_of_images_to_score_on)
-                else:
-                    selected_image_b64s = image_b64s
-                
-                response = await clip_vali.query_miner_with_images(metagraph, uid, selected_image_b64s)
-                expected_response = clip_vali.get_expected_image_embeddings(selected_image_b64s)
-                score = clip_vali.score_dot_embeddings(expected_response, response[1].image_embeddings)
-                bt.logging.info(f"Image embeddings similarity score for uid {uid}: {score}")
-                scores[uid] = score
-                
-            total_scores = utils.update_total_scores(total_scores, scores)
+            clip_image_embedding_scores = await clip_vali.get_scores_for_image_embeddings(image_b64s, metagraph, available_uids)
+            
+            total_scores = utils.update_total_scores(total_scores, clip_image_embedding_scores)
 
             ############ SCORING TEXT EMBEDDINGS ############
+
+            clip_text_embedding_scores = await clip_vali.get_scores_for_text_embeddings(metagraph, available_uids)
             
-            scores = {}
-            for uid in available_uids:
-                text_prompts = clip_vali.generate_n_random_text_prompts(random.randint(1, 10))
-                
-                response = await clip_vali.query_miner_with_texts(metagraph, uid, text_prompts)
-                expected_response = clip_vali.get_expected_text_embeddings(text_prompts)
-                score = clip_vali.score_dot_embeddings(expected_response, response[1].text_embeddings)
-                bt.logging.info(f"Image embeddings similarity score for uid {uid}: {score}")
-                scores[uid] = score
-                
-            total_scores = utils.update_total_scores(total_scores, scores)
-
-
-
+            total_scores = utils.update_total_scores(total_scores, clip_text_embedding_scores)
 
             bt.logging.info(f"Updating weights !")
             update_weights(

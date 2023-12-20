@@ -24,7 +24,6 @@ class BaseValidator(ABC):
 
 
     async def query_miner(self, axon: bt.axon, uid: int, syn: bt.Synapse) -> Tuple[int, bt.Synapse]:
-        bt.logging.info(f"Querying miner with uid {uid} and axon {axon}")
         try:
             responses = await self.dendrite(
                 [axon],

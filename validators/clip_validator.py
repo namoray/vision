@@ -74,6 +74,42 @@ class ClipValidator(BaseValidator):
         
         text_embeddings = text_embeddings.cpu().numpy().tolist()
         return text_embeddings
+    
+    async def run_image_embedding_query_for_uid(self, uid: int, image_b64s: List[str], metagraph: bt.metagraph) -> Tuple[int, float]:
+        random_number_of_images_to_score_on = random.randint(1, 10)
+        if len(image_b64s) >= random_number_of_images_to_score_on:
+            selected_image_b64s = random.sample(image_b64s, random_number_of_images_to_score_on)
+        else:
+            selected_image_b64s = image_b64s
+
+        response = await self.query_miner_with_images(metagraph, uid, selected_image_b64s)
+        expected_response = self.get_expected_image_embeddings(selected_image_b64s)
+        score = self.score_dot_embeddings(expected_response, response[1].image_embeddings)
+        return (uid, score)
+        
+
+    async def run_text_embedding_query_for_uid(self, uid: int, metagraph: bt.metagraph) -> Tuple[int, float]:
+        text_prompts = self.generate_n_random_text_prompts(random.randint(1, 10))
+        response = await self.query_miner_with_texts(metagraph, uid, text_prompts)
+        expected_response = self.get_expected_text_embeddings(text_prompts)
+        score = self.score_dot_embeddings(expected_response, response[1].text_embeddings)
+        return (uid, score)
+    
+    async def get_scores_for_image_embeddings(self, image_b64s: list[str], metagraph: bt.metagraph, available_uids: List[int]) -> Dict[int, float]:
+        img_tasks = [asyncio.create_task(self.run_image_embedding_query_for_uid(uid, image_b64s, metagraph)) for uid in available_uids]
+        uids_and_scores = await asyncio.gather(*img_tasks)
+        scores: Dict[int, float] = {}
+        for uid, score in uids_and_scores:
+            scores[uid] = score
+        return scores
+
+    async def get_scores_for_text_embeddings(self, metagraph: bt.metagraph, available_uids: List[int]) -> Dict[int, float]:
+        img_tasks = [asyncio.create_task(self.run_text_embedding_query_for_uid(uid, metagraph)) for uid in available_uids]
+        uids_and_scores = await asyncio.gather(*img_tasks)
+        scores: Dict[int, float] = {}
+        for uid, score in uids_and_scores:
+            scores[uid] = score
+        return scores
 
     def generate_n_random_text_prompts(self, x: int) -> list[str]:
         return [self.markov_text_generation_model.make_short_sentence(max_chars=200) for _ in range(x)]
