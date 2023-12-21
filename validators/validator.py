@@ -219,9 +219,6 @@ async def score_cache_responses_for_hotkey(
     scores = []
     times = []
     uid = hotkeys_to_uids[hotkey]
-    bt.logging.info(
-        f"Scoring hotkey {hotkey} for uid {uid}, with image_uuid {image_uuid}"
-    )
     for _ in range(times_to_test):
         input_boxes, input_points, input_labels = utils.generate_random_inputs(
             x_dim=x_dim, y_dim=y_dim
@@ -293,10 +290,12 @@ async def query_and_score_miners(
                 uids_to_hotkeys[uid]: image_uuid
                 for uid, image_uuid in miner_uids_to_image_uuid.items()
             }
-            bt.logging.info(f"\nscores from non cache part: {segmentation_scores} \n")
+            bt.logging.info(f"✅scores from non cache part: {segmentation_scores}")
             total_scores = utils.update_total_scores(total_scores, segmentation_scores, weight=0.5)
 
             ############ SCORING WITHOUT THE CACHE ############
+
+            bt.logging.info("Scoring without the cache now...")
 
             miner_hotkeys_to_image_uuid_and_image = (
                 segmenting_vali.update_and_clear_and_fetch_uuid_from_cache(
@@ -339,18 +338,23 @@ async def query_and_score_miners(
             total_scores = utils.update_total_scores(total_scores, scores, weight=1)
 
             ############ SCORING IMAGE EMBEDDINGS ############
+
+            bt.logging.info("Scoring the image embeddings now...")
+
             image_b64s = list(images_with_labels.values())
             clip_image_embedding_scores = await clip_vali.get_scores_for_image_embeddings(image_b64s, metagraph, available_uids)
 
-            bt.logging.info(f"\nscores from image embedding part: {clip_image_embedding_scores} \n")
+            bt.logging.info(f"✅ scores from image embedding part: {clip_image_embedding_scores}")
             
             total_scores = utils.update_total_scores(total_scores, clip_image_embedding_scores, weight=0.2)
 
             ############ SCORING TEXT EMBEDDINGS ############
 
+            bt.logging.info("Scoring the text embeddings now...")
+
             clip_text_embedding_scores = await clip_vali.get_scores_for_text_embeddings(metagraph, available_uids)
 
-            bt.logging.info(f"\nscores from text embedding part: {clip_text_embedding_scores} \n")
+            bt.logging.info(f"✅ scores from text embedding part: {clip_text_embedding_scores}")
             
             total_scores = utils.update_total_scores(total_scores, clip_text_embedding_scores, weight=0.2)
 
