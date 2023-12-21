@@ -239,17 +239,17 @@ class MinerBoi():
             )
             return synapse
         
-        # images = [Image.open(io.BytesIO(base64.b64decode(img_b64))) for img_b64 in synapse.image_b64s]
-        # async with self.asyncio_lock:
-        #     images = [self.clip_preprocess(image) for image in images]
-        #     images_tensor = torch.stack(images).to(self.device)
-        #     with torch.no_grad():
-        #         image_embeddings = self.clip_model.encode_image(images_tensor)
+        images = [Image.open(io.BytesIO(base64.b64decode(img_b64))) for img_b64 in synapse.image_b64s]
+        async with self.asyncio_lock:
+            images = [self.clip_preprocess(image) for image in images]
+            images_tensor = torch.stack(images).to(self.device)
+            with torch.no_grad():
+                image_embeddings = self.clip_model.encode_image(images_tensor)
         
-        # image_embeddings = image_embeddings.cpu().numpy().tolist()
-        # synapse.image_embeddings = image_embeddings
-        # if len(image_embeddings) > 0:
-        #     bt.logging.info(f"✅ {len(synapse.image_embeddings)} image embedding(s) generated. bang.")
+        image_embeddings = image_embeddings.cpu().numpy().tolist()
+        synapse.image_embeddings = image_embeddings
+        if len(image_embeddings) > 0:
+            bt.logging.info(f"✅ {len(synapse.image_embeddings)} image embedding(s) generated. bang.")
         
         # Removing this to not transfer it all back over the web again.
         synapse.image_b64s = None
@@ -266,18 +266,18 @@ class MinerBoi():
         
         text_prompts = synapse.text_prompts
         
-        # texts_tensor = clip.tokenize(text_prompts).to(self.device)
-        # async with self.asyncio_lock:
-        #     with torch.no_grad():
-        #         text_embeddings = self.clip_model.encode_text(texts_tensor)
+        texts_tensor = clip.tokenize(text_prompts).to(self.device)
+        async with self.asyncio_lock:
+            with torch.no_grad():
+                text_embeddings = self.clip_model.encode_text(texts_tensor)
         
-        # list_text_embeddings = text_embeddings.cpu().numpy().tolist()
-        # synapse.text_embeddings = list_text_embeddings
-        # bt.logging.info(f"✅ Generated {len(list_text_embeddings)} text embedding(s)? Completed it mate")
-        # bt.logging.debug(
-        #     f"type of synapse.text_embeddings: {type(list_text_embeddings)}"
-        # )
-        # bt.logging.debug(f"Shape of text embeddings: {np.array(list_text_embeddings).shape}")
+        list_text_embeddings = text_embeddings.cpu().numpy().tolist()
+        synapse.text_embeddings = list_text_embeddings
+        bt.logging.info(f"✅ Generated {len(list_text_embeddings)} text embedding(s)? Completed it mate")
+        bt.logging.debug(
+            f"type of synapse.text_embeddings: {type(list_text_embeddings)}"
+        )
+        bt.logging.debug(f"Shape of text embeddings: {np.array(list_text_embeddings).shape}")
 
         # # Removing this to not transfer it all back over the web again.
         synapse.text_prompts = None
