@@ -274,10 +274,6 @@ class MinerBoi():
         list_text_embeddings = text_embeddings.cpu().numpy().tolist()
         synapse.text_embeddings = list_text_embeddings
         bt.logging.info(f"✅ Generated {len(list_text_embeddings)} text embedding(s)? Completed it mate")
-        bt.logging.debug(
-            f"type of synapse.text_embeddings: {type(list_text_embeddings)}"
-        )
-        bt.logging.debug(f"Shape of text embeddings: {np.array(list_text_embeddings).shape}")
 
         # # Removing this to not transfer it all back over the web again.
         synapse.text_prompts = None

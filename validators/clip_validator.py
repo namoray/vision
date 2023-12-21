@@ -82,8 +82,6 @@ class ClipValidator(BaseValidator):
         else:
             selected_image_b64s = image_b64s
 
-        # This is important to not recieve all responses at once and hit bandwith limits
-        await asyncio.sleep(random.random() * 5 )
         response = await self.query_miner_with_images(metagraph, uid, selected_image_b64s)
         expected_response = self.get_expected_image_embeddings(selected_image_b64s)
         score = self.score_dot_embeddings(expected_response, response[1].image_embeddings)
@@ -93,8 +91,6 @@ class ClipValidator(BaseValidator):
     async def run_text_embedding_query_for_uid(self, uid: int, metagraph: bt.metagraph) -> Tuple[int, float]:
         text_prompts = self.generate_n_random_text_prompts(random.randint(1, 10))
 
-        # This is important to not recieve all responses at once and hit bandwith limit
-        await asyncio.sleep(random.random() * 5)
         uid, response_synapse = await self.query_miner_with_texts(metagraph, uid, text_prompts)
 
 

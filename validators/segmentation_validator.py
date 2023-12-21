@@ -106,7 +106,6 @@ class SegmentationValidator(BaseValidator):
             miner_hotkeys_to_image_uuid_and_image[hotkey] = random_uuid_base64_date
 
             random_uuid = random_uuid_base64_date[0]
-            bt.logging.debug(f"Hotkey {hotkey} has image {random_uuid}. In total they have {len(updated_image_uuids)} images.")
 
         return miner_hotkeys_to_image_uuid_and_image
 
@@ -211,8 +210,7 @@ class SegmentationValidator(BaseValidator):
         expected_masks: List,
         metagraph: bt.metagraph,
     ) -> Tuple:
-        # Prevent network overload
-        await asyncio.sleep(random.random() * 3)
+        
         time_before = time.time()
         _, response_synapse = await self.query_miner_with_image_b64(
             metagraph,

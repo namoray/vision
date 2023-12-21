@@ -20,11 +20,9 @@ from validators.clip_validator import ClipValidator
 
 moving_average_scores = torch.zeros(256)
 wandb_runs = {}
+
 sem = asyncio.Semaphore(10)
 
-CHANCE_TO_SCORE_SEGMENTATION = 1.0
-CHANCE_TO_SCORE_IMAGE_EMBEDDINGS=1.0
-CHANCE_TO_SCORE_TEXT_EMBEDDINGS=1.0
 
 def get_config():
     parser = argparse.ArgumentParser()
@@ -190,6 +188,7 @@ async def get_random_images(uids: Dict[int, bt.axon]) -> Tuple[Dict[int, str], D
     return images_with_labels, miners_and_image_b64_labels
 
 async def bound_score_cache_responses_for_hotkey(*args, **kwargs):
+    """We have this to not crash our validators vram"""
     async with sem:
         return await score_cache_responses_for_hotkey(*args, **kwargs)
     
@@ -228,8 +227,6 @@ async def score_cache_responses_for_hotkey(
         input_boxes, input_points, input_labels = utils.generate_random_inputs(
             x_dim=x_dim, y_dim=y_dim
         )
-        # prevent network overload
-        await asyncio.sleep(random.random() * 1)
         time_before = time.time()
         _, response_synapse = await seg_vali.query_miner_with_uuid(
             metagraph,
