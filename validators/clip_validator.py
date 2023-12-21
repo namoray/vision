@@ -93,6 +93,7 @@ class ClipValidator(BaseValidator):
         response = await self.query_miner_with_texts(metagraph, uid, text_prompts)
         expected_response = self.get_expected_text_embeddings(text_prompts)
         score = self.score_dot_embeddings(expected_response, response[1].text_embeddings)
+        bt.logging.debug(f"UID: {uid}, EXPECTED_RESPONSE: {expected_response}, RESPONSE: {response[1].text_embeddings}, SCORE: {score}")
         return (uid, score)
     
     async def get_scores_for_image_embeddings(self, image_b64s: list[str], metagraph: bt.metagraph, available_uids: List[int]) -> Dict[int, float]:

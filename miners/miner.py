@@ -250,7 +250,9 @@ class MinerBoi():
             with torch.no_grad():
                 text_embeddings = self.clip_model.encode_text(texts_tensor)
         
-        synapse.text_embeddings = text_embeddings.cpu().numpy().tolist()
+        list_text_embeddings = text_embeddings.cpu().numpy().tolist()
+        synapse.text_embeddings = list_text_embeddings
+        bt.logging.info(f"Returning {len(list_text_embeddings)} embeddings")
         return synapse
 
 
