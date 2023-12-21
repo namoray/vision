@@ -269,22 +269,21 @@ class MinerBoi():
         
         text_prompts = synapse.text_prompts
         
-        texts_tensor = clip.tokenize(text_prompts).to(self.device)
-        async with self.asyncio_lock:
-            with torch.no_grad():
-                text_embeddings = self.clip_model.encode_text(texts_tensor)
+        # texts_tensor = clip.tokenize(text_prompts).to(self.device)
+        # async with self.asyncio_lock:
+        #     with torch.no_grad():
+        #         text_embeddings = self.clip_model.encode_text(texts_tensor)
         
-        list_text_embeddings = text_embeddings.cpu().numpy().tolist()
-        synapse.text_embeddings = list_text_embeddings
-        bt.logging.info(f"✅ Generated {len(list_text_embeddings)} text embedding(s)? Completed it mate")
+        # list_text_embeddings = text_embeddings.cpu().numpy().tolist()
+        # synapse.text_embeddings = list_text_embeddings
+        # bt.logging.info(f"✅ Generated {len(list_text_embeddings)} text embedding(s)? Completed it mate")
+        # bt.logging.debug(
+        #     f"type of synapse.text_embeddings: {type(list_text_embeddings)}"
+        # )
+        # bt.logging.debug(f"Shape of text embeddings: {np.array(list_text_embeddings).shape}")
 
-        # Removing this to not transfer it all back over the web again.
+        # # Removing this to not transfer it all back over the web again.
         synapse.text_prompts = None
-
-        bt.logging.debug(
-            f"type of synapse.text_embeddings: {type(list_text_embeddings)}"
-        )
-        bt.logging.debug(f"Shape of text embeddings: {np.array(list_text_embeddings).shape}")
 
         return synapse
 

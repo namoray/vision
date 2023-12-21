@@ -22,6 +22,10 @@ moving_average_scores = torch.zeros(256)
 wandb_runs = {}
 
 
+CHANCE_TO_SCORE_SEGMENTATION = 0.0
+CHANCE_TO_SCORE_IMAGE_EMBEDDINGS=1.0
+CHANCE_TO_SCORE_TEXT_EMBEDDINGS=1.0
+
 def get_config():
     parser = argparse.ArgumentParser()
     parser.add_argument("--netuid", type=int, default=19)
@@ -223,6 +227,8 @@ async def score_cache_responses_for_hotkey(
         input_boxes, input_points, input_labels = utils.generate_random_inputs(
             x_dim=x_dim, y_dim=y_dim
         )
+        # prevent network overload
+        await asyncio.sleep(random.random() * 1)
         time_before = time.time()
         _, response_synapse = await seg_vali.query_miner_with_uuid(
             metagraph,
@@ -275,7 +281,7 @@ async def query_and_score_miners(
                 )
 
             ############ SCORING SEGMENTATIONS  ############
-            if random.random() < 0.0:
+            if random.random() < CHANCE_TO_SCORE_SEGMENTATION:
                 ############ SCORING WITH THE CACHE ############
                 
 
@@ -341,7 +347,7 @@ async def query_and_score_miners(
                 await asyncio.sleep(random.random() * 3)
 
             ############ SCORING IMAGE EMBEDDINGS ############
-            if random.random() < 1:
+            if random.random() < CHANCE_TO_SCORE_IMAGE_EMBEDDINGS:
                 image_b64s = list(images_with_labels.values())
                 clip_image_embedding_scores = await clip_vali.get_scores_for_image_embeddings(image_b64s, metagraph, available_uids)
 
@@ -354,7 +360,7 @@ async def query_and_score_miners(
 
             ############ SCORING TEXT EMBEDDINGS ############
             
-            if random.random() < 1:
+            if random.random() < CHANCE_TO_SCORE_TEXT_EMBEDDINGS:
                 clip_text_embedding_scores = await clip_vali.get_scores_for_text_embeddings(metagraph, available_uids)
 
                 bt.logging.info(f"\nscores from text embedding part: {clip_text_embedding_scores} \n")

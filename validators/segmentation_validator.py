@@ -211,6 +211,8 @@ class SegmentationValidator(BaseValidator):
         expected_masks: List,
         metagraph: bt.metagraph,
     ) -> Tuple:
+        # Prevent network overload
+        await asyncio.sleep(random.random() * 3)
         time_before = time.time()
         _, response_synapse = await self.query_miner_with_image_b64(
             metagraph,
