@@ -15,7 +15,7 @@ class IsAlive(bt.Synapse):
 class ClipEmbeddingImages(bt.Synapse):
     """Generates a clip embedding for images"""
 
-    image_b64s: List[str] = Field(..., description="The base64 encoded images", title="images")
+    image_b64s: Optional[List[str]] = Field(..., description="The base64 encoded images", title="images")
     image_embeddings: Optional[List[List[float]]] = Field(
         default=None, description="The image embeddings", title="image_embeddings"
     )
