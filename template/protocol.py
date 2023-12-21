@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple
 from pydantic import BaseModel, validator, HttpUrl, root_validator, ValidationError, Field
 import base64
 import io
@@ -34,6 +34,9 @@ class ClipEmbeddingImages(bt.Synapse):
             raise ValueError(f'Total image size should not exceed {max_size_mb} MB, we are not made of bandwith')
         return values
 
+    def deserialize(self) -> Optional[List[List[float]]]:
+        return self.image_embeddings
+
 class ClipEmbeddingTexts(bt.Synapse):
 
     text_prompts: List[str] = Field(..., description="The text prompts", title="text_prompts")
@@ -41,6 +44,9 @@ class ClipEmbeddingTexts(bt.Synapse):
     text_embeddings: Optional[List[List[float]]] = Field(
         default=None, description="The text embeddings", title="text_embeddings"
     )
+
+    def deserialize(self) -> Optional[List[List[float]]]:
+        return self.text_embeddings
     
 class SegmentingSynapse(bt.Synapse):
     """
@@ -92,8 +98,8 @@ class SegmentingSynapse(bt.Synapse):
         title="masks",
     )
 
-    def deserialize(self) -> Optional[str]:
+    def deserialize(self) -> Tuple[Optional[List[List[List[int]]]], Optional[List[int]]]:
         """
-        Deserialize the emebeddings response
+        Deserialize the emebeddings response with masks and image shape
         """
-        return self.masks
+        return self.masks, self.image_shape
