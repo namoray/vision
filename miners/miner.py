@@ -316,6 +316,7 @@ class MinerBoi():
     async def blacklist_text_embeddings(
         self, synapse: ClipEmbeddingTexts
     ) -> Tuple[bool, str]:
+        return False, synapse.dendrite.hotkey
         if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
             bt.logging.trace(
                 f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
