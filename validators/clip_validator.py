@@ -82,6 +82,8 @@ class ClipValidator(BaseValidator):
         else:
             selected_image_b64s = image_b64s
 
+        # This is important to not recieve all responses at once and hit bandwith limits
+        await asyncio.sleep(random.random() * 5 )
         response = await self.query_miner_with_images(metagraph, uid, selected_image_b64s)
         expected_response = self.get_expected_image_embeddings(selected_image_b64s)
         score = self.score_dot_embeddings(expected_response, response[1].image_embeddings)
@@ -90,15 +92,22 @@ class ClipValidator(BaseValidator):
 
     async def run_text_embedding_query_for_uid(self, uid: int, metagraph: bt.metagraph) -> Tuple[int, float]:
         text_prompts = self.generate_n_random_text_prompts(random.randint(1, 10))
+
+        # This is important to not recieve all responses at once and hit bandwith limit
+        await asyncio.sleep(random.random() * 5)
         uid, response_synapse = await self.query_miner_with_texts(metagraph, uid, text_prompts)
+
+
         expected_response = self.get_expected_text_embeddings(text_prompts)
         score = self.score_dot_embeddings(expected_response, response_synapse.text_embeddings)
+
         if response_synapse is not None and response_synapse.text_embeddings is not None:
             bt.logging.debug(f"UID {uid} scored {score}, RESPONSE EMBEDDING LENGTH = {len(response_synapse.text_embeddings)}, expected length = {len(expected_response)}")
         elif response_synapse is None:
             bt.logging.debug(f"UID {uid} scored {score}, RESPONSE is None")
         else:
             bt.logging.debug(f"UID {uid} scored {score}, response embeddings is None")
+
         return (uid, score)
     
     async def get_scores_for_image_embeddings(self, image_b64s: list[str], metagraph: bt.metagraph, available_uids: List[int]) -> Dict[int, float]:

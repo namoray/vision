@@ -236,6 +236,12 @@ class MinerBoi():
         return synapse
     
     async def get_image_embeddings(self, synapse: ClipEmbeddingImages) -> ClipEmbeddingImages:
+        if synapse.image_b64s is None:
+            synapse.error_message = "❌ You must supply the images that you want to embed"
+            bt.logging.warning(
+                f"USER ERROR: {synapse.error_message}, synapse: {synapse}"
+            )
+            return synapse
         images = [Image.open(io.BytesIO(base64.b64decode(img_b64))) for img_b64 in synapse.image_b64s]
         async with self.asyncio_lock:
             images = [self.clip_preprocess(image) for image in images]
@@ -254,6 +260,13 @@ class MinerBoi():
         return synapse
 
     async def get_text_embeddings(self, synapse: ClipEmbeddingTexts) -> ClipEmbeddingTexts:
+        if synapse.text_prompts is None:
+            synapse.error_message = "❌ You must supply the text prompts that you want to embed"
+            bt.logging.warning(
+                f"USER ERROR: {synapse.error_message}, synapse: {synapse}"
+            )
+            return synapse
+        
         text_prompts = synapse.text_prompts
         
         texts_tensor = clip.tokenize(text_prompts).to(self.device)
