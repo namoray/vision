@@ -343,6 +343,9 @@ async def query_and_score_miners(
             
             total_scores = utils.update_total_scores(total_scores, clip_image_embedding_scores, weight=0.2)
 
+
+            await asyncio.sleep(random.random()* 5 + 5)
+
             ############ SCORING TEXT EMBEDDINGS ############
 
             clip_text_embedding_scores = await clip_vali.get_scores_for_text_embeddings(metagraph, available_uids)
