@@ -62,11 +62,12 @@ class MinerBoi():
 
         bt.logging.info("Starting Segmenting miner")
 
+        self.device = "cuda"
+
         sam = sam_model_registry[cst.MODEL_TYPE](checkpoint=cst.CHECKPOINT_PATH)
-        sam.to(device="cuda")
+        sam.to(device=self.device)
         self.predictor = SamPredictor(sam)
 
-        self.device = "cuda"
         self.clip_model, self.clip_preprocess = clip.load("ViT-B/32", device=self.device)
 
         self.axon = axon or bt.axon(wallet=self.wallet, port=self.config.axon.port)
@@ -255,8 +256,7 @@ class MinerBoi():
     async def get_text_embeddings(self, synapse: ClipEmbeddingTexts) -> ClipEmbeddingTexts:
         text_prompts = synapse.text_prompts
         
-        texts_tensor = clip.tokenize(text_prompts)
-        texts_tensor.to(self.device)
+        texts_tensor = clip.tokenize(text_prompts).to(self.device)
         async with self.asyncio_lock:
             with torch.no_grad():
                 text_embeddings = self.clip_model.encode_text(texts_tensor)
