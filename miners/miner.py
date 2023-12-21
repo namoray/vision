@@ -62,11 +62,12 @@ class MinerBoi():
 
         bt.logging.info("Starting Segmenting miner")
 
+        self.device = "cuda"
+
         sam = sam_model_registry[cst.MODEL_TYPE](checkpoint=cst.CHECKPOINT_PATH)
-        sam.to(device="cuda")
+        sam.to(device=self.device)
         self.predictor = SamPredictor(sam)
 
-        self.device = "cuda"
         self.clip_model, self.clip_preprocess = clip.load("ViT-B/32", device=self.device)
 
         self.axon = axon or bt.axon(wallet=self.wallet, port=self.config.axon.port)
@@ -76,19 +77,15 @@ class MinerBoi():
         self.axon.attach(
             forward_fn=self.get_segmentation,
             blacklist_fn=self.blacklist_segmentation,
-            priority_fn=self.priority_segmentation
         ).attach(
             forward_fn=self._is_alive,
             blacklist_fn=self.blacklist_isalive,
-            priority_fn=self.priority_isalive
         ).attach(
             forward_fn=self.get_image_embeddings,
             blacklist_fn=self.blacklist_image_embeddings,
-            priority_fn=self.priority_image_embeddings
         ).attach(
             forward_fn=self.get_text_embeddings,
             blacklist_fn=self.blacklist_text_embeddings,
-            priority_fn=self.priority_text_embeddings,
         )
         bt.logging.info(
             f"Serving attached axons on network:"
@@ -101,8 +98,8 @@ class MinerBoi():
         self.should_exit: bool = False
         self.is_running: bool = False
         self.thread: threading.Thread = None
-        self._asyncio_lock = asyncio.Lock()
-        self._threading_lock = threading.Lock()
+        self.asyncio_lock = asyncio.Lock()
+        self.threading_lock = threading.Lock()
         self.request_timestamps: Dict[Any, Any] = {}
 
         self.cache = diskcache.Cache("images_cache", size_limit=cst.MINER_CACHE_SIZE)
@@ -116,7 +113,7 @@ class MinerBoi():
         parser = argparse.ArgumentParser(description="Streaming Miner Configs")
         return bt.config(parser)
 
-    def get_segmentation(self, synapse: SegmentingSynapse) -> SegmentingSynapse:
+    async def get_segmentation(self, synapse: SegmentingSynapse) -> SegmentingSynapse:
         """
         Generates the masks for an image, points, labels & boxes. This function is the core.
         You know you love it.
@@ -131,7 +128,7 @@ class MinerBoi():
 
         if synapse.image_uuid is None and synapse.image_b64 is None:
             synapse.error_message = (
-                "You must supply an image or UUID of the already stored image"
+                "❌ You must supply an image or UUID of the already stored image"
             )
             bt.logging.warning(
                 f"USER ERROR: {synapse.error_message}, synapse: {synapse}"
@@ -145,9 +142,9 @@ class MinerBoi():
                 image_uuid = utils.get_image_uuid(synapse.image_b64)
             except Exception:
                 synapse.error_message = (
-                    "Failed to get image uuid form image base64, invalid base64 I think"
+                    "❌ Failed to get image uuid form image base64, invalid base64 I think"
                 )
-                bt.logging.error(f"USER ERROR: {synapse.error_message}")
+                bt.logging.error(f" USER ERROR: {synapse.error_message}")
                 return synapse
             image_cv2 = utils.convert_b64_to_cv2_img(synapse.image_b64)
             bt.logging.info("Image not found in cache, gonsta store it now")
@@ -155,8 +152,8 @@ class MinerBoi():
             synapse.image_uuid = image_uuid
 
         else:
-            synapse.error_message = "Image not found in cache and you didn't supply the image :( Can you please gimme the image?!)"
-            bt.logging.warning(f"USER ERROR: {synapse.error_message}")
+            synapse.error_message = "❌ Image not found in cache and you didn't supply the image :( Can you please gimme the image?!)"
+            bt.logging.warning(f" USER ERROR: {synapse.error_message}")
             return synapse
 
         # remove image from synapse to not transfer it all back over the web again. Smort.
@@ -168,12 +165,12 @@ class MinerBoi():
             and synapse.input_labels is None
         ):
             synapse.error_message = (
-                "No input points, boxes or labels, just gonna store the image"
+                "❌ No input points, boxes or labels, just gonna store the image"
             )
-            bt.logging.warning(f"USER ERROR: {synapse.error_message}")
+            bt.logging.warning(f" USER ERROR: {synapse.error_message}")
             return synapse
 
-        with threading.Lock():
+        async with self.asyncio_lock:
             self.predictor.set_image(image_cv2)
             if (
                 synapse.input_boxes is None
@@ -228,30 +225,64 @@ class MinerBoi():
         encoded_masks = utils.rle_encode_masks(best_masks)
         synapse.masks = encoded_masks
         synapse.image_shape = list(image_cv2.shape)[:2]
+
+        if len(encoded_masks) > 0:
+            bt.logging.info(f"✅ Generated {len(synapse.masks)} mask(s), go me")
         
         return synapse
     
-    def get_image_embeddings(self, synapse: ClipEmbeddingImages) -> ClipEmbeddingImages:
-        images = [Image.open(io.BytesIO(base64.b64decode(img_b64))) for img_b64 in synapse.image_b64s]
-        images = [self.clip_preprocess(image) for image in images]
-        images_tensor = torch.stack(images).to(self.device)
-        with torch.no_grad():
-            image_embeddings = self.clip_model.encode_image(images_tensor)
+    async def get_image_embeddings(self, synapse: ClipEmbeddingImages) -> ClipEmbeddingImages:
+        if synapse.image_b64s is None:
+            synapse.error_message = "❌ You must supply the images that you want to embed"
+            bt.logging.warning(
+                f"USER ERROR: {synapse.error_message}, synapse: {synapse}"
+            )
+            return synapse
         
-        synapse.image_embeddings = image_embeddings.cpu().numpy().tolist()
+        images = [Image.open(io.BytesIO(base64.b64decode(img_b64))) for img_b64 in synapse.image_b64s]
+        async with self.asyncio_lock:
+            images = [self.clip_preprocess(image) for image in images]
+            images_tensor = torch.stack(images).to(self.device)
+            with torch.no_grad():
+                image_embeddings = self.clip_model.encode_image(images_tensor)
+        
+        image_embeddings = image_embeddings.cpu().numpy().tolist()
+        synapse.image_embeddings = image_embeddings
+        if len(image_embeddings) > 0:
+            bt.logging.info(f"✅ {len(synapse.image_embeddings)} image embedding(s) generated. bang.")
+        
+        # Removing this to not transfer it all back over the web again.
+        synapse.image_b64s = None
+
         return synapse
 
-    def get_text_embeddings(self, synapse: ClipEmbeddingTexts) -> ClipEmbeddingTexts:
-        text_prompts = synapse.text_prompts
-        texts_tensor = clip.tokenize(text_prompts).to(self.device)
-        with torch.no_grad():
-            text_embeddings = self.clip_model.encode_text(texts_tensor)
+    async def get_text_embeddings(self, synapse: ClipEmbeddingTexts) -> ClipEmbeddingTexts:
+        if synapse.text_prompts is None:
+            synapse.error_message = "❌ You must supply the text prompts that you want to embed"
+            bt.logging.warning(
+                f"USER ERROR: {synapse.error_message}, synapse: {synapse}"
+            )
+            return synapse
         
-        synapse.text_embeddings = text_embeddings.cpu().numpy().tolist()
+        text_prompts = synapse.text_prompts
+        
+        texts_tensor = clip.tokenize(text_prompts).to(self.device)
+        async with self.asyncio_lock:
+            with torch.no_grad():
+                text_embeddings = self.clip_model.encode_text(texts_tensor)
+        
+        list_text_embeddings = text_embeddings.cpu().numpy().tolist()
+        synapse.text_embeddings = list_text_embeddings
+        bt.logging.info(f"✅ Generated {len(list_text_embeddings)} text embedding(s)? Completed it mate")
+
+        # # Removing this to not transfer it all back over the web again.
+        synapse.text_prompts = None
+
         return synapse
 
 
     async def blacklist_isalive(self, synapse: IsAlive) -> Tuple[bool, str]:
+        return False, synapse.dendrite.hotkey
         if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
             bt.logging.trace(
                 f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
@@ -278,6 +309,7 @@ class MinerBoi():
     async def blacklist_image_embeddings(
         self, synapse: ClipEmbeddingImages
     ) -> Tuple[bool, str]:
+        return False, synapse.dendrite.hotkey
         if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
             bt.logging.trace(
                 f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
@@ -291,6 +323,7 @@ class MinerBoi():
     async def blacklist_text_embeddings(
         self, synapse: ClipEmbeddingTexts
     ) -> Tuple[bool, str]:
+        return False, synapse.dendrite.hotkey
         if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
             bt.logging.trace(
                 f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"

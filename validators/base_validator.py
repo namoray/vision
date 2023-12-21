@@ -8,7 +8,7 @@ from core import constants as cst
 
 
 class BaseValidator(ABC):
-    def __init__(self, dendrite, config, subtensor, wallet, timeout):
+    def __init__(self, dendrite: bt.dendrite, config, subtensor, wallet, timeout):
         self.dendrite = dendrite
         self.config = config
         self.subtensor = subtensor
@@ -25,7 +25,8 @@ class BaseValidator(ABC):
 
     async def query_miner(self, axon: bt.axon, uid: int, syn: bt.Synapse) -> Tuple[int, bt.Synapse]:
         try:
-            responses = await self.dendrite(
+            dendrite = bt.dendrite(wallet=self.wallet)
+            responses = await dendrite(
                 [axon],
                 syn,
                 deserialize=False,
