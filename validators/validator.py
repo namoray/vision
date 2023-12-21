@@ -20,7 +20,7 @@ from validators.clip_validator import ClipValidator
 
 moving_average_scores = torch.zeros(256)
 wandb_runs = {}
-
+sem = asyncio.Semaphore(10)
 
 def get_config():
     parser = argparse.ArgumentParser()
@@ -184,6 +184,10 @@ async def get_random_images(uids: Dict[int, bt.axon]) -> Tuple[Dict[int, str], D
     images_with_labels = {i: image_b64s[i] for i in range(len(image_b64s))}
     return images_with_labels, miners_and_image_b64_labels
 
+async def bound_score_cache_responses_for_hotkey(*args, **kwargs):
+    async with sem:
+        return await score_cache_responses_for_hotkey(*args, **kwargs)
+    
 
 async def score_cache_responses_for_hotkey(
     hotkey: str,
@@ -310,7 +314,7 @@ async def query_and_score_miners(
             )[0]
 
             tasks = [
-                score_cache_responses_for_hotkey(
+                bound_score_cache_responses_for_hotkey(
                     hotkey,
                     miner_hotkeys_to_image_uuid_and_image[hotkey],
                     amount_of_times_to_test_each_hotkey,
