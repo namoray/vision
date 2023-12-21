@@ -28,10 +28,14 @@ class ClipEmbeddingImages(bt.Synapse):
         
     @root_validator(pre=True)
     def check_total_image_size(cls, values):
-        max_size_mb = 10 
-        total_size_mb = sum((len(base64.b64decode(img)) for img in values.get('image_b64s', []))) / (1024*1024)
-        if total_size_mb > max_size_mb:
-            raise ValueError(f'Total image size should not exceed {max_size_mb} MB, we are not made of bandwith')
+        if values is not None:
+            max_size_mb = 10
+            total_size_mb = 0 
+            image_b64s = values.get('image_b64s', [])
+            if image_b64s:
+                total_size_mb = sum((len(base64.b64decode(img)) for img in image_b64s)) / (1024*1024)
+            if total_size_mb > max_size_mb:
+                raise ValueError(f'Total image size should not exceed {max_size_mb} MB, we are not made of bandwidth')
         return values
 
     def deserialize(self) -> Optional[List[List[float]]]:
