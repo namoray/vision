@@ -270,12 +270,14 @@ async def query_and_score_miners(
             uids_to_hotkeys = utils.get_uids_to_hotkeys(metagraph)
             available_uids = await get_available_uids(dendrite, metagraph)
 
+            images_with_labels, miners_and_image_b64_labels = await get_random_images(
+                    uids=available_uids
+                )
+
             ############ SCORING SEGMENTATIONS  ############
             if random.random() < 0.5:
                 ############ SCORING WITH THE CACHE ############
-                images_with_labels, miners_and_image_b64_labels = await get_random_images(
-                    uids=available_uids
-                )
+                
 
                 bt.logging.info(
                     f"Scoring miners with image b64 now! We have {len(images_with_labels)} images to score, for {len(miners_and_image_b64_labels)} miners"
