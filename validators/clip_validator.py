@@ -110,8 +110,8 @@ class ClipValidator(BaseValidator):
         return scores
 
     async def get_scores_for_text_embeddings(self, metagraph: bt.metagraph, available_uids: List[int]) -> Dict[int, float]:
-        img_tasks = [asyncio.create_task(self.run_text_embedding_query_for_uid(uid, metagraph)) for uid in available_uids]
-        uids_and_scores = await asyncio.gather(*img_tasks)
+        text_tasks = [asyncio.create_task(self.run_text_embedding_query_for_uid(uid, metagraph)) for uid in available_uids]
+        uids_and_scores = await asyncio.gather(*text_tasks)
         scores: Dict[int, float] = {}
         for uid, score in uids_and_scores:
             scores[uid] = score

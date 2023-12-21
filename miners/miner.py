@@ -260,8 +260,8 @@ class MinerBoi():
         async with self.asyncio_lock:
             with torch.no_grad():
                 text_embeddings = self.clip_model.encode_text(texts_tensor)
-                list_text_embeddings = text_embeddings.cpu().numpy().tolist()
-
+        
+        list_text_embeddings = text_embeddings.cpu().numpy().tolist()
         synapse.text_embeddings = list_text_embeddings
         bt.logging.info(f"✅ Generated {len(list_text_embeddings)} text embedding(s)? Completed it mate")
 
