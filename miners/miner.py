@@ -101,8 +101,8 @@ class MinerBoi():
         self.should_exit: bool = False
         self.is_running: bool = False
         self.thread: threading.Thread = None
-        self._asyncio_lock = asyncio.Lock()
-        self._threading_lock = threading.Lock()
+        self.asyncio_lock = asyncio.Lock()
+        self.threading_lock = threading.Lock()
         self.request_timestamps: Dict[Any, Any] = {}
 
         self.cache = diskcache.Cache("images_cache", size_limit=cst.MINER_CACHE_SIZE)
@@ -173,7 +173,7 @@ class MinerBoi():
             bt.logging.warning(f"USER ERROR: {synapse.error_message}")
             return synapse
 
-        with threading.Lock():
+        with self.asyncio_lock:
             self.predictor.set_image(image_cv2)
             if (
                 synapse.input_boxes is None
@@ -233,19 +233,22 @@ class MinerBoi():
     
     def get_image_embeddings(self, synapse: ClipEmbeddingImages) -> ClipEmbeddingImages:
         images = [Image.open(io.BytesIO(base64.b64decode(img_b64))) for img_b64 in synapse.image_b64s]
-        images = [self.clip_preprocess(image) for image in images]
-        images_tensor = torch.stack(images).to(self.device)
-        with torch.no_grad():
-            image_embeddings = self.clip_model.encode_image(images_tensor)
+        with self.asyncio_lock():
+            images = [self.clip_preprocess(image) for image in images]
+            images_tensor = torch.stack(images).to(self.device)
+            with torch.no_grad():
+                image_embeddings = self.clip_model.encode_image(images_tensor)
         
         synapse.image_embeddings = image_embeddings.cpu().numpy().tolist()
         return synapse
 
     def get_text_embeddings(self, synapse: ClipEmbeddingTexts) -> ClipEmbeddingTexts:
         text_prompts = synapse.text_prompts
+        
         texts_tensor = clip.tokenize(text_prompts).to(self.device)
-        with torch.no_grad():
-            text_embeddings = self.clip_model.encode_text(texts_tensor)
+        with self.asyncio_lock():
+            with torch.no_grad():
+                text_embeddings = self.clip_model.encode_text(texts_tensor)
         
         synapse.text_embeddings = text_embeddings.cpu().numpy().tolist()
         return synapse
