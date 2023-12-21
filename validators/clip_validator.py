@@ -90,12 +90,12 @@ class ClipValidator(BaseValidator):
 
     async def run_text_embedding_query_for_uid(self, uid: int, metagraph: bt.metagraph) -> Tuple[int, float]:
         text_prompts = self.generate_n_random_text_prompts(random.randint(1, 10))
-        response = await self.query_miner_with_texts(metagraph, uid, text_prompts)
+        uid, response_synapse = await self.query_miner_with_texts(metagraph, uid, text_prompts)
         expected_response = self.get_expected_text_embeddings(text_prompts)
-        score = self.score_dot_embeddings(expected_response, response[1].text_embeddings)
-        if response is not None and response.text_embeddings is not None:
-            bt.logging.debug(f"UID {uid} scored {score}, RESPONSE EMBEDDING LENGTH = {len(response[1].text_embeddings)}, expected length = {len(expected_response)}")
-        elif response is None:
+        score = self.score_dot_embeddings(expected_response, response_synapse.text_embeddings)
+        if response_synapse is not None and response_synapse.text_embeddings is not None:
+            bt.logging.debug(f"UID {uid} scored {score}, RESPONSE EMBEDDING LENGTH = {len(response_synapse.text_embeddings)}, expected length = {len(expected_response)}")
+        elif response_synapse is None:
             bt.logging.debug(f"UID {uid} scored {score}, RESPONSE is None")
         else:
             bt.logging.debug(f"UID {uid} scored {score}, response embeddings is None")
