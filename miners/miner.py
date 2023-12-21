@@ -290,6 +290,7 @@ class MinerBoi():
 
 
     async def blacklist_isalive(self, synapse: IsAlive) -> Tuple[bool, str]:
+        return False, synapse.dendrite.hotkey
         if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
             bt.logging.trace(
                 f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"
@@ -316,6 +317,7 @@ class MinerBoi():
     async def blacklist_image_embeddings(
         self, synapse: ClipEmbeddingImages
     ) -> Tuple[bool, str]:
+        return False, synapse.dendrite.hotkey
         if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
             bt.logging.trace(
                 f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}"

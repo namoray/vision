@@ -275,7 +275,7 @@ async def query_and_score_miners(
                 )
 
             ############ SCORING SEGMENTATIONS  ############
-            if random.random() < 0.5:
+            if random.random() < 0.0:
                 ############ SCORING WITH THE CACHE ############
                 
 
@@ -336,30 +336,30 @@ async def query_and_score_miners(
 
                 bt.logging.info(f"\nscores from cache part: {scores} \n")
 
-                total_scores = utils.update_total_scores(total_scores, scores, weight=1)
+                total_scores = utils.update_total_scores(total_scores, scores, weight=0.5)
 
                 await asyncio.sleep(random.random() * 3)
 
             ############ SCORING IMAGE EMBEDDINGS ############
-            if random.random() < 0.5:
+            if random.random() < 1:
                 image_b64s = list(images_with_labels.values())
                 clip_image_embedding_scores = await clip_vali.get_scores_for_image_embeddings(image_b64s, metagraph, available_uids)
 
                 bt.logging.info(f"\nscores from image embedding part: {clip_image_embedding_scores} \n")
                 
-                total_scores = utils.update_total_scores(total_scores, clip_image_embedding_scores, weight=0.2)
+                total_scores = utils.update_total_scores(total_scores, clip_image_embedding_scores, weight=0.25)
                 
                 await asyncio.sleep(random.random() * 3)
 
 
             ############ SCORING TEXT EMBEDDINGS ############
             
-            if random.random() < 0.5:
+            if random.random() < 1:
                 clip_text_embedding_scores = await clip_vali.get_scores_for_text_embeddings(metagraph, available_uids)
 
                 bt.logging.info(f"\nscores from text embedding part: {clip_text_embedding_scores} \n")
                 
-                total_scores = utils.update_total_scores(total_scores, clip_text_embedding_scores, weight=0.2)
+                total_scores = utils.update_total_scores(total_scores, clip_text_embedding_scores, weight=0.25)
 
                 await asyncio.sleep(random.random() * 3)
 
@@ -370,7 +370,7 @@ async def query_and_score_miners(
                 bt.logging.info(f"Skipping weight update since total_scores is empty.")
 
             bt.logging.info("Bout to sleep for a bit, done scoring for now :)")
-            await asyncio.sleep(random.random() * 60)
+            await asyncio.sleep(random.random() * 3)
 
         except Exception as e:
             bt.logging.error(f"General exception: {e}\n{traceback.format_exc()}")
