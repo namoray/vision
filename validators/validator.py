@@ -47,6 +47,7 @@ def init_wandb(config, my_uid, wallet):
         config.run_name = run_name
         config.version = template.__version__
         config.type = "validator"
+        bt.logging.info(f"Wandb Logs stored in {config.full_path}")
 
         # Initialize the wandb run for the single project
         run = wandb.init(
