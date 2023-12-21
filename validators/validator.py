@@ -22,7 +22,7 @@ moving_average_scores = torch.zeros(256)
 wandb_runs = {}
 
 
-CHANCE_TO_SCORE_SEGMENTATION = 0.0
+CHANCE_TO_SCORE_SEGMENTATION = 1.0
 CHANCE_TO_SCORE_IMAGE_EMBEDDINGS=1.0
 CHANCE_TO_SCORE_TEXT_EMBEDDINGS=1.0
 
@@ -300,6 +300,7 @@ async def query_and_score_miners(
                     for uid, image_uuid in miner_uids_to_image_uuid.items()
                 }
                 bt.logging.info(f"\nscores from non cache part: {segmentation_scores} \n")
+                
                 total_scores = utils.update_total_scores(total_scores, segmentation_scores, weight=0.5)
 
                 ############ SCORING WITHOUT THE CACHE ############
@@ -355,28 +356,31 @@ async def query_and_score_miners(
                 
                 total_scores = utils.update_total_scores(total_scores, clip_image_embedding_scores, weight=0.25)
                 
-                await asyncio.sleep(random.random() * 3)
+                # await asyncio.sleep(random.random() * 3)
 
 
             ############ SCORING TEXT EMBEDDINGS ############
             
             if random.random() < CHANCE_TO_SCORE_TEXT_EMBEDDINGS:
                 clip_text_embedding_scores = await clip_vali.get_scores_for_text_embeddings(metagraph, available_uids)
+                if any([i < 0.9 for i in clip_text_embedding_scores.values()]):
+                    bt.logging.error("SOMEONE FUCKED UP")
 
                 bt.logging.info(f"\nscores from text embedding part: {clip_text_embedding_scores} \n")
                 
                 total_scores = utils.update_total_scores(total_scores, clip_text_embedding_scores, weight=0.25)
+                
 
-                await asyncio.sleep(random.random() * 3)
+                # await asyncio.sleep(random.random() * 3)
 
-            if torch.any(total_scores != torch.zeros(256)):
-                bt.logging.info(f"Updating weights !")
-                update_weights(total_scores, config, subtensor, wallet, metagraph)
-            else:
-                bt.logging.info(f"Skipping weight update since total_scores is empty.")
+            # if torch.any(total_scores != torch.zeros(256)):
+            #     bt.logging.info(f"Updating weights !")
+            #     update_weights(total_scores, config, subtensor, wallet, metagraph)
+            # else:
+            #     bt.logging.info(f"Skipping weight update since total_scores is empty.")
 
             bt.logging.info("Bout to sleep for a bit, done scoring for now :)")
-            await asyncio.sleep(random.random() * 3)
+            # await asyncio.sleep(random.random() * 3)
 
         except Exception as e:
             bt.logging.error(f"General exception: {e}\n{traceback.format_exc()}")

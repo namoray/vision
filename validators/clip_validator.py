@@ -100,14 +100,6 @@ class ClipValidator(BaseValidator):
 
         expected_response = self.get_expected_text_embeddings(text_prompts)
         score = self.score_dot_embeddings(expected_response, response_synapse.text_embeddings)
-
-        if response_synapse is not None and response_synapse.text_embeddings is not None:
-            bt.logging.debug(f"UID {uid} scored {score}, RESPONSE EMBEDDING LENGTH = {len(response_synapse.text_embeddings)}, expected length = {len(expected_response)}")
-        elif response_synapse is None:
-            bt.logging.debug(f"UID {uid} scored {score}, RESPONSE is None")
-        else:
-            bt.logging.debug(f"UID {uid} scored {score}, response embeddings is None")
-
         return (uid, score)
     
     async def get_scores_for_image_embeddings(self, image_b64s: list[str], metagraph: bt.metagraph, available_uids: List[int]) -> Dict[int, float]:
