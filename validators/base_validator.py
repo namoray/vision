@@ -15,11 +15,12 @@ class BaseValidator(ABC):
         self.wallet = wallet
         self.timeout = timeout
         self.streaming = False
+        self.device = config.neuron.device
+        bt.logging.info(f"Using device {self.device}")
         sam = sam_model_registry[cst.MODEL_TYPE](checkpoint=cst.CHECKPOINT_PATH)
-        sam.to(device="cuda")
+        sam.to(device=self.device)
         self.predictor = SamPredictor(sam)
 
-        self.device = "cuda"
         self.clip_model, self.clip_preprocess = clip.load("ViT-B/32", device=self.device)
 
 

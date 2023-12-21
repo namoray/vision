@@ -83,6 +83,8 @@ def get_config() -> "bt.Config":
         default=False,
     )
 
+    parser.add_argument("--neuron.device", type=str, default="cuda")
+
     bt.subtensor.add_args(parser)
     bt.logging.add_args(parser)
     bt.wallet.add_args(parser)

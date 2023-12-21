@@ -28,6 +28,7 @@ def get_config():
     parser = argparse.ArgumentParser()
     parser.add_argument("--netuid", type=int, default=19)
     parser.add_argument("--wandb_off", action="store_false", dest="wandb_on")
+    parser.add_argument("--neuron.device", type=str, default="cuda")
     parser.set_defaults(wandb_on=True)
     bt.subtensor.add_args(parser)
     bt.logging.add_args(parser)
