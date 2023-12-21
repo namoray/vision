@@ -20,7 +20,7 @@ from validators.clip_validator import ClipValidator
 
 moving_average_scores = torch.zeros(256)
 wandb_runs = {}
-
+sem = asyncio.Semaphore(10)
 
 CHANCE_TO_SCORE_SEGMENTATION = 1.0
 CHANCE_TO_SCORE_IMAGE_EMBEDDINGS=1.0
@@ -189,6 +189,10 @@ async def get_random_images(uids: Dict[int, bt.axon]) -> Tuple[Dict[int, str], D
     images_with_labels = {i: image_b64s[i] for i in range(len(image_b64s))}
     return images_with_labels, miners_and_image_b64_labels
 
+async def bound_score_cache_responses_for_hotkey(*args, **kwargs):
+    async with sem:
+        return await score_cache_responses_for_hotkey(*args, **kwargs)
+    
 
 async def score_cache_responses_for_hotkey(
     hotkey: str,
@@ -220,9 +224,6 @@ async def score_cache_responses_for_hotkey(
     scores = []
     times = []
     uid = hotkeys_to_uids[hotkey]
-    bt.logging.info(
-        f"Scoring hotkey {hotkey} for uid {uid}, with image_uuid {image_uuid}"
-    )
     for _ in range(times_to_test):
         input_boxes, input_points, input_labels = utils.generate_random_inputs(
             x_dim=x_dim, y_dim=y_dim
@@ -278,109 +279,101 @@ async def query_and_score_miners(
 
             images_with_labels, miners_and_image_b64_labels = await get_random_images(
                     uids=available_uids
+            )
+
+
+            ############ SCORING WITHOUT THE CACHE ############
+
+            bt.logging.info(
+                f"Scoring miners with image b64 now! We have {len(images_with_labels)} images to score, for {len(miners_and_image_b64_labels)} miners"
+            )
+            (
+                segmentation_scores,
+                miner_uids_to_image_uuid,
+            ) = await segmenting_vali.score_miners_no_image_uuid(
+                metagraph, images_with_labels, miners_and_image_b64_labels
+            )
+
+            miner_hotkey_to_image_uuid = {
+                uids_to_hotkeys[uid]: image_uuid
+                for uid, image_uuid in miner_uids_to_image_uuid.items()
+            }
+            bt.logging.info(f"✅scores from non cache part: {segmentation_scores}")
+            total_scores = utils.update_total_scores(total_scores, segmentation_scores, weight=0.5)
+
+            ############ SCORING WITHOUT THE CACHE ############
+
+            bt.logging.info("Scoring without the cache now...")
+
+            miner_hotkeys_to_image_uuid_and_image = (
+                segmenting_vali.update_and_clear_and_fetch_uuid_from_cache(
+                    miner_hotkey_to_image_uuid,
+                    images_with_labels,
+                    miners_and_image_b64_labels,
+                    hotkeys_to_uids,
                 )
+            )
 
-            ############ SCORING SEGMENTATIONS  ############
-            if random.random() < CHANCE_TO_SCORE_SEGMENTATION:
-                ############ SCORING WITH THE CACHE ############
-                
+            amount_of_times_to_test_each_hotkey = random.choices(
+                cst.POSSIBLE_VALUES_TO_TEST_EACH_HOTKEY,
+                cst.WEIGHTS_FOR_NUMBER_OF_TIMES_TO_TEST_EACH_HOTKEY,
+                k=1,
+            )[0]
 
-                bt.logging.info(
-                    f"Scoring miners with image b64 now! We have {len(images_with_labels)} images to score, for {len(miners_and_image_b64_labels)} miners"
+            tasks = [
+                bound_score_cache_responses_for_hotkey(
+                    hotkey,
+                    miner_hotkeys_to_image_uuid_and_image[hotkey],
+                    amount_of_times_to_test_each_hotkey,
+                    segmenting_vali,
+                    metagraph,
+                    hotkeys_to_uids,
                 )
-                (
-                    segmentation_scores,
-                    miner_uids_to_image_uuid,
-                ) = await segmenting_vali.score_miners_no_image_uuid(
-                    metagraph, images_with_labels, miners_and_image_b64_labels
-                )
+                for hotkey in miner_hotkeys_to_image_uuid_and_image
+            ]
 
-                miner_hotkey_to_image_uuid = {
-                    uids_to_hotkeys[uid]: image_uuid
-                    for uid, image_uuid in miner_uids_to_image_uuid.items()
-                }
-                bt.logging.info(f"\nscores from non cache part: {segmentation_scores} \n")
-                
-                total_scores = utils.update_total_scores(total_scores, segmentation_scores, weight=0.5)
+            average_scores_and_times = await asyncio.gather(*tasks)
+            time_weighted_scores = utils.calculate_time_weighted_scores(
+                average_scores_and_times
+            )
 
-                ############ SCORING WITHOUT THE CACHE ############
+            scores: Dict[int, float] = {}
+            for hotkey, time_weighted_score in time_weighted_scores:
+                uid = hotkeys_to_uids[hotkey]
+                scores[uid] = time_weighted_score
 
-                miner_hotkeys_to_image_uuid_and_image = (
-                    segmenting_vali.update_and_clear_and_fetch_uuid_from_cache(
-                        miner_hotkey_to_image_uuid,
-                        images_with_labels,
-                        miners_and_image_b64_labels,
-                        hotkeys_to_uids,
-                    )
-                )
+            bt.logging.info(f"✅ scores from cache part: {scores}")
 
-                amount_of_times_to_test_each_hotkey = random.choices(
-                    cst.POSSIBLE_VALUES_TO_TEST_EACH_HOTKEY,
-                    cst.WEIGHTS_FOR_NUMBER_OF_TIMES_TO_TEST_EACH_HOTKEY,
-                    k=1,
-                )[0]
+            total_scores = utils.update_total_scores(total_scores, scores, weight=0.5)
 
-                tasks = [
-                    score_cache_responses_for_hotkey(
-                        hotkey,
-                        miner_hotkeys_to_image_uuid_and_image[hotkey],
-                        amount_of_times_to_test_each_hotkey,
-                        segmenting_vali,
-                        metagraph,
-                        hotkeys_to_uids,
-                    )
-                    for hotkey in miner_hotkeys_to_image_uuid_and_image
-                ]
-                average_scores_and_times = await asyncio.gather(*tasks)
-                time_weighted_scores = utils.calculate_time_weighted_scores(
-                    average_scores_and_times
-                )
-
-                scores: Dict[int, float] = {}
-                for hotkey, time_weighted_score in time_weighted_scores:
-                    uid = hotkeys_to_uids[hotkey]
-                    scores[uid] = time_weighted_score
-
-                bt.logging.info(f"\nscores from cache part: {scores} \n")
-
-                total_scores = utils.update_total_scores(total_scores, scores, weight=0.5)
-
-                await asyncio.sleep(random.random() * 3)
 
             ############ SCORING IMAGE EMBEDDINGS ############
-            if random.random() < CHANCE_TO_SCORE_IMAGE_EMBEDDINGS:
-                image_b64s = list(images_with_labels.values())
-                clip_image_embedding_scores = await clip_vali.get_scores_for_image_embeddings(image_b64s, metagraph, available_uids)
 
-                bt.logging.info(f"\nscores from image embedding part: {clip_image_embedding_scores} \n")
-                
-                total_scores = utils.update_total_scores(total_scores, clip_image_embedding_scores, weight=0.25)
-                
-                # await asyncio.sleep(random.random() * 3)
+            bt.logging.info("Scoring the image embeddings now...")
 
+            image_b64s = list(images_with_labels.values())
+            clip_image_embedding_scores = await clip_vali.get_scores_for_image_embeddings(image_b64s, metagraph, available_uids)
+
+            bt.logging.info(f"✅ scores from image embedding part: {clip_image_embedding_scores}")
+            
+            total_scores = utils.update_total_scores(total_scores, clip_image_embedding_scores, weight=0.25)
 
             ############ SCORING TEXT EMBEDDINGS ############
-            
-            if random.random() < CHANCE_TO_SCORE_TEXT_EMBEDDINGS:
-                clip_text_embedding_scores = await clip_vali.get_scores_for_text_embeddings(metagraph, available_uids)
-                if any([i < 0.9 for i in clip_text_embedding_scores.values()]):
-                    bt.logging.error("SOMEONE FUCKED UP")
 
-                bt.logging.info(f"\nscores from text embedding part: {clip_text_embedding_scores} \n")
+            bt.logging.info("Scoring the text embeddings now...")
+
+            clip_text_embedding_scores = await clip_vali.get_scores_for_text_embeddings(metagraph, available_uids)
+
+            bt.logging.info(f"✅ scores from text embedding part: {clip_text_embedding_scores}")
                 
-                total_scores = utils.update_total_scores(total_scores, clip_text_embedding_scores, weight=0.25)
-                
+            total_scores = utils.update_total_scores(total_scores, clip_text_embedding_scores, weight=0.25)
 
-                # await asyncio.sleep(random.random() * 3)
 
-            # if torch.any(total_scores != torch.zeros(256)):
-            #     bt.logging.info(f"Updating weights !")
-            #     update_weights(total_scores, config, subtensor, wallet, metagraph)
-            # else:
-            #     bt.logging.info(f"Skipping weight update since total_scores is empty.")
+            bt.logging.info(f"Updating weights !")
+            update_weights(total_scores, config, subtensor, wallet, metagraph)
 
             bt.logging.info("Bout to sleep for a bit, done scoring for now :)")
-            # await asyncio.sleep(random.random() * 3)
+            await asyncio.sleep(random.random() * 60)
 
         except Exception as e:
             bt.logging.error(f"General exception: {e}\n{traceback.format_exc()}")
