@@ -242,17 +242,18 @@ class MinerBoi():
                 f"USER ERROR: {synapse.error_message}, synapse: {synapse}"
             )
             return synapse
-        images = [Image.open(io.BytesIO(base64.b64decode(img_b64))) for img_b64 in synapse.image_b64s]
-        async with self.asyncio_lock:
-            images = [self.clip_preprocess(image) for image in images]
-            images_tensor = torch.stack(images).to(self.device)
-            with torch.no_grad():
-                image_embeddings = self.clip_model.encode_image(images_tensor)
         
-        image_embeddings = image_embeddings.cpu().numpy().tolist()
-        synapse.image_embeddings = image_embeddings
-        if len(image_embeddings) > 0:
-            bt.logging.info(f"✅ {len(synapse.image_embeddings)} image embedding(s) generated. bang.")
+        # images = [Image.open(io.BytesIO(base64.b64decode(img_b64))) for img_b64 in synapse.image_b64s]
+        # async with self.asyncio_lock:
+        #     images = [self.clip_preprocess(image) for image in images]
+        #     images_tensor = torch.stack(images).to(self.device)
+        #     with torch.no_grad():
+        #         image_embeddings = self.clip_model.encode_image(images_tensor)
+        
+        # image_embeddings = image_embeddings.cpu().numpy().tolist()
+        # synapse.image_embeddings = image_embeddings
+        # if len(image_embeddings) > 0:
+        #     bt.logging.info(f"✅ {len(synapse.image_embeddings)} image embedding(s) generated. bang.")
         
         # Removing this to not transfer it all back over the web again.
         synapse.image_b64s = None
