@@ -19,6 +19,7 @@ class ClipEmbeddingImages(bt.Synapse):
     image_embeddings: Optional[List[List[float]]] = Field(
         default=None, description="The image embeddings", title="image_embeddings"
     )
+    error_message: Optional[str] = Field(None, description="The error message", title="error_message")
 
     @validator('image_b64s', pre=True)
     def check_number_of_images(cls, values):
@@ -48,6 +49,7 @@ class ClipEmbeddingTexts(bt.Synapse):
     text_embeddings: Optional[List[List[float]]] = Field(
         default=None, description="The text embeddings", title="text_embeddings"
     )
+    error_message: Optional[str] = Field(None, description="The error message", title="error_message")
 
     def deserialize(self) -> Optional[List[List[float]]]:
         return self.text_embeddings
