@@ -7,6 +7,7 @@ Follow the "Symmetrical port mapping" step :)
 
 
 ## Prerequisites for both mining and validating
+I would advise using python 3.9 or 3.10. It is known that python 3.12 currently causes issues.
 
 ### Install pm2
 ```bash
