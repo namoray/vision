@@ -2,49 +2,85 @@ import argparse
 import subprocess
 import time
 
-def start_miner(pm2_name, miner_args):
-    # Start the miner with PM2
-    pm2_start_command = ["pm2", "start", "miners/miner.py", "--interpreter", "python3", "--name", pm2_name] + miner_args
-    subprocess.run(pm2_start_command, check=True)
-    print(f"Started miner with PM2 under the name: {pm2_name}")
 
-def check_for_updates_and_restart(pm2_name, check_interval):
+pm2_start_command = None
+
+def acquire_lock(timeout=300):
+    start_time = time.time()
+    try:
+        with os.fdopen(os.open(lock_file_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY), 'w') as f:
+            f.write(str(os.getpid()))
+        return True
+    except FileExistsError:
+        return False
+
+            
+def release_lock():
+    try:
+        os.remove(lock_file_path)
+    except FileNotFoundError:
+        pass
+
+    
+def start_miner(neuron_pm2_name, validator, neuron_args):
+
+    global pm2_start_command
+    if not validator:
+        print("Starting miner!")
+        pm2_start_command = ["pm2", "start", "miners/miner.py", "--interpreter", "python3", "--name", neuron_pm2_name] + neuron_args
+    else:
+        print("Starting validator!")
+        pm2_start_command = ["pm2", "start", "validators/validator.py", "--interpreter", "python3", "--name", neuron_pm2_name] + neuron_args
+
+    subprocess.run(pm2_start_command, check=True)
+    print(f"Started neuron with PM2 under the name: {neuron_pm2_name}")
+
+
+def check_for_updates_and_restart(neuron_pm2_name, check_interval):
     while True:
         try:
-            # Fetch the latest changes from the remote repository
             print("Checking for updates... ⏳")
             subprocess.run(["git", "fetch"], check=True)
 
-            # Compare the local HEAD to the remote HEAD
+
             local = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip()
             remote = subprocess.check_output(["git", "rev-parse", "@{u}"]).strip()
 
-            # If the local commit differs from the remote commit, there are changes
-            if local != remote:
+
+            if local != remote and acquire_lock():
+                
                 print("Changes detected. Pulling updates.")
-                subprocess.run(["git", "pull"], check=True)
-                subprocess.run(["pm2", "restart", pm2_name], check=True)
+                subprocess.run(["git", "fetch"], check=True)
+                subprocess.run(["git", "reset", "--hard"])
+                subprocess.run(["pip", "install", "-r", "requirements.txt"])
+                subprocess.run(["pip", "install", "-e", "."])
+                subprocess.run(["pm2", "delete", neuron_pm2_name], check=True)
+                time.sleep(2)
+                subprocess.run(pm2_start_command, check=True)
             else:
                 print("No changes detected, up to date ✅")
-
-            # Wait for the specified interval before checking again
+            release_lock()
             time.sleep(check_interval)
  
         except subprocess.CalledProcessError as e:
             print(f"An error occurred while checking for updates: {e}")
+            release_lock()
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            release_lock()
 
 def main():
     parser = argparse.ArgumentParser(description="Monitor a Git repository for updates and restart a PM2 process if updates are found.")
-    parser.add_argument("--pm2_name", required=True, help="Name of the PM2 process to restart.")
-    parser.add_argument("--check_interval", type=int, default=1200, help="Interval in seconds to check for updates (default: 1200).")
-    parser.add_argument('miner_args', nargs=argparse.REMAINDER, help="Arguments to pass to the miner script")
+    parser.add_argument("--neuron_pm2_name", required=True, help="Name of the PM2 process for the miner/validator neuron")
+    parser.add_argument("--check_interval", type=int, default=240, help="Interval in seconds to check for updates (default: 1200).")
+    parser.add_argument("--validator", action='store_true', help="Whether we are running a validator or miner. True if running a validator")
+    parser.add_argument('neuron_args', nargs=argparse.REMAINDER, help="Arguments to pass to the miner script")
     args = parser.parse_args()
 
-    # Start the miner process
-    start_miner(args.pm2_name, args.miner_args)
+    start_miner(args.neuron_pm2_name, args.validator, args.neuron_args)
 
     # Monitor the repository for updates
-    check_for_updates_and_restart(args.pm2_name, args.check_interval)
+    check_for_updates_and_restart(args.neuron_pm2_name, args.check_interval)
 
 if __name__ == "__main__":
     main()
