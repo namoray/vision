@@ -15,14 +15,15 @@ check_for_updates() {
         echo "Changes detected. Pulling updates."
         git pull
         exit 42
+    else
+        echo "No changes detected, up to date ✅"
     fi
 }
 
-# Interval in seconds between checks for updates (20 minutes)
 CHECK_INTERVAL=10
 
-# Start the main Python application and redirect its output to stdout/stderr
-python miners/miner.py --netuid 51 --wallet.name default --wallet.hotkey default --logging.debug --axon.port 8091 --subtensor.network test &
+PYTHON_ARGS="$@"
+pm2 start miners/miner.py --interpreter python3 -- $PYTHON_ARGS
 
 # Get the Python application's PID
 APP_PID=$!
