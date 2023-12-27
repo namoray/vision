@@ -27,7 +27,7 @@ def check_for_updates_and_restart(check_interval):
             print(f"An error occurred while checking for updates: {e}")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
- 
+  
 def main():
 
     check_for_updates_and_restart()
