@@ -31,7 +31,7 @@ btcli s register --netuid 19 --wallet.name YOUR_WALLET_NAME_HERE --wallet.hotkey
 ```
 
 ```bash
-pm2 start miners/miner.py --interpreter python3 --name 19_miner -- --netuid 19 --wallet.name YOUR_WALLET_NAME_HERE --wallet.hotkey YOUR_HOTKEY_NAME_HERE --logging.debug --axon.port YOUR_PORT_HERE --subtensor.network finney/local --neuron.device cuda
+pm2 start miners/miner.py --interpreter python3 --name 19_miner -- --netuid 19 --wallet.name YOUR_WALLET_NAME_HERE --wallet.hotkey YOUR_HOTKEY_NAME_HERE --logging.debug --axon.port YOUR_PORT_HERE --subtensor.network PICK_ONE_OF_finney/local --neuron.device cuda
 ```
 Feel free to change this as you desire, e.g. changing the subtensor config to use a local subtensor.
 
