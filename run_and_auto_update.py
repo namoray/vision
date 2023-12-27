@@ -33,7 +33,7 @@ def start_miner(neuron_pm2_name, validator, neuron_args):
         pm2_start_command = ["pm2", "start", "validators/validator.py", "--interpreter", "python3", "--name", neuron_pm2_name] + neuron_args
 
     subprocess.run(pm2_start_command, check=True)
-    print(f"Started neuron with PM2 under the name: {neuron_pm2_name}")
+    print(f"Started neuron with PM2 under the name: {neuron_pm2_name}") 
 
 
 def check_for_updates_and_restart(neuron_pm2_name, check_interval):
