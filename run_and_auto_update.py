@@ -29,7 +29,7 @@ def check_for_updates_and_restart(pm2_name, check_interval):
 
             # Wait for the specified interval before checking again
             time.sleep(check_interval)
-
+ 
         except subprocess.CalledProcessError as e:
             print(f"An error occurred while checking for updates: {e}")
 
