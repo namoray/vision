@@ -4,23 +4,6 @@ import time
 import os
 
 pm2_start_command = None
-lock_file_path = 'lock-file.lock'
-
-def acquire_lock(timeout=300):
-    start_time = time.time()
-    try:
-        with os.fdopen(os.open(lock_file_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY), 'w') as f:
-            f.write(str(os.getpid()))
-        return True
-    except FileExistsError:
-        return False
-
-            
-def release_lock():
-    try:
-        os.remove(lock_file_path)
-    except FileNotFoundError:
-        pass
 
     
 def start_miner(neuron_pm2_name, validator, neuron_args):
@@ -46,10 +29,7 @@ def check_for_updates_and_restart(neuron_pm2_name, check_interval):
 
             local = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip()
             remote = subprocess.check_output(["git", "rev-parse", "@{u}"]).strip()
-
-
-            if local != remote and acquire_lock():
-                
+            if local != remote: 
                 print("Changes detected. Pulling updates.")
                 subprocess.run(["git", "reset", "--hard"])
                 subprocess.run(["git", "pull"])
@@ -60,15 +40,13 @@ def check_for_updates_and_restart(neuron_pm2_name, check_interval):
                 subprocess.run(pm2_start_command, check=True)
             else:
                 print("No changes detected, up to date ✅")
-            release_lock()
+                
             time.sleep(check_interval)
  
         except subprocess.CalledProcessError as e:
             print(f"An error occurred while checking for updates: {e}")
-            release_lock()
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-            release_lock()
  
 def main():
     parser = argparse.ArgumentParser(
@@ -81,8 +59,6 @@ def main():
     args = parser.parse_args()
 
     start_miner(args.neuron_pm2_name, args.validator, args.neuron_args)
-
-    # Monitor the repository for updates
     check_for_updates_and_restart(args.neuron_pm2_name, args.check_interval)
 
 if __name__ == "__main__":
