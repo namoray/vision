@@ -51,8 +51,8 @@ def check_for_updates_and_restart(neuron_pm2_name, check_interval):
             if local != remote and acquire_lock():
                 
                 print("Changes detected. Pulling updates.")
-                subprocess.run(["git", "fetch"], check=True)
                 subprocess.run(["git", "reset", "--hard"])
+                subprocess.run(["git", "pull"])
                 subprocess.run(["pip", "install", "-r", "requirements.txt"])
                 subprocess.run(["pip", "install", "-e", "."])
                 subprocess.run(["pm2", "delete", neuron_pm2_name], check=True)
