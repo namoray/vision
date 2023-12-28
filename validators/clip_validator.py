@@ -108,6 +108,10 @@ class ClipValidator(BaseValidator):
         async with self.embedding_semaphore:
             expected_response = await self.get_expected_image_embeddings(image_b64s)
         score = self.score_dot_embeddings(expected_response, response_synapse.image_embeddings)
+
+        del response_synapse.image_embeddings
+        torch.cuda.empty_cache()
+
         return (uid, score)
         
 
@@ -119,6 +123,10 @@ class ClipValidator(BaseValidator):
         async with self.embedding_semaphore:
             expected_response = await self.get_expected_text_embeddings(text_prompts)
         score = self.score_dot_embeddings(expected_response, response_synapse.text_embeddings)
+
+        del response_synapse.text_embeddings
+        torch.cuda.empty_cache()
+
         return (uid, score)
     
     async def get_scores_for_image_embeddings(self, image_b64s: list[str], metagraph: bt.metagraph, available_uids: List[int]) -> Dict[int, float]:
