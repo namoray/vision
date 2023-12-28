@@ -119,9 +119,9 @@ class ClipValidator(BaseValidator):
 
         return (uid, score)
     
-    async def get_scores_for_image_embeddings(self, image_b64s: list[str], metagraph, available_uids: Set[int]) -> Dict[int, float]:
+    async def get_scores_for_image_embeddings(self, image_b64s: list[str], metagraph, available_uids: Dict[int, float]) -> Dict[int, float]:
         scores: Dict[int, float] = {}
-        available_uids_list = list(available_uids)
+        available_uids_list = list(available_uids.keys())
         for i in range(0, len(available_uids_list), 50):
             batch_uids = available_uids_list[i:i + 50]
             img_tasks = [asyncio.create_task(self.run_image_embedding_query_for_uid(uid, image_b64s, metagraph)) for uid in batch_uids]
@@ -132,7 +132,7 @@ class ClipValidator(BaseValidator):
 
     async def get_scores_for_text_embeddings(self, metagraph, available_uids: List[int]) -> Dict[int, float]:
         scores: Dict[int, float] = {}
-        available_uids_list = list(available_uids)
+        available_uids_list = list(available_uids.keys())
         for i in range(0, len(available_uids_list), 50):
             batch_uids = available_uids_list[i:i + 50]
             text_tasks = [asyncio.create_task(self.run_text_embedding_query_for_uid(uid, metagraph)) for uid in batch_uids]
