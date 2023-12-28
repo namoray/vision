@@ -307,4 +307,4 @@ class SegmentationValidator(BaseValidator):
             avg = 0
         else:
             avg = sum(cosine_similarities) / len(cosine_similarities)
-        return avg
+        return round(avg, 2)

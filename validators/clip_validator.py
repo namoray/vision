@@ -169,5 +169,5 @@ class ClipValidator(BaseValidator):
             cosine_similarities.append(cos_sim)
         
         avg = np.mean(cosine_similarities)    
-        return avg
+        return round(avg, 2)
     
