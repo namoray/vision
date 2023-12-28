@@ -1,9 +1,8 @@
-from typing import List, Optional, Union, Tuple
-from pydantic import BaseModel, validator, HttpUrl, root_validator, ValidationError, Field
 import base64
-import io
+from typing import List, Optional, Tuple, Union
+
 import bittensor as bt
-from pydantic import Field
+from pydantic import Field, root_validator, validator
 
 
 class IsAlive(bt.Synapse):
@@ -11,6 +10,7 @@ class IsAlive(bt.Synapse):
 
     def deserialize(self) -> Optional[str]:
         return self.answer
+
 
 class ClipEmbeddingImages(bt.Synapse):
     """Generates a clip embedding for images"""
@@ -21,29 +21,29 @@ class ClipEmbeddingImages(bt.Synapse):
     )
     error_message: Optional[str] = Field(None, description="The error message", title="error_message")
 
-    @validator('image_b64s', pre=True)
+    @validator("image_b64s", pre=True)
     def check_number_of_images(cls, values):
         if values is not None and len(values) > 10:
-            raise ValueError('Number of images should not exceed 10 please')
+            raise ValueError("Number of images should not exceed 10 please")
         return values
-        
+
     @root_validator(pre=True)
     def check_total_image_size(cls, values):
         if values is not None:
             max_size_mb = 10
-            total_size_mb = 0 
-            image_b64s = values.get('image_b64s', [])
+            total_size_mb = 0
+            image_b64s = values.get("image_b64s", [])
             if image_b64s:
-                total_size_mb = sum((len(base64.b64decode(img)) for img in image_b64s)) / (1024*1024)
+                total_size_mb = sum((len(base64.b64decode(img)) for img in image_b64s)) / (1024 * 1024)
             if total_size_mb > max_size_mb:
-                raise ValueError(f'Total image size should not exceed {max_size_mb} MB, we are not made of bandwidth')
+                raise ValueError(f"Total image size should not exceed {max_size_mb} MB, we are not made of bandwidth")
         return values
 
     def deserialize(self) -> Optional[List[List[float]]]:
         return self.image_embeddings
 
-class ClipEmbeddingTexts(bt.Synapse):
 
+class ClipEmbeddingTexts(bt.Synapse):
     text_prompts: Optional[List[str]] = Field(None, description="The text prompts", title="text_prompts")
 
     text_embeddings: Optional[List[List[float]]] = Field(
@@ -53,7 +53,8 @@ class ClipEmbeddingTexts(bt.Synapse):
 
     def deserialize(self) -> Optional[List[List[float]]]:
         return self.text_embeddings
-    
+
+
 class SegmentingSynapse(bt.Synapse):
     """
     Segment according the given points and boxes for a given image embedding.

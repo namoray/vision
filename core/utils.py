@@ -1,7 +1,6 @@
 import base64
 import hashlib
 import io
-import re
 import uuid
 from io import BytesIO
 from typing import Dict, List, Tuple
@@ -14,28 +13,6 @@ import numpy as np
 import requests
 import torch
 from PIL import Image
-
-
-# Github unauthorized rate limit of requests per hour is 60. Authorized is 5000.
-def get_version(line_number=22):
-    url = f"https://api.github.com/repos/corcel-api/cortex.t/contents/template/__init__.py"
-    response = requests.get(url)
-    if response.status_code == 200:
-        content = response.json()["content"]
-        decoded_content = base64.b64decode(content).decode("utf-8")
-        lines = decoded_content.split("\n")
-        if line_number <= len(lines):
-            version_line = lines[line_number - 1]
-            version_match = re.search(r'__version__ = "(.*?)"', version_line)
-            if version_match:
-                return version_match.group(1)
-            else:
-                raise Exception("Version information not found in the specified line")
-        else:
-            raise Exception("Line number exceeds file length")
-    else:
-        bt.logging.error("github api call failed")
-        return None
 
 
 async def get_random_image(x_dim: int, y_dim: int) -> str:
@@ -200,9 +177,7 @@ def rle_decode_masks(rles: List[List[List[int]]], shape: Tuple[int, int]):
     return imgs
 
 
-def update_total_scores(
-    total_scores: torch.tensor, scores: Dict[int, float], weight=1
-) -> torch.tensor:
+def update_total_scores(total_scores: torch.tensor, scores: Dict[int, float], weight=1) -> torch.tensor:
     """
     Updates the total scores by adding the given scores to the existing total scores.
 
@@ -214,9 +189,9 @@ def update_total_scores(
     Returns:
         torch.tensor: The updated total scores tensor.
     """
-    
-    for uid, segmentation_score in scores.items():
-        total_scores[uid] += segmentation_score * weight
+
+    for uid, score in scores.items():
+        total_scores[uid] += score * weight
     return total_scores
 
 
@@ -325,10 +300,29 @@ def calculate_time_weighted_scores(scores_and_times: List[Tuple[str, float, floa
         weights = [1]
     else:
         weight_increment = (1.25 - 0.75) / (len(scores_and_times) - 1)
-        weights = [(0.75 + weight_increment * i) for i in range(len(scores_and_times))]
+        weights = [(0.75 + round(weight_increment * i, 2)) for i in range(len(scores_and_times))]
     time_weighted_scores = [
-        (hotkey, avg_score * weights[i])
-        for i, (hotkey, avg_score, avg_time) in enumerate(scores_and_times)
+        (hotkey, avg_score * weights[i]) for i, (hotkey, avg_score, avg_time) in enumerate(scores_and_times)
     ]
 
     return time_weighted_scores
+
+
+def send_discord_alert(message: str, webhook_url: str) -> None:
+    """
+    Send a Discord alert message using a webhook URL.
+
+    Args:
+        message (str): The message to be sent as the alert.
+        webhook_url (str): The URL of the webhook to send the alert to.
+    """
+
+    data = {"content": f"@everyone {message}", "username": "Subnet18 Updates"}
+    try:
+        response = requests.post(webhook_url, json=data)
+        if response.status_code == 204:
+            print("Discord alert sent successfully!")
+        else:
+            print(f"Failed to send Discord alert. Status code: {response.status_code}")
+    except Exception as e:
+        print(f"Failed to send Discord alert: {e}", exc_info=True)

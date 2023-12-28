@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import datetime
 import random
-import threading
 import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -11,7 +10,9 @@ import bittensor as bt
 import diskcache
 import numpy as np
 import torch
+from segment_anything import SamPredictor, sam_model_registry
 
+from core import constants as cst
 from core import utils
 from template.protocol import SegmentingSynapse
 from validators.base_validator import BaseValidator
@@ -22,8 +23,11 @@ class SegmentationValidator(BaseValidator):
         super().__init__(dendrite, config, subtensor, wallet, timeout=15)
 
         self.cache = diskcache.Cache(
-            "validator_cache", 
+            "validator_cache",
         )
+        sam = sam_model_registry[cst.MODEL_TYPE](checkpoint=cst.CHECKPOINT_PATH)
+        sam.to(device=self.device)
+        self.predictor = SamPredictor(sam)
 
     def _get_expected_json_rle_encoded_masks(
         self,
@@ -40,14 +44,14 @@ class SegmentationValidator(BaseValidator):
 
         image_cv2 = utils.convert_b64_to_cv2_img(image_b64)
 
-        with threading.Lock():
+        with self.threading_lock:
             self.predictor.set_image(image_cv2)
             if input_boxes is None or len(input_boxes) == 0 or isinstance(input_boxes[0], int) or len(input_boxes) == 1:
                 input_points = np.array(input_points) if input_points else None
                 input_labels = np.array(input_labels) if input_labels else None
                 input_boxes = np.array(input_boxes).squeeze() if input_boxes else None
 
-                all_masks, scores, _ = self.predictor.predict(
+                all_masks, scores, logits = self.predictor.predict(
                     point_coords=input_points,
                     point_labels=input_labels,
                     box=input_boxes,
@@ -64,6 +68,9 @@ class SegmentationValidator(BaseValidator):
                 )
                 all_masks = all_masks.cpu().numpy()
                 scores = scores.cpu().numpy()
+                del input_boxes_tensor
+
+            del logits
 
         if len(all_masks.shape) == 4:
             best_options_indices = np.argmax(scores, axis=1)
@@ -210,7 +217,6 @@ class SegmentationValidator(BaseValidator):
         expected_masks: List,
         metagraph: bt.metagraph,
     ) -> Tuple:
-        
         time_before = time.time()
         _, response_synapse = await self.query_miner_with_image_b64(
             metagraph,
@@ -280,7 +286,6 @@ class SegmentationValidator(BaseValidator):
 
         cosine_similarities = []
         for i in range(len(expected_masks)):
-        
             if np.count_nonzero(expected_masks[i]) == 0 and np.count_nonzero(response_masks[i]) == 0:
                 cos_sim = 1
             elif np.count_nonzero(expected_masks[i]) == 0 or np.count_nonzero(response_masks[i]) == 0:
@@ -291,11 +296,11 @@ class SegmentationValidator(BaseValidator):
                     response_masks[i].flatten().astype(float),
                 )
                 cos_sim = dot_product / (np.linalg.norm(expected_masks[i]) * np.linalg.norm(response_masks[i]))
-        
+
             cosine_similarities.append(cos_sim)
 
         if len(cosine_similarities) == 0:
             avg = 0
         else:
             avg = sum(cosine_similarities) / len(cosine_similarities)
-        return avg
+        return round(avg, 2)

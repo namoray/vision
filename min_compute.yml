@@ -55,8 +55,8 @@ compute_spec:
 
     gpu:  # Slightly lower requirements than a miner as you don't need to worry as much about speed, but it still needs to be on GPU
       required: True                       
-      min_vram: 8                          
-      recommended_vram: 20             
+      min_vram: 15                     
+      recommended_vram: 30           
       cuda_cores: 1024                    
       min_compute_capability: 6.0          
       recommended_compute_capability: 7.0  
