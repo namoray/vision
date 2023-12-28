@@ -24,7 +24,8 @@ class BaseValidator(ABC):
 
     async def query_miner(self, axon: bt.axon, uid: int, syn: bt.Synapse) -> Tuple[int, bt.Synapse]:
         try:
-            responses = await self.dendrite(
+            dendrite = bt.dendrite(self.wallet)
+            responses = await dendrite(
                 [axon],
                 syn,
                 deserialize=False,
