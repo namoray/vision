@@ -21,23 +21,28 @@ def start_miner(neuron_pm2_name, validator, neuron_args):
 
 
 def check_for_updates_and_restart(neuron_pm2_name, check_interval):
+    still_needs_restart = False
     while True:
         try:
             print("Checking for updates... ⏳")
             subprocess.run(["git", "fetch"], check=True)
 
-
             local = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip()
             remote = subprocess.check_output(["git", "rev-parse", "@{u}"]).strip()
-            if local != remote: 
+            if local != remote or still_needs_restart: 
                 print("Changes detected. Pulling updates.")
-                subprocess.run(["git", "reset", "--hard"])
-                subprocess.run(["git", "pull"])
-                subprocess.run(["pip", "install", "-r", "requirements.txt"])
-                subprocess.run(["pip", "install", "-e", "."])
-                subprocess.run(["pm2", "delete", neuron_pm2_name], check=True)
-                time.sleep(2)
-                subprocess.run(pm2_start_command, check=True)
+                try:
+                    subprocess.run(["git", "reset", "--hard"])
+                    subprocess.run(["git", "pull"])
+                    subprocess.run(["pip", "install", "-r", "requirements.txt"])
+                    subprocess.run(["pip", "install", "-e", "."])
+                    subprocess.run(["pm2", "delete", neuron_pm2_name], check=True)
+                    time.sleep(2)
+                    subprocess.run(pm2_start_command, check=True)
+                    still_needs_restart = False
+                except subprocess.CalledProcessError as e:
+                    print(f"An error occurred while restarting the PM2 process: {e}. Gonna try again")
+                    still_needs_restart = True
             else:
                 print("No changes detected, up to date ✅")
                 
