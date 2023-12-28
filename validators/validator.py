@@ -247,7 +247,6 @@ async def score_cache_responses_for_hotkey(
         score = seg_vali.score_response(response_synapse, expected_masks)
         scores.append(score)
         times.append(time_taken)
-        await asyncio.sleep(random.random() * 3)
 
     average_score = sum(scores) / len(scores)
     average_time = sum(times) / len(times)
