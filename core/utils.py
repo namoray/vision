@@ -303,7 +303,7 @@ def calculate_time_weighted_scores(scores_and_times: List[Tuple[str, float, floa
         weights = [1]
     else:
         weight_increment = (1.25 - 0.75) / (len(scores_and_times) - 1)
-        weights = [(0.75 + weight_increment * i) for i in range(len(scores_and_times))]
+        weights = [(0.75 + round(weight_increment * i, 2)) for i in range(len(scores_and_times))]
     time_weighted_scores = [
         (hotkey, avg_score * weights[i])
         for i, (hotkey, avg_score, avg_time) in enumerate(scores_and_times)
