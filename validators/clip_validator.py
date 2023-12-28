@@ -155,6 +155,8 @@ class ClipValidator(BaseValidator):
     ) -> float:
         expected_embeddings = np.array(expected_embeddings)
         response_embeddings = np.array(response_embeddings)
+
+        bt.logging.warning(f"expected_embeddings shape: {expected_embeddings.shape}, response_embeddings shape: {response_embeddings.shape}")
         
         if expected_embeddings.shape != response_embeddings.shape:
             if expected_embeddings.size == 0:

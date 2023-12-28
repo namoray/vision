@@ -193,8 +193,8 @@ def update_total_scores(
         torch.tensor: The updated total scores tensor.
     """
     
-    for uid, segmentation_score in scores.items():
-        total_scores[uid] += segmentation_score * weight
+    for uid, score in scores.items():
+        total_scores[uid] += score * weight
     return total_scores
 
 
