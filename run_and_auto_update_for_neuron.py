@@ -47,7 +47,7 @@ def check_for_updates_and_restart(neuron_pm2_name, check_interval):
             print(f"An error occurred while checking for updates: {e}")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
- 
+
 def main():
     parser = argparse.ArgumentParser(
         description="Monitor a Git repository for updates and restart a PM2 process if updates are found.",             
