@@ -378,7 +378,7 @@ async def query_and_score_miners(
             update_weights(total_scores, config, subtensor, wallet, metagraph)
 
             bt.logging.info("Bout to sleep for a bit, done scoring for now :)")
-            await asyncio.sleep(random.random() * 60)
+            # await asyncio.sleep(random.random() * 60)
 
         except Exception as e:
             bt.logging.error(f"General exception: {e}\n{traceback.format_exc()}")
