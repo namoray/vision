@@ -112,13 +112,11 @@ class ClipValidator(BaseValidator):
         available_uids_list = list(available_uids.keys())
         for i in range(0, len(available_uids_list), 50):
             batch_uids = available_uids_list[i : i + 50]
-            bt.logging.warning(f"batch_uids: {batch_uids}")
             img_tasks = [
                 asyncio.create_task(self.run_image_embedding_query_for_uid(uid, image_b64s, metagraph))
                 for uid in batch_uids
             ]
             uids_and_scores = await asyncio.gather(*img_tasks)
-            bt.logging.warning(f"uids_and_scores: {uids_and_scores}")
             for uid, score in uids_and_scores:
                 scores[uid] = score
         return scores
