@@ -18,7 +18,7 @@ class BaseValidator(ABC):
         self.device = config.neuron.device
         self.async_lock = asyncio.Lock()
         self.threading_lock = threading.Lock()
-        bt.logging.info(f"Using device {self.device} for the validator")
+        
 
 
 
