@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 from email.mime import image
+import gc
 import random
 import threading
 import time
@@ -71,6 +72,9 @@ class ClipValidator(BaseValidator):
 
             del images_tensor
             del image_embeddings
+        
+        torch.cuda.empty_cache()
+        gc.collect()
 
         return image_embeddings_cpu
     
@@ -84,6 +88,10 @@ class ClipValidator(BaseValidator):
 
             del texts_tensor
             del text_embeddings
+        
+        torch.cuda.empty_cache()
+        gc.collect()
+        
         return text_embeddings_cpu
     
     async def run_image_embedding_query_for_uid(self, uid: int, image_b64s: List[str], metagraph: bt.metagraph) -> Tuple[int, float]:
@@ -142,8 +150,6 @@ class ClipValidator(BaseValidator):
                 bt.logging.error(f"Expected embeddings size is 0. Please check this")
             return 0
         
-        
-
         cosine_similarities = []
         for expected, response in zip(expected_embeddings, response_embeddings):
             expected = expected.flatten().astype(float)
