@@ -46,12 +46,12 @@ pm2 start --name  "default-miner-auto-updater" run_and_auto_update_for_neuron.py
 Feel free to change this as you desire, e.g. changing the subtensor config to use a local subtensor
 
 #### For more than one miner/validator
-Start your miners in the same way, and then run:
+Start your miners / validators WITHOUT auto updates, and then run:
 ```bash
 pm2 start --name "run_auto_updates_for_all_neurons" run_and_auto_update_for_all_neurons.py --interpreter python3
 ```
 > :warning: **Note**: Please make sure you have exposed the correct ports on your gpu / instance (default is 8091)
-
+ 
 ## Installing for validators
 Clone the repository, install requirements, get the model, configure api keys, badabing, badaboom: 
 ```bash
