@@ -68,6 +68,8 @@ class ClipValidator(BaseValidator):
                 image_embeddings = self.clip_model.encode_image(images_tensor)
             image_embeddings = image_embeddings.cpu().numpy().tolist()
 
+            del images_tensor
+
         return image_embeddings
     
     def get_expected_text_embeddings(self, text_prompts: list[str]) -> List[List[float]]:
@@ -77,6 +79,8 @@ class ClipValidator(BaseValidator):
                 text_embeddings = self.clip_model.encode_text(texts_tensor)
             
             text_embeddings = text_embeddings.cpu().numpy().tolist()
+
+            del texts_tensor
         return text_embeddings
     
     async def run_image_embedding_query_for_uid(self, uid: int, image_b64s: List[str], metagraph: bt.metagraph) -> Tuple[int, float]:

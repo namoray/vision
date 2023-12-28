@@ -47,7 +47,7 @@ class SegmentationValidator(BaseValidator):
                 input_labels = np.array(input_labels) if input_labels else None
                 input_boxes = np.array(input_boxes).squeeze() if input_boxes else None
 
-                all_masks, scores, _ = self.predictor.predict(
+                all_masks, scores, logits = self.predictor.predict(
                     point_coords=input_points,
                     point_labels=input_labels,
                     box=input_boxes,
@@ -64,6 +64,9 @@ class SegmentationValidator(BaseValidator):
                 )
                 all_masks = all_masks.cpu().numpy()
                 scores = scores.cpu().numpy()
+                del input_boxes_tensor
+
+            del logits
 
         if len(all_masks.shape) == 4:
             best_options_indices = np.argmax(scores, axis=1)
