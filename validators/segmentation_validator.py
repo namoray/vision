@@ -40,7 +40,7 @@ class SegmentationValidator(BaseValidator):
 
         image_cv2 = utils.convert_b64_to_cv2_img(image_b64)
 
-        with threading.Lock():
+        with self.threading_lock:
             self.predictor.set_image(image_cv2)
             if input_boxes is None or len(input_boxes) == 0 or isinstance(input_boxes[0], int) or len(input_boxes) == 1:
                 input_points = np.array(input_points) if input_points else None

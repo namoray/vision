@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+from email.mime import image
 import random
 import threading
 import time
@@ -59,20 +60,23 @@ class ClipValidator(BaseValidator):
         return await self.query_miner(metagraph.axons[uid], uid, query)
     
     def get_expected_image_embeddings(self, image_b64s: list[str]) -> List[List[float]]:
-        images = [Image.open(io.BytesIO(base64.b64decode(img_b64))) for img_b64 in image_b64s ]
-        images = [self.clip_preprocess(image) for image in images]
-        images_tensor = torch.stack(images).to(self.device)
-        with torch.no_grad():
-            image_embeddings = self.clip_model.encode_image(images_tensor)
-        
-        return image_embeddings.cpu().numpy().tolist()
+        with self.threading_lock:
+            images = [Image.open(io.BytesIO(base64.b64decode(img_b64))) for img_b64 in image_b64s ]
+            images = [self.clip_preprocess(image) for image in images]
+            images_tensor = torch.stack(images).to(self.device)
+            with torch.no_grad():
+                image_embeddings = self.clip_model.encode_image(images_tensor)
+            image_embeddings = image_embeddings.cpu().numpy().tolist()
+
+        return image_embeddings
     
     def get_expected_text_embeddings(self, text_prompts: list[str]) -> List[List[float]]:
-        texts_tensor = clip.tokenize(text_prompts).to(self.device)
-        with torch.no_grad():
-            text_embeddings = self.clip_model.encode_text(texts_tensor)
-        
-        text_embeddings = text_embeddings.cpu().numpy().tolist()
+        with self.threading_lock:
+            texts_tensor = clip.tokenize(text_prompts).to(self.device)
+            with torch.no_grad():
+                text_embeddings = self.clip_model.encode_text(texts_tensor)
+            
+            text_embeddings = text_embeddings.cpu().numpy().tolist()
         return text_embeddings
     
     async def run_image_embedding_query_for_uid(self, uid: int, image_b64s: List[str], metagraph: bt.metagraph) -> Tuple[int, float]:

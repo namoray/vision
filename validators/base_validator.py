@@ -5,7 +5,7 @@ import bittensor as bt
 from segment_anything import SamPredictor, sam_model_registry
 import clip
 from core import constants as cst
-
+import asyncio
 
 class BaseValidator(ABC):
     def __init__(self, dendrite: bt.dendrite, config, subtensor, wallet, timeout):
@@ -16,6 +16,8 @@ class BaseValidator(ABC):
         self.timeout = timeout
         self.streaming = False
         self.device = config.neuron.device
+        self.async_lock = asyncio.Lock()
+        self.threading_lock = threading.Lock()
         bt.logging.info(f"Using device {self.device}")
         sam = sam_model_registry[cst.MODEL_TYPE](checkpoint=cst.CHECKPOINT_PATH)
         sam.to(device=self.device)
