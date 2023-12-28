@@ -103,8 +103,6 @@ class ClipValidator(BaseValidator):
         expected_response = await self.get_expected_image_embeddings(image_b64s)
         score = self.score_dot_embeddings(expected_response, response_synapse.image_embeddings)
 
-        bt.logging.error("score of response: {} for uid  {}".format(score, uid))
-
         del response_synapse.image_embeddings
 
         return (uid, score)
