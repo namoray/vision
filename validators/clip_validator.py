@@ -25,6 +25,7 @@ import markovify
 
 
 
+
 class ClipValidator(BaseValidator):
     def __init__(self, dendrite, config, subtensor, wallet):
         super().__init__(dendrite, config, subtensor, wallet, timeout=15)
@@ -35,7 +36,7 @@ class ClipValidator(BaseValidator):
         dataset = load_dataset('multi-train/coco_captions_1107')
         text = [i["query"] for i in dataset["train"]]
         self.markov_text_generation_model = markovify.Text(" ".join(text))
-
+        self.embedding_semaphore = asyncio.Semaphore(1)
 
     async def query_miner_with_images(
         self,
@@ -59,27 +60,27 @@ class ClipValidator(BaseValidator):
         )
         return await self.query_miner(metagraph.axons[uid], uid, query)
     
-    def get_expected_image_embeddings(self, image_b64s: list[str]) -> List[List[float]]:
-        with self.threading_lock:
-            images = [Image.open(io.BytesIO(base64.b64decode(img_b64))) for img_b64 in image_b64s ]
-            images = [self.clip_preprocess(image) for image in images]
-            images_tensor = torch.stack(images).to(self.device)
+    async def get_expected_image_embeddings(self, image_b64s: list[str]) -> List[List[float]]:
+        async with self.async_lock:
             with torch.no_grad():
+                images = [Image.open(io.BytesIO(base64.b64decode(img_b64))) for img_b64 in image_b64s ]
+                images = [self.clip_preprocess(image) for image in images]
+                images_tensor = torch.stack(images).to(self.device)
                 image_embeddings = self.clip_model.encode_image(images_tensor)
-            image_embeddings_cpu = image_embeddings.cpu().numpy().tolist()
+                image_embeddings_cpu = image_embeddings.cpu().numpy().tolist()
 
             del images_tensor
             del image_embeddings
 
         return image_embeddings_cpu
     
-    def get_expected_text_embeddings(self, text_prompts: list[str]) -> List[List[float]]:
-        with self.threading_lock:
-            texts_tensor = clip.tokenize(text_prompts).to(self.device)
+    async def get_expected_text_embeddings(self, text_prompts: list[str]) -> List[List[float]]:
+        async with self.async_lock:
             with torch.no_grad():
+                texts_tensor = clip.tokenize(text_prompts).to(self.device)
                 text_embeddings = self.clip_model.encode_text(texts_tensor)
             
-            text_embeddings_cpu = text_embeddings.cpu().numpy().tolist()
+                text_embeddings_cpu = text_embeddings.cpu().numpy().tolist()
 
             del texts_tensor
             del text_embeddings
@@ -93,7 +94,8 @@ class ClipValidator(BaseValidator):
             selected_image_b64s = image_b64s
 
         response = await self.query_miner_with_images(metagraph, uid, selected_image_b64s)
-        expected_response = self.get_expected_image_embeddings(selected_image_b64s)
+        async with self.embedding_semaphore:
+            expected_response = await self.get_expected_image_embeddings(image_b64s)
         score = self.score_dot_embeddings(expected_response, response[1].image_embeddings)
         return (uid, score)
         
@@ -103,8 +105,8 @@ class ClipValidator(BaseValidator):
 
         uid, response_synapse = await self.query_miner_with_texts(metagraph, uid, text_prompts)
 
-
-        expected_response = self.get_expected_text_embeddings(text_prompts)
+        async with self.embedding_semaphore:
+            expected_response = await self.get_expected_text_embeddings(text_prompts)
         score = self.score_dot_embeddings(expected_response, response_synapse.text_embeddings)
         return (uid, score)
     
@@ -136,13 +138,11 @@ class ClipValidator(BaseValidator):
         response_embeddings = np.array(response_embeddings)
         
         if expected_embeddings.shape != response_embeddings.shape:
-            if response_embeddings.shape is not None or len(response_embeddings) == 0:
-                bt.logging.warning(f"Expected embeddings shape is {expected_embeddings.shape} but the response embeddings shape is {response_embeddings.shape}")
+            if expected_embeddings.size == 0:
+                bt.logging.error(f"Expected embeddings size is 0. Please check this")
             return 0
         
-        if expected_embeddings.size == 0:
-            bt.logging.error(f"Expected embeddings size is 0. Please check this")
-            return 0
+        
 
         cosine_similarities = []
         for expected, response in zip(expected_embeddings, response_embeddings):
