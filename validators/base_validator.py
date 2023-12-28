@@ -6,6 +6,7 @@ from segment_anything import SamPredictor, sam_model_registry
 import clip
 from core import constants as cst
 import asyncio
+import threading
 
 class BaseValidator(ABC):
     def __init__(self, dendrite: bt.dendrite, config, subtensor, wallet, timeout):
