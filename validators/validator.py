@@ -355,7 +355,7 @@ async def query_and_score_miners(
 
             bt.logging.info(f"✅ scores from image embedding part: {clip_image_embedding_scores}")
             
-            total_scores = utils.update_total_scores(total_scores, clip_image_embedding_scores, weight=0.5)
+            total_scores = utils.update_total_scores(total_scores, clip_image_embedding_scores, weight=0.25)
 
             torch.cuda.empty_cache()
 
@@ -367,7 +367,7 @@ async def query_and_score_miners(
 
             bt.logging.info(f"✅ scores from text embedding part: {clip_text_embedding_scores}")
                 
-            total_scores = utils.update_total_scores(total_scores, clip_text_embedding_scores, weight=0.5)
+            total_scores = utils.update_total_scores(total_scores, clip_text_embedding_scores, weight=0.25)
 
             torch.cuda.empty_cache()
 

@@ -74,4 +74,5 @@ Example command:
 ```bash
 pm2 start --name  "default-validator-auto-updater" run_and_auto_update_for_neuron.py --interpreter python3 -- --neuron_pm2_name "default-validator" --validator -- --netuid 19 --wallet.name YOUR_WALLET_NAME_HERE  --wallet.hotkey YOUR_HOTKEY_NAME_HERE  --logging.debug --subtensor.network finney  --neuron.device cuda
 ```
+
 Feel free to change this as you desire, e.g. changing the subtensor config to use a local subtensor
