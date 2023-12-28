@@ -39,7 +39,7 @@ def main():
         description="Monitor a Git repository for updates and restart all PM2 processes if updates are found.",             
         epilog='Example usage: pm2 start --name "run_auto_updates_for_all_neurons" run_and_auto_update_for_all_neurons.py --interpreter python3')
 
-    parser.add_argument("--check_interval", type=int, default=240, help="Interval in seconds to check for updates (default: 240).")
+    parser.add_argument("--check_interval", type=int, default=60, help="Interval in seconds to check for updates (default: 60).")
     args = parser.parse_args()
     check_for_updates_and_restart(args.check_interval)
  

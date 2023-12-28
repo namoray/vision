@@ -74,7 +74,7 @@ def main():
         description="Monitor a Git repository for updates and restart a PM2 process if updates are found.",             
         epilog='Example usage: pm2 start --name "default-miner-auto-updater" run_and_auto_update.py --interpreter python3 -- --neuron_pm2_name "default-miner"  -- --netuid 19 --wallet.name default  --wallet.hotkey default --logging.debug --axon.port 8091 --subtensor.network finney --neuron.device cuda')
     parser.add_argument("--neuron_pm2_name", required=True, help="Name of the PM2 process for the miner/validator neuron")
-    parser.add_argument("--check_interval", type=int, default=240, help="Interval in seconds to check for updates (default: 240).")
+    parser.add_argument("--check_interval", type=int, default=60, help="Interval in seconds to check for updates (default: 60).")
     parser.add_argument("--validator", action='store_true', help="Whether we are running a validator or miner. True if running a validator")
     parser.add_argument("--only_alert", action='store_true', help="Whether to just alert instead of running the validator")
     parser.add_argument('neuron_args', nargs=argparse.REMAINDER, help="Arguments to pass to the miner script")
