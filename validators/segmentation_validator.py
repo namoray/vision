@@ -12,10 +12,12 @@ import diskcache
 import numpy as np
 import torch
 
+
+from core import constants as cst
 from core import utils
 from template.protocol import SegmentingSynapse
 from validators.base_validator import BaseValidator
-
+from segment_anything import SamPredictor, sam_model_registry
 
 class SegmentationValidator(BaseValidator):
     def __init__(self, dendrite, config, subtensor, wallet):
@@ -24,6 +26,10 @@ class SegmentationValidator(BaseValidator):
         self.cache = diskcache.Cache(
             "validator_cache", 
         )
+        sam = sam_model_registry[cst.MODEL_TYPE](checkpoint=cst.CHECKPOINT_PATH)
+        sam.to(device=self.device)
+        self.predictor = SamPredictor(sam)
+
 
     def _get_expected_json_rle_encoded_masks(
         self,

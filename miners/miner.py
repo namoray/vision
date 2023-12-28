@@ -63,7 +63,7 @@ class MinerBoi():
         bt.logging.info("Starting Segmenting miner")
 
         self.device = self.config.neuron.device
-        bt.logging.debug(f"Using device: {self.device}")
+        bt.logging.debug(f"Using device: {self.device} on the miner")
 
         sam = sam_model_registry[cst.MODEL_TYPE](checkpoint=cst.CHECKPOINT_PATH)
         sam.to(device=self.device)

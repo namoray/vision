@@ -24,6 +24,7 @@ from validators.base_validator import BaseValidator
 from datasets import load_dataset
 import markovify
 
+import clip
 
 
 
@@ -38,6 +39,8 @@ class ClipValidator(BaseValidator):
         text = [i["query"] for i in dataset["train"]]
         self.markov_text_generation_model = markovify.Text(" ".join(text))
         self.embedding_semaphore = asyncio.Semaphore(1)
+
+        self.clip_model, self.clip_preprocess = clip.load("ViT-B/32", device=self.device)
 
     async def query_miner_with_images(
         self,
@@ -101,10 +104,10 @@ class ClipValidator(BaseValidator):
         else:
             selected_image_b64s = image_b64s
 
-        response = await self.query_miner_with_images(metagraph, uid, selected_image_b64s)
+        uid, response_synapse = await self.query_miner_with_images(metagraph, uid, selected_image_b64s)
         async with self.embedding_semaphore:
             expected_response = await self.get_expected_image_embeddings(image_b64s)
-        score = self.score_dot_embeddings(expected_response, response[1].image_embeddings)
+        score = self.score_dot_embeddings(expected_response, response_synapse.image_embeddings)
         return (uid, score)
         
 

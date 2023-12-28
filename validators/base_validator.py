@@ -19,7 +19,7 @@ class BaseValidator(ABC):
         self.device = config.neuron.device
         self.async_lock = asyncio.Lock()
         self.threading_lock = threading.Lock()
-        bt.logging.info(f"Using device {self.device}")
+        bt.logging.info(f"Using device {self.device} for the validator")
         sam = sam_model_registry[cst.MODEL_TYPE](checkpoint=cst.CHECKPOINT_PATH)
         sam.to(device=self.device)
         self.predictor = SamPredictor(sam)
