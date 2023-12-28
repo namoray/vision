@@ -57,7 +57,7 @@ def main():
     parser.add_argument("--validator", action='store_true', help="Whether we are running a validator or miner. True if running a validator")
     parser.add_argument('neuron_args', nargs=argparse.REMAINDER, help="Arguments to pass to the miner script")
     args = parser.parse_args()
-
+ 
     start_miner(args.neuron_pm2_name, args.validator, args.neuron_args)
     check_for_updates_and_restart(args.neuron_pm2_name, args.check_interval)
 
