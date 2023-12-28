@@ -6,17 +6,18 @@ import os
 import random
 import time
 import traceback
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 import bittensor as bt
 import torch
 import wandb
+
+import template
 from core import constants as cst
 from core import utils
-from template.protocol import IsAlive, SegmentingSynapse, ClipEmbeddingImages, ClipEmbeddingTexts
-from validators.segmentation_validator import SegmentationValidator
-import template
+from template.protocol import IsAlive
 from validators.clip_validator import ClipValidator
+from validators.segmentation_validator import SegmentationValidator
 
 moving_average_scores = torch.zeros(256)
 wandb_runs = {}
@@ -72,9 +73,7 @@ def init_wandb(config, my_uid, wallet):
 
 def initialize_components(config):
     bt.logging(config=config, logging_dir=config.full_path)
-    bt.logging.info(
-        f"Running validator for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint}"
-    )
+    bt.logging.info(f"Running validator for subnet: {config.netuid} on network: {config.subtensor.chain_endpoint}")
     wallet = bt.wallet(config=config)
     subtensor = bt.subtensor(config=config)
     metagraph = subtensor.metagraph(config.netuid)
@@ -118,28 +117,22 @@ async def check_uid(dendrite: bt.dendrite, axon: bt.axon, uid: int) -> Union[bt.
 
 async def get_available_uids(dendrite: bt.dendrite, metagraph: bt.metagraph) -> Dict[int, bt.axon]:
     """Get a dictionary of available UIDs and their axons asynchronously."""
-    tasks = {
-        uid.item(): check_uid(dendrite, metagraph.axons[uid.item()], uid.item())
-        for uid in metagraph.uids
-    }
+    tasks = {uid.item(): check_uid(dendrite, metagraph.axons[uid.item()], uid.item()) for uid in metagraph.uids}
     results = await asyncio.gather(*tasks.values())
 
     # Create a dictionary of UID to axon info for active UIDs
-    available_uids = {
-        uid: axon_info
-        for uid, axon_info in zip(tasks.keys(), results)
-        if axon_info is not None
-    }
+    available_uids = {uid: axon_info for uid, axon_info in zip(tasks.keys(), results) if axon_info is not None}
 
     return available_uids
 
 
-def set_weights(scores: torch.tensor, config: Any, subtensor: bt.subtensor, wallet: bt.wallet, metagraph: bt.metagraph) -> None:
+def set_weights(
+    scores: torch.tensor, config: Any, subtensor: bt.subtensor, wallet: bt.wallet, metagraph: bt.metagraph
+) -> None:
     global moving_average_scores
 
     alpha = 0.2
     moving_average_scores = alpha * scores + (1 - alpha) * moving_average_scores
-
 
     uids_data = metagraph.uids.data
     weights = moving_average_scores[uids_data]
@@ -153,7 +146,9 @@ def set_weights(scores: torch.tensor, config: Any, subtensor: bt.subtensor, wall
     bt.logging.success("Successfully set weights.")
 
 
-def update_weights(total_scores: torch.tensor, config: Any, subtensor: bt.subtensor, wallet: bt.wallet, metagraph: bt.metagraph) -> None:
+def update_weights(
+    total_scores: torch.tensor, config: Any, subtensor: bt.subtensor, wallet: bt.wallet, metagraph: bt.metagraph
+) -> None:
     """Update weights based on total scores, using min-max normalization for display"""
 
     # Normalize avg_scores to a range of 0 to 1
@@ -182,17 +177,16 @@ async def get_random_images(uids: Dict[int, bt.axon]) -> Tuple[Dict[int, str], D
 
     image_b64s = await asyncio.gather(*tasks)
 
-    miners_and_image_b64_labels = {
-        uid: random.randint(0, len(image_b64s) - 1) for uid in uids
-    }
+    miners_and_image_b64_labels = {uid: random.randint(0, len(image_b64s) - 1) for uid in uids}
     images_with_labels = {i: image_b64s[i] for i in range(len(image_b64s))}
     return images_with_labels, miners_and_image_b64_labels
+
 
 async def bound_score_cache_responses_for_hotkey(*args, **kwargs):
     """We have this to not crash our validators vram"""
     async with sem:
         return await score_cache_responses_for_hotkey(*args, **kwargs)
-    
+
 
 async def score_cache_responses_for_hotkey(
     hotkey: str,
@@ -225,9 +219,7 @@ async def score_cache_responses_for_hotkey(
     times = []
     uid = hotkeys_to_uids[hotkey]
     for _ in range(times_to_test):
-        input_boxes, input_points, input_labels = utils.generate_random_inputs(
-            x_dim=x_dim, y_dim=y_dim
-        )
+        input_boxes, input_points, input_labels = utils.generate_random_inputs(x_dim=x_dim, y_dim=y_dim)
         time_before = time.time()
         _, response_synapse = await seg_vali.query_miner_with_uuid(
             metagraph,
@@ -253,7 +245,6 @@ async def score_cache_responses_for_hotkey(
     return hotkey, average_score, average_time
 
 
-
 async def query_and_score_miners(
     dendrite: bt.dendrite,
     subtensor: bt.subtensor,
@@ -274,9 +265,7 @@ async def query_and_score_miners(
             uids_to_hotkeys = utils.get_uids_to_hotkeys(metagraph)
             available_uids = await get_available_uids(dendrite, metagraph)
 
-            images_with_labels, miners_and_image_b64_labels = await get_random_images(
-                    uids=available_uids
-            )
+            images_with_labels, miners_and_image_b64_labels = await get_random_images(uids=available_uids)
 
             torch.cuda.empty_cache()
 
@@ -293,8 +282,7 @@ async def query_and_score_miners(
             )
 
             miner_hotkey_to_image_uuid = {
-                uids_to_hotkeys[uid]: image_uuid
-                for uid, image_uuid in miner_uids_to_image_uuid.items()
+                uids_to_hotkeys[uid]: image_uuid for uid, image_uuid in miner_uids_to_image_uuid.items()
             }
             bt.logging.info(f"✅scores from non cache part: {segmentation_scores}")
             total_scores = utils.update_total_scores(total_scores, segmentation_scores, weight=0.5)
@@ -303,13 +291,11 @@ async def query_and_score_miners(
 
             bt.logging.info("Scoring without the cache now...")
 
-            miner_hotkeys_to_image_uuid_and_image = (
-                segmenting_vali.update_and_clear_and_fetch_uuid_from_cache(
-                    miner_hotkey_to_image_uuid,
-                    images_with_labels,
-                    miners_and_image_b64_labels,
-                    hotkeys_to_uids,
-                )
+            miner_hotkeys_to_image_uuid_and_image = segmenting_vali.update_and_clear_and_fetch_uuid_from_cache(
+                miner_hotkey_to_image_uuid,
+                images_with_labels,
+                miners_and_image_b64_labels,
+                hotkeys_to_uids,
             )
 
             amount_of_times_to_test_each_hotkey = random.choices(
@@ -331,9 +317,7 @@ async def query_and_score_miners(
             ]
 
             average_scores_and_times = await asyncio.gather(*tasks)
-            time_weighted_scores = utils.calculate_time_weighted_scores(
-                average_scores_and_times
-            )
+            time_weighted_scores = utils.calculate_time_weighted_scores(average_scores_and_times)
 
             scores: Dict[int, float] = {}
             for hotkey, time_weighted_score in time_weighted_scores:
@@ -351,10 +335,12 @@ async def query_and_score_miners(
             bt.logging.info("Scoring the image embeddings now...")
 
             image_b64s = list(images_with_labels.values())
-            clip_image_embedding_scores = await clip_vali.get_scores_for_image_embeddings(image_b64s, metagraph, available_uids)
+            clip_image_embedding_scores = await clip_vali.get_scores_for_image_embeddings(
+                image_b64s, metagraph, available_uids
+            )
 
             bt.logging.info(f"✅ scores from image embedding part: {clip_image_embedding_scores}")
-            
+
             total_scores = utils.update_total_scores(total_scores, clip_image_embedding_scores, weight=0.25)
 
             torch.cuda.empty_cache()
@@ -366,19 +352,18 @@ async def query_and_score_miners(
             clip_text_embedding_scores = await clip_vali.get_scores_for_text_embeddings(metagraph, available_uids)
 
             bt.logging.info(f"✅ scores from text embedding part: {clip_text_embedding_scores}")
-                
+
             total_scores = utils.update_total_scores(total_scores, clip_text_embedding_scores, weight=0.25)
 
             torch.cuda.empty_cache()
 
-
-            bt.logging.info(f"Updating weights !")
+            bt.logging.info("Updating weights !")
             update_weights(total_scores, config, subtensor, wallet, metagraph)
 
             bt.logging.info("Bout to sleep for a bit, done scoring for now :)")
-            
+
             torch.cuda.empty_cache()
-            # await asyncio.sleep(random.random() * 60)
+            await asyncio.sleep(random.random() * 60)
 
         except Exception as e:
             bt.logging.error(f"General exception: {e}\n{traceback.format_exc()}")
@@ -400,11 +385,7 @@ def main():
     loop = asyncio.get_event_loop()
 
     try:
-        loop.run_until_complete(
-            query_and_score_miners(
-                dendrite, subtensor, metagraph, config, wallet, validators
-            )
-        )
+        loop.run_until_complete(query_and_score_miners(dendrite, subtensor, metagraph, config, wallet, validators))
 
     except KeyboardInterrupt:
         bt.logging.info("Keyboard interrupt detected. Exiting validator.")

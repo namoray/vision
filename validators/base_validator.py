@@ -1,11 +1,10 @@
+import asyncio
+import threading
 from abc import ABC
 from typing import Tuple
 
 import bittensor as bt
 
-
-import asyncio
-import threading
 
 class BaseValidator(ABC):
     def __init__(self, dendrite: bt.dendrite, config, subtensor, wallet, timeout):
@@ -18,9 +17,6 @@ class BaseValidator(ABC):
         self.device = config.neuron.device
         self.async_lock = asyncio.Lock()
         self.threading_lock = threading.Lock()
-        
-
-
 
     async def query_miner(self, axon: bt.axon, uid: int, syn: bt.Synapse) -> Tuple[int, bt.Synapse]:
         try:

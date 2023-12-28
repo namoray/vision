@@ -1,7 +1,6 @@
 import base64
 import hashlib
 import io
-import re
 import uuid
 from io import BytesIO
 from typing import Dict, List, Tuple
@@ -178,9 +177,7 @@ def rle_decode_masks(rles: List[List[List[int]]], shape: Tuple[int, int]):
     return imgs
 
 
-def update_total_scores(
-    total_scores: torch.tensor, scores: Dict[int, float], weight=1
-) -> torch.tensor:
+def update_total_scores(total_scores: torch.tensor, scores: Dict[int, float], weight=1) -> torch.tensor:
     """
     Updates the total scores by adding the given scores to the existing total scores.
 
@@ -192,7 +189,7 @@ def update_total_scores(
     Returns:
         torch.tensor: The updated total scores tensor.
     """
-    
+
     for uid, score in scores.items():
         total_scores[uid] += score * weight
     return total_scores
@@ -305,8 +302,7 @@ def calculate_time_weighted_scores(scores_and_times: List[Tuple[str, float, floa
         weight_increment = (1.25 - 0.75) / (len(scores_and_times) - 1)
         weights = [(0.75 + round(weight_increment * i, 2)) for i in range(len(scores_and_times))]
     time_weighted_scores = [
-        (hotkey, avg_score * weights[i])
-        for i, (hotkey, avg_score, avg_time) in enumerate(scores_and_times)
+        (hotkey, avg_score * weights[i]) for i, (hotkey, avg_score, avg_time) in enumerate(scores_and_times)
     ]
 
     return time_weighted_scores
@@ -315,16 +311,13 @@ def calculate_time_weighted_scores(scores_and_times: List[Tuple[str, float, floa
 def send_discord_alert(message: str, webhook_url: str) -> None:
     """
     Send a Discord alert message using a webhook URL.
-    
+
     Args:
         message (str): The message to be sent as the alert.
         webhook_url (str): The URL of the webhook to send the alert to.
     """
 
-    data = {
-        "content": f"@everyone {message}",
-        "username": "Subnet18 Updates"
-    }
+    data = {"content": f"@everyone {message}", "username": "Subnet18 Updates"}
     try:
         response = requests.post(webhook_url, json=data)
         if response.status_code == 204:

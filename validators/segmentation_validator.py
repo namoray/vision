@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import datetime
 import random
-import threading
 import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -11,25 +10,24 @@ import bittensor as bt
 import diskcache
 import numpy as np
 import torch
-
+from segment_anything import SamPredictor, sam_model_registry
 
 from core import constants as cst
 from core import utils
 from template.protocol import SegmentingSynapse
 from validators.base_validator import BaseValidator
-from segment_anything import SamPredictor, sam_model_registry
+
 
 class SegmentationValidator(BaseValidator):
     def __init__(self, dendrite, config, subtensor, wallet):
         super().__init__(dendrite, config, subtensor, wallet, timeout=15)
 
         self.cache = diskcache.Cache(
-            "validator_cache", 
+            "validator_cache",
         )
         sam = sam_model_registry[cst.MODEL_TYPE](checkpoint=cst.CHECKPOINT_PATH)
         sam.to(device=self.device)
         self.predictor = SamPredictor(sam)
-
 
     def _get_expected_json_rle_encoded_masks(
         self,
@@ -219,7 +217,6 @@ class SegmentationValidator(BaseValidator):
         expected_masks: List,
         metagraph: bt.metagraph,
     ) -> Tuple:
-        
         time_before = time.time()
         _, response_synapse = await self.query_miner_with_image_b64(
             metagraph,
@@ -289,7 +286,6 @@ class SegmentationValidator(BaseValidator):
 
         cosine_similarities = []
         for i in range(len(expected_masks)):
-        
             if np.count_nonzero(expected_masks[i]) == 0 and np.count_nonzero(response_masks[i]) == 0:
                 cos_sim = 1
             elif np.count_nonzero(expected_masks[i]) == 0 or np.count_nonzero(response_masks[i]) == 0:
@@ -300,7 +296,7 @@ class SegmentationValidator(BaseValidator):
                     response_masks[i].flatten().astype(float),
                 )
                 cos_sim = dot_product / (np.linalg.norm(expected_masks[i]) * np.linalg.norm(response_masks[i]))
-        
+
             cosine_similarities.append(cos_sim)
 
         if len(cosine_similarities) == 0:
