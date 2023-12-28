@@ -66,11 +66,12 @@ class ClipValidator(BaseValidator):
             images_tensor = torch.stack(images).to(self.device)
             with torch.no_grad():
                 image_embeddings = self.clip_model.encode_image(images_tensor)
-            image_embeddings = image_embeddings.cpu().numpy().tolist()
+            image_embeddings_cpu = image_embeddings.cpu().numpy().tolist()
 
             del images_tensor
+            del image_embeddings
 
-        return image_embeddings
+        return image_embeddings_cpu
     
     def get_expected_text_embeddings(self, text_prompts: list[str]) -> List[List[float]]:
         with self.threading_lock:
@@ -78,10 +79,11 @@ class ClipValidator(BaseValidator):
             with torch.no_grad():
                 text_embeddings = self.clip_model.encode_text(texts_tensor)
             
-            text_embeddings = text_embeddings.cpu().numpy().tolist()
+            text_embeddings_cpu = text_embeddings.cpu().numpy().tolist()
 
             del texts_tensor
-        return text_embeddings
+            del text_embeddings
+        return text_embeddings_cpu
     
     async def run_image_embedding_query_for_uid(self, uid: int, image_b64s: List[str], metagraph: bt.metagraph) -> Tuple[int, float]:
         random_number_of_images_to_score_on = random.randint(1, 10)
