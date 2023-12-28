@@ -30,7 +30,7 @@ import clip
 
 class ClipValidator(BaseValidator):
     def __init__(self, dendrite, config, subtensor, wallet):
-        super().__init__(dendrite, config, subtensor, wallet, timeout=15)
+        super().__init__(dendrite, config, subtensor, wallet, timeout=3)
 
         self.cache = diskcache.Cache(
             "validator_cache", 
@@ -38,9 +38,9 @@ class ClipValidator(BaseValidator):
         dataset = load_dataset('multi-train/coco_captions_1107')
         text = [i["query"] for i in dataset["train"]]
         self.markov_text_generation_model = markovify.Text(" ".join(text))
-        self.embedding_semaphore = asyncio.Semaphore(1)
 
         self.clip_model, self.clip_preprocess = clip.load("ViT-B/32", device=self.device)
+        
 
     async def query_miner_with_images(
         self,
@@ -105,8 +105,7 @@ class ClipValidator(BaseValidator):
             selected_image_b64s = image_b64s
 
         uid, response_synapse = await self.query_miner_with_images(metagraph, uid, selected_image_b64s)
-        async with self.embedding_semaphore:
-            expected_response = await self.get_expected_image_embeddings(image_b64s)
+        expected_response = await self.get_expected_image_embeddings(image_b64s)
         score = self.score_dot_embeddings(expected_response, response_synapse.image_embeddings)
 
         del response_synapse.image_embeddings
@@ -119,9 +118,7 @@ class ClipValidator(BaseValidator):
         text_prompts = self.generate_n_random_text_prompts(random.randint(1, 10))
 
         uid, response_synapse = await self.query_miner_with_texts(metagraph, uid, text_prompts)
-
-        async with self.embedding_semaphore:
-            expected_response = await self.get_expected_text_embeddings(text_prompts)
+        expected_response = await self.get_expected_text_embeddings(text_prompts)
         score = self.score_dot_embeddings(expected_response, response_synapse.text_embeddings)
 
         del response_synapse.text_embeddings
@@ -129,20 +126,24 @@ class ClipValidator(BaseValidator):
 
         return (uid, score)
     
-    async def get_scores_for_image_embeddings(self, image_b64s: list[str], metagraph: bt.metagraph, available_uids: List[int]) -> Dict[int, float]:
-        img_tasks = [asyncio.create_task(self.run_image_embedding_query_for_uid(uid, image_b64s, metagraph)) for uid in available_uids]
-        uids_and_scores = await asyncio.gather(*img_tasks)
+    async def get_scores_for_image_embeddings(self, image_b64s: list[str], metagraph, available_uids: List[int]) -> Dict[int, float]:
         scores: Dict[int, float] = {}
-        for uid, score in uids_and_scores:
-            scores[uid] = score
+        for i in range(0, len(available_uids), 50):
+            batch_uids = available_uids[i:i + 50]
+            img_tasks = [asyncio.create_task(self.run_image_embedding_query_for_uid(uid, image_b64s, metagraph)) for uid in batch_uids]
+            uids_and_scores = await asyncio.gather(*img_tasks)
+            for uid, score in uids_and_scores:
+                scores[uid] = score
         return scores
 
-    async def get_scores_for_text_embeddings(self, metagraph: bt.metagraph, available_uids: List[int]) -> Dict[int, float]:
-        text_tasks = [asyncio.create_task(self.run_text_embedding_query_for_uid(uid, metagraph)) for uid in available_uids]
-        uids_and_scores = await asyncio.gather(*text_tasks)
+    async def get_scores_for_text_embeddings(self, metagraph, available_uids: List[int]) -> Dict[int, float]:
         scores: Dict[int, float] = {}
-        for uid, score in uids_and_scores:
-            scores[uid] = score
+        for i in range(0, len(available_uids), 50):
+            batch_uids = available_uids[i:i + 50]
+            text_tasks = [asyncio.create_task(self.run_text_embedding_query_for_uid(uid, metagraph)) for uid in batch_uids]
+            uids_and_scores = await asyncio.gather(*text_tasks)
+            for uid, score in uids_and_scores:
+                scores[uid] = score
         return scores
 
     def generate_n_random_text_prompts(self, x: int) -> list[str]:

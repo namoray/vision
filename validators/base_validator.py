@@ -2,9 +2,8 @@ from abc import ABC
 from typing import Tuple
 
 import bittensor as bt
-from segment_anything import SamPredictor, sam_model_registry
-import clip
-from core import constants as cst
+
+
 import asyncio
 import threading
 
@@ -20,17 +19,12 @@ class BaseValidator(ABC):
         self.async_lock = asyncio.Lock()
         self.threading_lock = threading.Lock()
         bt.logging.info(f"Using device {self.device} for the validator")
-        sam = sam_model_registry[cst.MODEL_TYPE](checkpoint=cst.CHECKPOINT_PATH)
-        sam.to(device=self.device)
-        self.predictor = SamPredictor(sam)
 
-        self.clip_model, self.clip_preprocess = clip.load("ViT-B/32", device=self.device)
 
 
     async def query_miner(self, axon: bt.axon, uid: int, syn: bt.Synapse) -> Tuple[int, bt.Synapse]:
         try:
-            dendrite = bt.dendrite(wallet=self.wallet)
-            responses = await dendrite(
+            responses = await self.dendrite(
                 [axon],
                 syn,
                 deserialize=False,
