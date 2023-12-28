@@ -52,9 +52,9 @@ def check_for_updates_and_restart(neuron_pm2_name: str, check_interval: float, o
                     subprocess.run(["git", "pull"])
                     subprocess.run(["pip", "install", "-r", "requirements.txt"])
                     subprocess.run(["pip", "install", "-e", "."])
-                    subprocess.run(["pm2", "delete", neuron_pm2_name], check=True)
+                    subprocess.run(["pm2", "stop", neuron_pm2_name], check=True)
                     time.sleep(2)
-                    subprocess.run(pm2_start_command, check=True)
+                    subprocess.run(["pm2", "start", neuron_pm2_name], check=True)
                     still_needs_restart = False
                 except subprocess.CalledProcessError as e:
                     print(f"An error occurred while restarting the PM2 process: {e}. Gonna try again")
