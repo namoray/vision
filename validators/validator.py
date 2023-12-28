@@ -298,8 +298,6 @@ async def query_and_score_miners(
             # bt.logging.info(f"✅scores from non cache part: {segmentation_scores}")
             # total_scores = utils.update_total_scores(total_scores, segmentation_scores, weight=0.5)
 
-            # torch.cuda.empty_cache()
-
             # ############ SCORING WITHOUT THE CACHE ############
 
             # bt.logging.info("Scoring without the cache now...")
@@ -345,7 +343,7 @@ async def query_and_score_miners(
 
             # total_scores = utils.update_total_scores(total_scores, scores, weight=0.5)
 
-            # torch.cuda.empty_cache()
+
 
 
             ############ SCORING IMAGE EMBEDDINGS ############
@@ -359,8 +357,6 @@ async def query_and_score_miners(
             
             total_scores = utils.update_total_scores(total_scores, clip_image_embedding_scores, weight=0.5)
 
-            torch.cuda.empty_cache()
-
             ############ SCORING TEXT EMBEDDINGS ############
 
             bt.logging.info("Scoring the text embeddings now...")
@@ -371,7 +367,6 @@ async def query_and_score_miners(
                 
             total_scores = utils.update_total_scores(total_scores, clip_text_embedding_scores, weight=0.5)
 
-            torch.cuda.empty_cache()
 
 
             bt.logging.info(f"Updating weights !")

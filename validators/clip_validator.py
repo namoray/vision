@@ -7,7 +7,7 @@ import gc
 import random
 import threading
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import bittensor as bt
 import diskcache
@@ -29,8 +29,8 @@ import clip
 
 
 class ClipValidator(BaseValidator):
-    def __init__(self, dendrite, config, subtensor, wallet):
-        super().__init__(dendrite, config, subtensor, wallet, timeout=3)
+    def __init__(self, dendrite: bt.dendrite, config, subtensor, wallet):
+        super().__init__(dendrite, config, subtensor, wallet, timeout=5)
 
         self.cache = diskcache.Cache(
             "validator_cache", 
@@ -75,10 +75,7 @@ class ClipValidator(BaseValidator):
 
             del images_tensor
             del image_embeddings
-        
-        torch.cuda.empty_cache()
-        gc.collect()
-
+    
         return image_embeddings_cpu
     
     async def get_expected_text_embeddings(self, text_prompts: list[str]) -> List[List[float]]:
@@ -91,14 +88,12 @@ class ClipValidator(BaseValidator):
 
             del texts_tensor
             del text_embeddings
-        
-        torch.cuda.empty_cache()
-        gc.collect()
+    
         
         return text_embeddings_cpu
     
     async def run_image_embedding_query_for_uid(self, uid: int, image_b64s: List[str], metagraph: bt.metagraph) -> Tuple[int, float]:
-        random_number_of_images_to_score_on = random.randint(1, 10)
+        random_number_of_images_to_score_on = random.randint(1, 5)
         if len(image_b64s) >= random_number_of_images_to_score_on:
             selected_image_b64s = random.sample(image_b64s, random_number_of_images_to_score_on)
         else:
@@ -109,27 +104,26 @@ class ClipValidator(BaseValidator):
         score = self.score_dot_embeddings(expected_response, response_synapse.image_embeddings)
 
         del response_synapse.image_embeddings
-        torch.cuda.empty_cache()
 
         return (uid, score)
         
 
     async def run_text_embedding_query_for_uid(self, uid: int, metagraph: bt.metagraph) -> Tuple[int, float]:
-        text_prompts = self.generate_n_random_text_prompts(random.randint(1, 10))
+        text_prompts = self.generate_n_random_text_prompts(random.randint(1, 5))
 
         uid, response_synapse = await self.query_miner_with_texts(metagraph, uid, text_prompts)
         expected_response = await self.get_expected_text_embeddings(text_prompts)
         score = self.score_dot_embeddings(expected_response, response_synapse.text_embeddings)
 
         del response_synapse.text_embeddings
-        torch.cuda.empty_cache()
 
         return (uid, score)
     
-    async def get_scores_for_image_embeddings(self, image_b64s: list[str], metagraph, available_uids: List[int]) -> Dict[int, float]:
+    async def get_scores_for_image_embeddings(self, image_b64s: list[str], metagraph, available_uids: Set[int]) -> Dict[int, float]:
         scores: Dict[int, float] = {}
-        for i in range(0, len(available_uids), 50):
-            batch_uids = available_uids[i:i + 50]
+        available_uids_list = list(available_uids)
+        for i in range(0, len(available_uids_list), 50):
+            batch_uids = available_uids_list[i:i + 50]
             img_tasks = [asyncio.create_task(self.run_image_embedding_query_for_uid(uid, image_b64s, metagraph)) for uid in batch_uids]
             uids_and_scores = await asyncio.gather(*img_tasks)
             for uid, score in uids_and_scores:
@@ -138,8 +132,9 @@ class ClipValidator(BaseValidator):
 
     async def get_scores_for_text_embeddings(self, metagraph, available_uids: List[int]) -> Dict[int, float]:
         scores: Dict[int, float] = {}
-        for i in range(0, len(available_uids), 50):
-            batch_uids = available_uids[i:i + 50]
+        available_uids_list = list(available_uids)
+        for i in range(0, len(available_uids_list), 50):
+            batch_uids = available_uids_list[i:i + 50]
             text_tasks = [asyncio.create_task(self.run_text_embedding_query_for_uid(uid, metagraph)) for uid in batch_uids]
             uids_and_scores = await asyncio.gather(*text_tasks)
             for uid, score in uids_and_scores:
