@@ -100,7 +100,7 @@ class ClipValidator(BaseValidator):
             selected_image_b64s = image_b64s
 
         uid, response_synapse = await self.query_miner_with_images(metagraph, uid, selected_image_b64s)
-        expected_response = await self.get_expected_image_embeddings(image_b64s)
+        expected_response = await self.get_expected_image_embeddings(selected_image_b64s)
         score = self.score_dot_embeddings(expected_response, response_synapse.image_embeddings)
 
         del response_synapse.image_embeddings
