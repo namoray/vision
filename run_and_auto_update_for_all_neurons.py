@@ -42,6 +42,6 @@ def main():
     parser.add_argument("--check_interval", type=int, default=240, help="Interval in seconds to check for updates (default: 240).")
     args = parser.parse_args()
     check_for_updates_and_restart(args.check_interval)
-
+ 
 if __name__ == "__main__":
     main()
