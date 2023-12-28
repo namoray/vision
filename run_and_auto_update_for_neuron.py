@@ -1,12 +1,17 @@
 import argparse
+from datetime import datetime
 import subprocess
 import time
-import os
+from typing import List
+
+from core import utils
 
 pm2_start_command = None
 
-    
-def start_miner(neuron_pm2_name, validator, neuron_args):
+# Please ADD you webhook url here if you want to be sent discord alerts instead of auto updating
+webhook_url = ""
+
+def start_miner(neuron_pm2_name: str, validator: bool, neuron_args: List[str]):
 
     global pm2_start_command
     if not validator:
@@ -20,7 +25,7 @@ def start_miner(neuron_pm2_name, validator, neuron_args):
     print(f"Started neuron with PM2 under the name: {neuron_pm2_name}") 
 
 
-def check_for_updates_and_restart(neuron_pm2_name, check_interval):
+def check_for_updates_and_restart(neuron_pm2_name: str, check_interval: float, only_alert: bool):
     still_needs_restart = False
     while True:
         try:
@@ -30,6 +35,17 @@ def check_for_updates_and_restart(neuron_pm2_name, check_interval):
             local = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip()
             remote = subprocess.check_output(["git", "rev-parse", "@{u}"]).strip()
             if local != remote or still_needs_restart: 
+
+                if only_alert:
+                    now = datetime.now()
+                    nice_date = now.strftime("%m/%d/%Y, %H:%M:%S")
+                    if webhook_url != "":
+                        utils.send_discord_alert(message=f"Please update your neuron on subnet 19, you're out of date! Date: {nice_date}", webhook_url=webhook_url)
+                    else:
+                        print(f"Please update your neuron on subnet 19, you're out of date! Date: {nice_date}")
+                    time.sleep(60*30)
+                    continue
+
                 print("Changes detected. Pulling updates.")
                 try:
                     subprocess.run(["git", "reset", "--hard"])
@@ -60,11 +76,12 @@ def main():
     parser.add_argument("--neuron_pm2_name", required=True, help="Name of the PM2 process for the miner/validator neuron")
     parser.add_argument("--check_interval", type=int, default=240, help="Interval in seconds to check for updates (default: 240).")
     parser.add_argument("--validator", action='store_true', help="Whether we are running a validator or miner. True if running a validator")
+    parser.add_argument("--only_alert", action='store_true', help="Whether to just alert instead of running the validator")
     parser.add_argument('neuron_args', nargs=argparse.REMAINDER, help="Arguments to pass to the miner script")
     args = parser.parse_args()
  
     start_miner(args.neuron_pm2_name, args.validator, args.neuron_args)
-    check_for_updates_and_restart(args.neuron_pm2_name, args.check_interval)
+    check_for_updates_and_restart(args.neuron_pm2_name, args.check_interval, args.only_alert)
 
 if __name__ == "__main__":
     main()

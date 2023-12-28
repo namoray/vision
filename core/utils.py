@@ -16,28 +16,6 @@ import torch
 from PIL import Image
 
 
-# Github unauthorized rate limit of requests per hour is 60. Authorized is 5000.
-def get_version(line_number=22):
-    url = f"https://api.github.com/repos/corcel-api/cortex.t/contents/template/__init__.py"
-    response = requests.get(url)
-    if response.status_code == 200:
-        content = response.json()["content"]
-        decoded_content = base64.b64decode(content).decode("utf-8")
-        lines = decoded_content.split("\n")
-        if line_number <= len(lines):
-            version_line = lines[line_number - 1]
-            version_match = re.search(r'__version__ = "(.*?)"', version_line)
-            if version_match:
-                return version_match.group(1)
-            else:
-                raise Exception("Version information not found in the specified line")
-        else:
-            raise Exception("Line number exceeds file length")
-    else:
-        bt.logging.error("github api call failed")
-        return None
-
-
 async def get_random_image(x_dim: int, y_dim: int) -> str:
     """
     Generate a random image with the specified dimensions, by calling unsplash api.
@@ -332,3 +310,26 @@ def calculate_time_weighted_scores(scores_and_times: List[Tuple[str, float, floa
     ]
 
     return time_weighted_scores
+
+
+def send_discord_alert(message: str, webhook_url: str) -> None:
+    """
+    Send a Discord alert message using a webhook URL.
+    
+    Args:
+        message (str): The message to be sent as the alert.
+        webhook_url (str): The URL of the webhook to send the alert to.
+    """
+
+    data = {
+        "content": f"@everyone {message}",
+        "username": "Subnet18 Updates"
+    }
+    try:
+        response = requests.post(webhook_url, json=data)
+        if response.status_code == 204:
+            print("Discord alert sent successfully!")
+        else:
+            print(f"Failed to send Discord alert. Status code: {response.status_code}")
+    except Exception as e:
+        print(f"Failed to send Discord alert: {e}", exc_info=True)
