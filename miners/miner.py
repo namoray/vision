@@ -148,6 +148,7 @@ class MinerBoi:
             text_prompts=synapse.text_prompts,
             cfg_scale=synapse.cfg_scale,
             samples=synapse.samples,
+            sampler=synapse.sampler,
             steps=synapse.steps,
             init_image_mode=synapse.init_image_mode,
             image_strength=synapse.image_strength,

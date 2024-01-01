@@ -97,6 +97,9 @@ async def generate_images_from_image(
     if sampler:
         data["sampler"] = sampler
 
+    data_without_init_image = {k: v for k, v in data.items() if k != "init_image"}
+    bt.logging.info(f"Data to use: {data_without_init_image}")
+
     async with aiohttp.ClientSession() as session:
         async with session.post(
             f"{API_HOST}/v1/generation/{engine_id}/image-to-image",
