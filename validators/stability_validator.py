@@ -106,9 +106,10 @@ class StabilityValidator(BaseValidator):
         results: list[tuple[int, Optional[protocol.GenerateImagesFromText]]] = await asyncio.gather(*query_miners_for_images_tasks)
         scores = {}
         for uid, response_synapse in results:
-            if response_synapse is None:
+            if response_synapse is None or response_synapse.image_b64s is None:
                 continue
-
+                
+            bt.logging.debug(f"Recieved {len(response_synapse.image_b64s)} images")
             scores[uid] = score
             score = 1 if response_synapse.image_b64s is not None and len(response_synapse.image_b64s) == len(expected_image_b64s) else 0
 
