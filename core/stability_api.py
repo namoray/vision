@@ -65,7 +65,7 @@ async def generate_images_from_text(
 
 async def generate_images_from_image(
     init_image: str,
-    text_prompts: List[Dict[str, Union[str, float]]],
+    text_prompts: List[dc.TextPrompt],
     cfg_scale: int = cst.DEFAULT_CFG_SCALE,
     samples: int = cst.DEFAULT_SAMPLES,
     steps: int = cst.DEFAULT_STEPS,
@@ -87,8 +87,9 @@ async def generate_images_from_image(
         "seed": str(seed),
     }
     for i, prompt in enumerate(text_prompts):
-        data[f"text_prompts[{i}][text]"] = prompt["text"]
-        data[f"text_prompts[{i}][weight]"] = str(prompt["weight"])  # Convert weight to string if necessary
+        prompt_dict = prompt.dict()
+        data[f"text_prompts[{i}][text]"] = prompt_dict["text"]
+        data[f"text_prompts[{i}][weight]"] = str(prompt_dict["weight"])  # Convert weight to string if necessary
 
     if style_preset:
         data["style_preset"] = style_preset
