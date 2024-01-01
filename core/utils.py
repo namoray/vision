@@ -15,6 +15,7 @@ import torch
 from PIL import Image
 import random
 
+
 async def get_random_image(x_dim: int, y_dim: int) -> str:
     """
     Generate a random image with the specified dimensions, by calling unsplash api.
@@ -327,6 +328,7 @@ def send_discord_alert(message: str, webhook_url: str) -> None:
     except Exception as e:
         print(f"Failed to send Discord alert: {e}", exc_info=True)
 
+
 def generate_random_weight():
     """
     Generate a random weight.
@@ -337,13 +339,7 @@ def generate_random_weight():
     if random.random() < 0.5:
         return 1.0
     else:
-
-        dp_case = random.choices(
-            population=[0, 1, 2], 
-            weights=[0.1, 0.1, 0.3], 
-            k=1
-        )[0]
-
+        dp_case = random.choices(population=[0, 1, 2], weights=[0.1, 0.1, 0.3], k=1)[0]
 
         number = random.uniform(0.8, 1.2)
         return round(number, dp_case)

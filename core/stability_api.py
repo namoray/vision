@@ -18,6 +18,7 @@ API_KEY = os.getenv("STABILITY_API_KEY")
 if API_KEY is None:
     raise Exception("STABILITY_API_KEY is not set. Please run `export STABILITY_API_KEY=YOUR_API_KEY`")
 
+
 async def generate_images_from_text(
     text_prompts: List[dc.TextPrompt],
     engine_id: str = "stable-diffusion-v1-6",
@@ -27,10 +28,8 @@ async def generate_images_from_text(
     samples: int = cst.DEFAULT_SAMPLES,
     steps: int = cst.DEFAULT_STEPS,
     style_preset: Optional[str] = cst.DEFAULT_STYLE_PRESET,
-    seed: int = random.randint(1, cst.LARGEST_SEED)
+    seed: int = random.randint(1, cst.LARGEST_SEED),
 ) -> List[str]:
-    
-
     async with aiohttp.ClientSession() as session:
         response = await session.post(
             f"{API_HOST}/v1/generation/{engine_id}/text-to-image",
@@ -53,13 +52,16 @@ async def generate_images_from_text(
 
         image_b64s = []
         if response.status != 200:
-            bt.logging.warning("Bad response code from stability :( {} {} {}".format(response.status, response.reason, response.text))
+            bt.logging.warning(
+                "Bad response code from stability :( {} {} {}".format(response.status, response.reason, response.text)
+            )
 
         response_json = await response.json()
         for i, image in enumerate(response_json.get("artifacts", [])):
             image_b64s.append(image["base64"])
 
         return image_b64s
+
 
 async def generate_images_from_image(
     init_image: str,
@@ -73,10 +75,9 @@ async def generate_images_from_image(
     seed: int = random.randint(1, cst.LARGEST_SEED),
     engine_id: str = "stable-diffusion-xl-1024-v1-0",
 ) -> List[str]:
-
     data = {
         # "init_image": open(init_image_path, "rb"),
-        "init_image": base64.b64decode(init_image),   # THis might cause issues, may need to use IO or save to file first
+        "init_image": base64.b64decode(init_image),  # THis might cause issues, may need to use IO or save to file first
         "image_strength": str(image_strength),
         "init_image_mode": init_image_mode,
         "cfg_scale": str(cfg_scale),
@@ -87,7 +88,7 @@ async def generate_images_from_image(
     for i, prompt in enumerate(text_prompts):
         data[f"text_prompts[{i}][text]"] = prompt["text"]
         data[f"text_prompts[{i}][weight]"] = str(prompt["weight"])  # Convert weight to string if necessary
-    
+
     if style_preset:
         data["style_preset"] = style_preset
 

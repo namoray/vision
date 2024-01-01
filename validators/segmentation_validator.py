@@ -29,8 +29,6 @@ class SegmentationValidator(BaseValidator):
         sam.to(device=self.device)
         self.predictor = SamPredictor(sam)
 
- 
-
     def _get_expected_json_rle_encoded_masks(
         self,
         image_b64: Optional[str] = None,

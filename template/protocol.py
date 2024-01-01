@@ -5,12 +5,13 @@ import bittensor as bt
 from pydantic import Field, root_validator, validator
 import random
 
+
 class IsAlive(bt.Synapse):
     answer: Optional[str] = None
 
     def deserialize(self) -> Optional[str]:
         return self.answer
-    
+
 
 class GenerateImagesFromText(bt.Synapse):
     """Generates an image from a text prompt"""
@@ -30,6 +31,7 @@ class GenerateImagesFromText(bt.Synapse):
     def deserialize(self) -> Optional[List[str]]:
         return self.image_b64s
 
+
 class GenerateImagesFromImage(bt.Synapse):
     """Generates an image from an image (and text) prompt"""
 
@@ -46,6 +48,7 @@ class GenerateImagesFromImage(bt.Synapse):
 
     def deserialize(self) -> Optional[List[str]]:
         return self.image_b64s
+
 
 class ClipEmbeddingImages(bt.Synapse):
     """Generates a clip embedding for images"""

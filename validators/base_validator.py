@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class BaseValidator(ABC):
     def __init__(self, dendrite: bt.dendrite, config, subtensor, wallet, timeout):
         self.dendrite = dendrite
@@ -24,7 +25,6 @@ class BaseValidator(ABC):
         dataset = load_dataset("multi-train/coco_captions_1107")
         text = [i["query"] for i in dataset["train"]]
         self.markov_text_generation_model = markovify.Text(" ".join(text))
-
 
     async def query_miner(self, axon: bt.axon, uid: int, syn: bt.Synapse) -> Tuple[int, bt.Synapse]:
         try:

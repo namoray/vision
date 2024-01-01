@@ -21,10 +21,12 @@ from core import utils
 from miners.config import check_config, get_config
 from template import protocol
 from core import stability_api
+
 # import base miner class which takes care of most of the boilerplate
 
 
-T = TypeVar('T', bound=bt.Synapse) 
+T = TypeVar("T", bound=bt.Synapse)
+
 
 class MinerBoi:
     def __init__(self, config=None, axon=None, wallet=None, subtensor=None):
@@ -120,44 +122,45 @@ class MinerBoi:
         parser = argparse.ArgumentParser(description="Streaming Miner Configs")
         return bt.config(parser)
 
-    async def generate_images_from_text(self, synapse: protocol.GenerateImagesFromText) -> protocol.GenerateImagesFromText:
-        
+    async def generate_images_from_text(
+        self, synapse: protocol.GenerateImagesFromText
+    ) -> protocol.GenerateImagesFromText:
         image_b64s = await stability_api.generate_images_from_text(
             text_prompts=synapse.text_prompts,
             engine_id=synapse.engine_id,
             cfg_scale=synapse.cfg_scale,
-            height = synapse.height,
-            width = synapse.width,
-            samples = synapse.samples,
-            steps = synapse.steps,
-            style_preset = synapse.style_preset,
-            seed = synapse.seed,
+            height=synapse.height,
+            width=synapse.width,
+            samples=synapse.samples,
+            steps=synapse.steps,
+            style_preset=synapse.style_preset,
+            seed=synapse.seed,
         )
 
         synapse.image_b64s = image_b64s
-        return synapse  
+        return synapse
 
-    async def generate_images_from_image(self, synapse: protocol.GenerateImagesFromImage) -> protocol.GenerateImagesFromImage:
-
+    async def generate_images_from_image(
+        self, synapse: protocol.GenerateImagesFromImage
+    ) -> protocol.GenerateImagesFromImage:
         image_b64s = await stability_api.generate_images_from_image(
             init_image=synapse.init_image,
             text_prompts=synapse.text_prompts,
             cfg_scale=synapse.cfg_scale,
-            samples = synapse.samples,
-            steps = synapse.steps,
-            init_image_mode = synapse.init_image_mode,
+            samples=synapse.samples,
+            steps=synapse.steps,
+            init_image_mode=synapse.init_image_mode,
             image_strength=synapse.image_strength,
-            style_preset = synapse.style_preset,
-            seed = synapse.seed,
+            style_preset=synapse.style_preset,
+            seed=synapse.seed,
             engine_id=synapse.engine_id,
         )
 
         # Remove to minimise data transferred
         synapse.init_image = None
         synapse.image_b64s = image_b64s
-        
-        return synapse
 
+        return synapse
 
     async def get_segmentation(self, synapse: protocol.SegmentingSynapse) -> protocol.SegmentingSynapse:
         """

@@ -26,7 +26,6 @@ class ClipValidator(BaseValidator):
         self.cache = diskcache.Cache(
             "validator_cache",
         )
-        
 
         self.clip_model, self.clip_preprocess = clip.load("ViT-B/32", device=self.device)
 
