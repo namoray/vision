@@ -18,7 +18,7 @@ import os
 
 class StabilityValidator(BaseValidator):
     def __init__(self, dendrite: bt.dendrite, config, subtensor, wallet):
-        super().__init__(dendrite, config, subtensor, wallet, timeout=5)
+        super().__init__(dendrite, config, subtensor, wallet, timeout=15)
 
         self.dendrite = dendrite
         self.stability_cache = diskcache.Cache(
@@ -101,7 +101,7 @@ class StabilityValidator(BaseValidator):
         random_image_uuid = str(uuid4())
         self.stability_cache.set(random_image_uuid, expected_image_b64s)
 
-        bt.logging.debug(f"Expecting {len(expected_image_b64s)} 1 image to score")
+        bt.logging.debug(f"Expecting {len(expected_image_b64s)} image(s) to score")
 
         results: list[tuple[int, Optional[protocol.GenerateImagesFromText]]] = await asyncio.gather(*query_miners_for_images_tasks)
         scores = {}
