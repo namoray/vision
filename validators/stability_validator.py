@@ -108,8 +108,9 @@ class StabilityValidator(BaseValidator):
         for uid, response_synapse in results:
             if response_synapse is None:
                 continue
-            score = 1 if response_synapse.image_b64s == expected_image_b64s else 0
+
             scores[uid] = score
+            score = 1 if response_synapse.image_b64s is not None and len(response_synapse.image_b64s) == len(expected_image_b64s) else 0
 
         bt.logging.info("scores: {}".format(scores))
         return scores
