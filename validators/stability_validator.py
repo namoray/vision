@@ -112,7 +112,7 @@ class StabilityValidator(BaseValidator):
         return self.markov_text_generation_model.make_short_sentence(max_chars=200)
 
     def get_text_prompt_from_positive_and_negative_prompts(
-        positive_prompt: str, negative_prompt: str
+        self, positive_prompt: str, negative_prompt: str
     ):
         positive_weight = utils.generate_random_weight()
         if random.random() < 0.85:
