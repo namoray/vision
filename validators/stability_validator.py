@@ -200,8 +200,10 @@ class StabilityValidator(BaseValidator):
             query_miners_for_images_tasks.append(asyncio.create_task(self.query_miner(axon, uid, synapse)))
 
         expected_image_b64s = await get_image_task
+        positive_prompt = args["text_prompts"][0].text 
+        negative_prompt = args["text_prompts"][1].text if len(args["text_prompts"]) >= 1 else ""
         self.update_cache_with_images_and_prompts(
-            expected_image_b64s, args["text_prompts"][0].text, args["text_prompts"][1].text
+            expected_image_b64s,  positive_prompt, negative_prompt
         )
 
         bt.logging.debug(f"Expecting {len(expected_image_b64s)} image(s) to score")
