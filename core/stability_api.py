@@ -6,7 +6,7 @@ import os
 import io
 import bittensor as bt
 from typing import List, Dict, Optional, Union
-from core import constants as cst
+from core import constants as cst, dataclasses as dc
 
 API_HOST = "https://api.stability.ai"
 API_KEY = os.getenv("STABILITY_API_KEY")
@@ -19,7 +19,7 @@ if API_KEY is None:
 
 
 async def generate_images_from_text(
-    text_prompts: List[Dict[str, Union[str, float]]],
+    text_prompts: List[dc.TextPrompt],
     engine_id: str = "stable-diffusion-v1-6",
     cfg_scale: int = cst.DEFAULT_CFG_SCALE,
     height: int = cst.DEFAULT_HEIGHT,
@@ -38,7 +38,7 @@ async def generate_images_from_text(
                 "Authorization": f"Bearer {API_KEY}",
             },
             json={
-                "text_prompts": text_prompts,
+                "text_prompts": [text_prompt.to_dict() for text_prompt in text_prompts],
                 "cfg_scale": cfg_scale,
                 "height": height,
                 "width": width,
