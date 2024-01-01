@@ -53,8 +53,8 @@ async def generate_images_from_text(
         if response.status != 200:
             bt.logging.warning("Bad response code :( {} {}".format(response.status, response.reason))
 
-        data = await response.json()
-        for i, image in enumerate(data["artifacts"]):
+        response_json = await response.json()
+        for i, image in enumerate(response_json.get("artifacts", [])):
             image_b64s.append(image["base64"])
 
         return image_b64s
@@ -99,8 +99,8 @@ async def generate_images_from_image(
             if response.status != 200:
                 bt.logging.warning("Bad response code :( {} {}".format(response.status, response.reason))
 
-            data = await response.json()
-            for i, image in enumerate(data["artifacts"]):
+            response_json = await response.json()
+            for i, image in enumerate(response_json.get("artifacts", [])):
                 image_b64s.append(image["base64"])
 
-    return image_b64s
+        return image_b64s
