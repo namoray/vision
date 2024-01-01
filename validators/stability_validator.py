@@ -65,8 +65,11 @@ class StabilityValidator(BaseValidator):
         
         
         args = await self.get_args_for_text_to_image()
+        bt.logging.debug(f"Args: {args}")
+
         get_image_task = asyncio.create_task(stability_api.generate_images_from_text(**args))
 
+        bt.logging.debug(f"Querying {len(available_uids)} miners for images")
         query_miners_for_images_tasks = []
         for uid, axon in available_uids.items():
             synapse = protocol.GenerateImagesFromText(**args)
@@ -75,6 +78,8 @@ class StabilityValidator(BaseValidator):
         expected_image_b64s = await get_image_task
         random_image_uuid = str(uuid4())
         self.stability_cache.set(random_image_uuid, expected_image_b64s)
+
+        bt.logging.debug(f"Got {len(expected_image_b64s)} images to score")
 
         results: list[tuple[int, Optional[protocol.GenerateImagesFromText]]] = await asyncio.gather(*query_miners_for_images_tasks)
         scores = {}

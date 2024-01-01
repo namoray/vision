@@ -133,7 +133,7 @@ def set_weights(
 ) -> None:
     global moving_average_scores
 
-    alpha = 0.2
+    alpha = 0.1
     moving_average_scores = alpha * scores + (1 - alpha) * moving_average_scores
 
     uids_data = metagraph.uids.data
