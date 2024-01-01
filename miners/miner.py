@@ -86,13 +86,13 @@ class MinerBoi:
         ).attach(
             forward_fn=self.get_text_embeddings,
             blacklist_fn=self.blacklist_text_embeddings,
-        )#.attach(
-        #     forward_fn=self.generate_images_from_text,
-        #     # blacklist_fn=self.blacklist_generate_images_from_text,
-        # ).attach(
-        #     forward_fn=self.generate_images_from_image,
-        #     # blacklist_fn=self.blacklist_generate_images_from_image,
-        # )
+        ).attach(
+            forward_fn=self.generate_images_from_text,
+            blacklist_fn=self.blacklist_generate_images_from_text,
+        ).attach(
+            forward_fn=self.generate_images_from_image,
+            blacklist_fn=self.blacklist_generate_images_from_image,
+        )
 
         bt.logging.info(
             f"Serving attached axons on network:"

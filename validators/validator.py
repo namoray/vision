@@ -363,7 +363,7 @@ async def query_and_score_miners(
             bt.logging.info("Bout to sleep for a bit, done scoring for now :)")
 
             torch.cuda.empty_cache()
-            await asyncio.sleep(random.random() * 60)
+            await asyncio.sleep(random.random() * 1)
 
         except Exception as e:
             bt.logging.error(f"General exception: {e}\n{traceback.format_exc()}")
