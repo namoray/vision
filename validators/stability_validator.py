@@ -234,6 +234,9 @@ class StabilityValidator(BaseValidator):
 
         args = await self.get_args_for_image_to_image()
 
+        if args is None:
+            return {}
+
         get_image_task = asyncio.create_task(stability_api.generate_images_from_image(**args))
 
         query_miners_for_images_tasks = []
@@ -315,8 +318,16 @@ class StabilityValidator(BaseValidator):
         )
         revised_prompt = response.choices[0].message.content
 
-        positive_prompt_new = revised_prompt.split("POSITIVE_PROMPT: ")[1].split("\n")[0]
-        negative_prompt_new = revised_prompt.split("NEGATIVE_PROMPT: ")[1].split("\n")[0]
+        try:
+            positive_prompt_new = revised_prompt.split("POSITIVE_PROMPT: ")[1].split("\n")[0]
+        except IndexError:
+            bt.logging.error(f"Error parsing revised prompt: {revised_prompt}")
+            positive_prompt_new = ""
+        
+        try:
+            negative_prompt_new = revised_prompt.split("NEGATIVE_PROMPT: ")[1].split("\n")[0]
+        except IndexError:
+            negative_prompt_new = ""
 
         if len(positive_prompt_new) == 0:
             positive_prompt_new = positive_prompt
