@@ -5,7 +5,9 @@ from typing import Tuple
 import markovify
 from datasets import load_dataset
 import bittensor as bt
+from dotenv import load_dotenv
 
+load_dotenv()
 
 class BaseValidator(ABC):
     def __init__(self, dendrite: bt.dendrite, config, subtensor, wallet, timeout):

@@ -16,3 +16,4 @@ python-Levenshtein==0.23.*
 aiohttp
 llama-cpp-python
 openai
+python-dotenv
