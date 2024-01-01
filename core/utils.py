@@ -13,7 +13,7 @@ import numpy as np
 import requests
 import torch
 from PIL import Image
-
+import random
 
 async def get_random_image(x_dim: int, y_dim: int) -> str:
     """
@@ -326,3 +326,24 @@ def send_discord_alert(message: str, webhook_url: str) -> None:
             print(f"Failed to send Discord alert. Status code: {response.status_code}")
     except Exception as e:
         print(f"Failed to send Discord alert: {e}", exc_info=True)
+
+def generate_random_weight():
+    """
+    Generate a random weight.
+
+    Returns:
+        float: The randomly generated weight.
+    """
+    if random.random() < 0.5:
+        return 1.0
+    else:
+
+        dp_case = random.choices(
+            population=[0, 1, 2], 
+            weights=[0.1, 0.1, 0.3], 
+            k=1
+        )[0]
+
+
+        number = random.uniform(0.8, 1.2)
+        return round(number, dp_case)

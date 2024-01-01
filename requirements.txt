@@ -14,3 +14,4 @@ datasets==2.15.*
 markovify==0.9.*
 python-Levenshtein==0.23.*
 aiohttp
+llama-cpp-python

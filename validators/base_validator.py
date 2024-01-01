@@ -2,7 +2,8 @@ import asyncio
 import threading
 from abc import ABC
 from typing import Tuple
-
+import markovify
+from datasets import load_dataset
 import bittensor as bt
 
 
@@ -17,6 +18,11 @@ class BaseValidator(ABC):
         self.device = config.neuron.device
         self.async_lock = asyncio.Lock()
         self.threading_lock = threading.Lock()
+
+        dataset = load_dataset("multi-train/coco_captions_1107")
+        text = [i["query"] for i in dataset["train"]]
+        self.markov_text_generation_model = markovify.Text(" ".join(text))
+
 
     async def query_miner(self, axon: bt.axon, uid: int, syn: bt.Synapse) -> Tuple[int, bt.Synapse]:
         try:
