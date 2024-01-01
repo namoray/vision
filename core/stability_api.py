@@ -11,12 +11,8 @@ from core import constants as cst, dataclasses as dc
 API_HOST = "https://api.stability.ai"
 API_KEY = os.getenv("STABILITY_API_KEY")
 
-
-
-
 if API_KEY is None:
     raise Exception("STABILITY_API_KEY is not set. Please run `export STABILITY_API_KEY=YOUR_API_KEY`")
-
 
 async def generate_images_from_text(
     text_prompts: List[dc.TextPrompt],
@@ -51,7 +47,7 @@ async def generate_images_from_text(
 
         image_b64s = []
         if response.status != 200:
-            bt.logging.warning("Bad response code :( {} {}".format(response.status, response.reason))
+            bt.logging.warning("Bad response code from stability :( {} {} {}".format(response.status, response.reason, response.text))
 
         response_json = await response.json()
         for i, image in enumerate(response_json.get("artifacts", [])):
@@ -97,7 +93,7 @@ async def generate_images_from_image(
         ) as response:
             image_b64s = []
             if response.status != 200:
-                bt.logging.warning("Bad response code :( {} {}".format(response.status, response.reason))
+                bt.logging.warning("Bad response code from stability :( {} {}".format(response.status, response.reason))
 
             response_json = await response.json()
             for i, image in enumerate(response_json.get("artifacts", [])):
