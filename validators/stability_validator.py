@@ -84,7 +84,7 @@ class StabilityValidator(BaseValidator):
         self.dendrite = dendrite
         self.stability_cache = diskcache.Cache("validator_cache/stability_images", max_size=5 * 1024 * 1024 * 1024)
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.list_of_cache_keys = self.stability_cache.iterkeys()
+        self.list_of_cache_keys = list(self.stability_cache.iterkeys())
 
     def update_cache_with_images_and_prompts(
         self, image_b64s: list[str], positive_prompt: str, negative_prompt: str
