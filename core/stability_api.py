@@ -38,7 +38,7 @@ async def generate_images_from_text(
                 "Authorization": f"Bearer {API_KEY}",
             },
             json={
-                "text_prompts": [text_prompt.to_dict() for text_prompt in text_prompts],
+                "text_prompts": [text_prompt.dict() for text_prompt in text_prompts],
                 "cfg_scale": cfg_scale,
                 "height": height,
                 "width": width,
