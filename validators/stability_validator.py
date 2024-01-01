@@ -135,7 +135,7 @@ class StabilityValidator(BaseValidator):
                 random.choice(self.list_of_cache_keys)
             )
             init_image = random.choice(random_images)
-            new_positive_prompt, new_negative_prompt = self.get_refined_positive_and_negative_prompts(positive_prompt=positive_prompt, negative_prompt=negative_prompt)
+            new_positive_prompt, new_negative_prompt = await self.get_refined_positive_and_negative_prompts(positive_prompt=positive_prompt, negative_prompt=negative_prompt)
             text_prompts = self.get_text_prompt_from_positive_and_negative_prompts(
                 new_positive_prompt, new_negative_prompt
             )
