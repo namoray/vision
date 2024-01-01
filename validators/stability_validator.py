@@ -124,7 +124,8 @@ class StabilityValidator(BaseValidator):
             messages=[
                 {"role": "system", "content": "Make the below very similar but making more sense. One sentence. If there's two prompts, ignore one. Make sure it looks like a DESCRIPTION of an image. Try not to change the original text much."},
                 {"role": "user", "content": markov_text},
-            ]
+            ],
+            temperature=0.2
         )
         positive_prompt = response.choices[0].message.content
 
@@ -133,9 +134,10 @@ class StabilityValidator(BaseValidator):
             response = self.client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "Take in a description of an image, and then give a few words describing what you don't want to be in it. Just a few words is good. Seperate each word (or phrase) with a comma. Dont make it sound like a sentence. So just a few words or phrases seperated by commas. Don't use the prefix `no`"},
+                {"role": "system", "content": "Take in a description of an image, and then give a few words describing what you don't want to be in the image. Just a few words is good. Seperate each word (or phrase) with a comma. Dont make it sound like a sentence. So just a few words or phrases seperated by commas. Don't use the prefix `no`"},
                 {"role": "user", "content": positive_prompt},
-            ]
+            ],
+            temperature=0.2
             )
             negative_prompt = response.choices[0].message.content
         else:
