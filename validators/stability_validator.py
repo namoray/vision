@@ -58,8 +58,31 @@ class StabilityValidator(BaseValidator):
             negative_weight = -1.0 * utils.generate_random_weight()
             text_prompts.append({"text": negative_prompt, "weight": negative_weight})
 
+        bt.logging.debug(f"Text prompts: {text_prompts}")
+
+
         hyper_parameters = stability_api.get_random_hyper_parameters_for_text_to_image()
         return {"text_prompts": text_prompts, **hyper_parameters}
+    
+    async def get_random_hyper_parameters_for_text_to_image(self):
+        bt.logging.debug("Getting random hyper parameters for text to image.")
+        
+        cfg_scale = random.randint(0, 35)
+
+        height = random.choice([i for i in range(320, 1537) if i % 64 == 0])
+
+        width = random.choice([i for i in range(320, 1537) if i % 64 == 0])
+
+        samples = random.randint(1, 3)
+
+        steps = random.randint(10, 50)
+
+        style_preset = random.choice(['3d-model', 'analog-film', 'anime', 'cinematic', 'comic-book', 'digital-art',
+                                    'enhance', 'fantasy-art', 'isometric', 'line-art', 'low-poly', 'modeling-compound',
+                                    'neon-punk', 'origami', 'photographic', 'pixel-art', 'tile-texture', None, None, None, None, None])
+        
+        return {"cfg_scale": cfg_scale, "height": height, "width": width, "samples": samples, "steps": steps, "style_preset": style_preset}
+
 
     async def query_and_score_text_to_image(self, metagraph: bt.metagraph, available_uids: Dict[int, bt.axon]):
         
