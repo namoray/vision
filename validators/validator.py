@@ -276,7 +276,7 @@ async def query_and_score_miners(
 
             bt.logging.info("Scoring text_to_image now...")
 
-            stability_vali.query_text_to_image(metagraph, available_uids)
+            stability_vali.query_and_score_text_to_image(metagraph, available_uids)
 
             ########### SCORING SEGMENTATION WITHOUT THE CACHE ############
 
