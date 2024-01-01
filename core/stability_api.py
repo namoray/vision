@@ -72,6 +72,7 @@ async def generate_images_from_image(
     init_image_mode: str = cst.DEFAULT_INIT_IMAGE_MODE,
     image_strength: float = cst.DEFAULT_IMAGE_STRENGTH,
     style_preset: Optional[str] = cst.DEFAULT_STYLE_PRESET,
+    sampler: Optional[str] = cst.DEFAULT_SAMPLER,
     seed: int = random.randint(1, cst.LARGEST_SEED),
     engine_id: str = "stable-diffusion-xl-1024-v1-0",
 ) -> List[str]:
@@ -91,6 +92,9 @@ async def generate_images_from_image(
 
     if style_preset:
         data["style_preset"] = style_preset
+    
+    if sampler:
+        data["sampler"] = sampler
 
     async with aiohttp.ClientSession() as session:
         async with session.post(

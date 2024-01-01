@@ -232,7 +232,6 @@ class StabilityValidator(BaseValidator):
         bt.logging.debug(f"Scoring image to image for {len(available_uids)} miners.")
 
         args = await self.get_args_for_image_to_image()
-        bt.logging.debug(f"Args: {args}")
 
         get_image_task = asyncio.create_task(stability_api.generate_images_from_image(**args))
 
@@ -245,7 +244,6 @@ class StabilityValidator(BaseValidator):
         random_image_uuid = str(uuid4())
         self.stability_cache.set(random_image_uuid, expected_image_b64s)
 
-        bt.logging.debug(f"Expecting {len(expected_image_b64s)} image(s) to score")
 
         results: list[tuple[int, Optional[protocol.GenerateImagesFromImage]]] = await asyncio.gather(
             *query_miners_for_images_tasks
@@ -255,7 +253,6 @@ class StabilityValidator(BaseValidator):
             if response_synapse is None or response_synapse.image_b64s is None:
                 continue
 
-            bt.logging.debug(f"Recieved {len(response_synapse.image_b64s)} images")
             score = (
                 1
                 if response_synapse.image_b64s is not None
