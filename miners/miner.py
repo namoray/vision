@@ -76,23 +76,23 @@ class MinerBoi:
 
         self.axon.attach(
             forward_fn=self.get_segmentation,
-            blacklist_fn=self.blacklist_segmentation,
+            # blacklist_fn=self.blacklist_segmentation,
         ).attach(
             forward_fn=self._is_alive,
-            blacklist_fn=self.blacklist_is_alive,
+            # blacklist_fn=self.blacklist_is_alive,
         ).attach(
             forward_fn=self.get_image_embeddings,
-            blacklist_fn=self.blacklist_image_embeddings,
+            # blacklist_fn=self.blacklist_image_embeddings,
         ).attach(
             forward_fn=self.get_text_embeddings,
-            blacklist_fn=self.blacklist_text_embeddings,
-        ).attach(
-            forward_fn=self.generate_images_from_text,
-            blacklist_fn=self.blacklist_generate_images_from_text,
-        ).attach(
-            forward_fn=self.generate_images_from_image,
-            blacklist_fn=self.blacklist_generate_images_from_image,
-        )
+            # blacklist_fn=self.blacklist_text_embeddings,
+        )#.attach(
+        #     forward_fn=self.generate_images_from_text,
+        #     # blacklist_fn=self.blacklist_generate_images_from_text,
+        # ).attach(
+        #     forward_fn=self.generate_images_from_image,
+        #     # blacklist_fn=self.blacklist_generate_images_from_image,
+        # )
 
         bt.logging.info(
             f"Serving attached axons on network:"
