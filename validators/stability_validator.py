@@ -201,7 +201,7 @@ class StabilityValidator(BaseValidator):
 
         expected_image_b64s = await get_image_task
         positive_prompt = args["text_prompts"][0].text 
-        negative_prompt = args["text_prompts"][1].text if len(args["text_prompts"]) >= 1 else ""
+        negative_prompt = args["text_prompts"][1].text if len(args["text_prompts"]) > 1 else ""
         self.update_cache_with_images_and_prompts(
             expected_image_b64s,  positive_prompt, negative_prompt
         )
