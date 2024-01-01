@@ -20,7 +20,6 @@ class StabilityValidator(BaseValidator):
     def __init__(self, dendrite: bt.dendrite, config, subtensor, wallet):
         super().__init__(dendrite, config, subtensor, wallet, timeout=5)
 
-        self.stability_api_key = os.environ.get("STABILITY_API_KEY")
         self.dendrite = dendrite
         self.stability_cache = diskcache.Cache(
             "validator_cache/stability_images",
@@ -50,13 +49,13 @@ class StabilityValidator(BaseValidator):
 
         positive_weight = utils.generate_random_weight()
         if random.random() < 0.85:
-            text_prompts = [dc.TextPrompt({"text": positive_prompt, "weight": positive_weight})]
+            text_prompts = [dc.TextPrompt(**{"text": positive_prompt, "weight": positive_weight})]
         else:
-            text_prompts = [dc.TextPrompt({"text": positive_prompt})]
+            text_prompts = [dc.TextPrompt(**{"text": positive_prompt})]
 
         if negative_prompt:
             negative_weight = -1.0 * utils.generate_random_weight()
-            text_prompts.append({"text": negative_prompt, "weight": negative_weight})
+            text_prompts.append(dc.TextPrompt(**{"text": negative_prompt, "weight": negative_weight}))
 
         bt.logging.debug(f"Text prompts: {text_prompts}")
 
