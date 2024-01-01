@@ -18,7 +18,7 @@ import os
 
 class StabilityValidator(BaseValidator):
     def __init__(self, dendrite: bt.dendrite, config, subtensor, wallet):
-        super().__init__(dendrite, config, subtensor, wallet, timeout=15)
+        super().__init__(dendrite, config, subtensor, wallet, timeout=25)
 
         self.dendrite = dendrite
         self.stability_cache = diskcache.Cache(
