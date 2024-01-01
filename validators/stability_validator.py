@@ -242,8 +242,12 @@ class StabilityValidator(BaseValidator):
             query_miners_for_images_tasks.append(asyncio.create_task(self.query_miner(axon, uid, synapse)))
 
         expected_image_b64s = await get_image_task
-        random_image_uuid = str(uuid4())
-        self.stability_cache.set(random_image_uuid, expected_image_b64s)
+        positive_prompt = args["text_prompts"][0].text 
+        negative_prompt = args["text_prompts"][1].text if len(args["text_prompts"]) > 1 else ""
+        if len(expected_image_b64s) > 0:
+            self.update_cache_with_images_and_prompts(
+                expected_image_b64s,  positive_prompt, negative_prompt
+            )
 
 
         results: list[tuple[int, Optional[protocol.GenerateImagesFromImage]]] = await asyncio.gather(
