@@ -60,7 +60,7 @@ class StabilityValidator(BaseValidator):
         bt.logging.debug(f"Text prompts: {text_prompts}")
 
 
-        hyper_parameters = stability_api.get_random_hyper_parameters_for_text_to_image()
+        hyper_parameters = self.get_random_hyper_parameters_for_text_to_image()
         return {"text_prompts": text_prompts, **hyper_parameters}
     
     def get_random_hyper_parameters_for_text_to_image(self):
