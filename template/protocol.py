@@ -43,6 +43,7 @@ class GenerateImagesFromImage(bt.Synapse):
     steps: int = Field(cst.DEFAULT_STEPS, description="Number of steps in the image generation process")
     style_preset: str = Field(cst.DEFAULT_STYLE_PRESET, description="Preset style for the image")
     seed: int = Field(default=random.randint(1, cst.LARGEST_SEED), description="Random seed for generating the image")
+    init_image_mode: Optional[str] = Field("IMAGE_STRENGTH", description="The mode of the init image")
 
     image_b64s: Optional[List[str]] = Field(None, description="The base64 encoded images to return", title="image_b64s")
 
