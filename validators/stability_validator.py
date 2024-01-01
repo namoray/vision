@@ -124,7 +124,7 @@ class StabilityValidator(BaseValidator):
             negative_weight = -1.0 * utils.generate_random_weight()
             text_prompts.append(dc.TextPrompt(**{"text": negative_prompt, "weight": negative_weight}))
         
-        return positive_prompt, negative_prompt
+        return text_prompts
 
     async def get_args_for_image_to_image(self):
         if self.list_of_cache_keys == []:
@@ -167,12 +167,6 @@ class StabilityValidator(BaseValidator):
 
         bt.logging.debug(f"Text prompts: {text_prompts}")
 
-        hyper_parameters = self.get_random_hyper_parameters_for_text_to_image()
-        return {"text_prompts": text_prompts, **hyper_parameters}
-
-    def get_random_hyper_parameters_for_text_to_image(self):
-        bt.logging.debug("Getting random hyper parameters for text to image.")
-
         cfg_scale = random.choice(CFG_SCALE_VALUES)
         height = random.choice(HEIGHT_VALUES)
         width = random.choice(WIDTH_VALUES)
@@ -181,7 +175,8 @@ class StabilityValidator(BaseValidator):
         sampler = random.choice(SAMPLER_VALUES)
         style_preset = random.choice(STYLE_PRESET_VALUES)
 
-        return {
+
+        hyper_parameters = {
             "cfg_scale": cfg_scale,
             "height": height,
             "width": width,
@@ -189,6 +184,7 @@ class StabilityValidator(BaseValidator):
             "steps": steps,
             "style_preset": style_preset,
         }
+        return {"text_prompts": text_prompts, **hyper_parameters}
 
     async def query_and_score_text_to_image(self, metagraph: bt.metagraph, available_uids: Dict[int, bt.axon]):
         bt.logging.debug(f"Scoring text to images for {len(available_uids)} miners.")
