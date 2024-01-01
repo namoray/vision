@@ -19,7 +19,7 @@ CFG_SCALE_VALUES = list(range(0, 36))
 HEIGHT_VALUES = [i for i in range(320, 1537) if i % 64 == 0]
 WIDTH_VALUES = [i for i in range(320, 1537) if i % 64 == 0]
 SAMPLES_VALUES = list(range(1, 4))
-STEPS_VALUES = list(range(3, 51))
+STEPS_VALUES = list(range(10, 51))
 STYLE_PRESET_VALUES = [
     "3d-model",
     "analog-film",
