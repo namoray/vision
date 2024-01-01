@@ -6,7 +6,11 @@ import os
 import io
 import bittensor as bt
 from typing import List, Dict, Optional, Union
+
+from dotenv import load_dotenv
 from core import constants as cst, dataclasses as dc
+
+load_dotenv()
 
 API_HOST = "https://api.stability.ai"
 API_KEY = os.getenv("STABILITY_API_KEY")

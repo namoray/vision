@@ -25,7 +25,7 @@ class StabilityValidator(BaseValidator):
         self.stability_cache = diskcache.Cache(
             "validator_cache/stability_images",
         )
-        self.client = OpenAI(api_key=os.getenv("STABILITY_API_KEY"))
+        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     async def query_miner(self, axon: bt.axon, uid: int, syn: bt.Synapse) -> Tuple[int, bt.Synapse]:
         try:
             responses = await self.dendrite(
