@@ -64,7 +64,7 @@ class StabilityValidator(BaseValidator):
         hyper_parameters = stability_api.get_random_hyper_parameters_for_text_to_image()
         return {"text_prompts": text_prompts, **hyper_parameters}
     
-    async def get_random_hyper_parameters_for_text_to_image(self):
+    def get_random_hyper_parameters_for_text_to_image(self):
         bt.logging.debug("Getting random hyper parameters for text to image.")
         
         cfg_scale = random.randint(0, 35)
@@ -86,13 +86,13 @@ class StabilityValidator(BaseValidator):
 
     async def query_and_score_text_to_image(self, metagraph: bt.metagraph, available_uids: Dict[int, bt.axon]):
         
+        bt.logging.debug(f"Scoring text to images for {len(available_uids)} miners.")
         
         args = await self.get_args_for_text_to_image()
         bt.logging.debug(f"Args: {args}")
 
         get_image_task = asyncio.create_task(stability_api.generate_images_from_text(**args))
 
-        bt.logging.debug(f"Querying {len(available_uids)} miners for images")
         query_miners_for_images_tasks = []
         for uid, axon in available_uids.items():
             synapse = protocol.GenerateImagesFromText(**args)
