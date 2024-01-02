@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 CHECKPOINT_PATH = "sam_vit_l_0b3195.pth"
 MODEL_TYPE = "vit_l"
 # THESE ARE SUBJECT TO CHANGE AT ANY TIME, YOU PESKY MINERS YOU
@@ -18,3 +20,8 @@ DEFAULT_STYLE_PRESET = None
 DEFAULT_IMAGE_STRENGTH = 0.20
 DEFAULT_INIT_IMAGE_MODE = "IMAGE_STRENGTH"
 DEFAULT_SAMPLER = None
+DEFAULT_ENGINE = "stable-diffusion-xl-1024-v1-0"
+
+ALLOWED_IMAGE_SIZES: List[Tuple] = [(1024, 1024), (1152, 896), (1216, 832), (1344, 768), 
+                (1536, 640), (640, 1536), (768, 1344), (832, 1216), 
+                (896, 1152)]

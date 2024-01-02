@@ -10,7 +10,7 @@ import numpy as np
 import diskcache
 import bittensor as bt
 from openai import OpenAI
-from core import stability_api, utils, dataclasses as dc
+from core import stability_api, utils, dataclasses as dc, constants as cst
 from validators.base_validator import BaseValidator
 from template import protocol
 import os
@@ -18,7 +18,7 @@ import os
 CFG_SCALE_VALUES = list(range(0, 36))
 HEIGHT_VALUES = [i for i in range(320, 1537) if i % 64 == 0]
 WIDTH_VALUES = [i for i in range(320, 1537) if i % 64 == 0]
-SAMPLES_VALUES = list(range(1, 4))
+SAMPLES_VALUES = [1 for _ in range(50)] + [2, 2, 3]
 STEPS_VALUES = list(range(10, 51))
 STYLE_PRESET_VALUES = [
     "3d-model",
@@ -79,7 +79,7 @@ SAMPLER_VALUES = [
 
 class StabilityValidator(BaseValidator):
     def __init__(self, dendrite: bt.dendrite, config, subtensor, wallet):
-        super().__init__(dendrite, config, subtensor, wallet, timeout=25)
+        super().__init__(dendrite, config, subtensor, wallet, timeout=60)
 
         self.dendrite = dendrite
         self.stability_cache = diskcache.Cache("validator_cache/stability_images", max_size=5 * 1024 * 1024 * 1024)
@@ -168,8 +168,7 @@ class StabilityValidator(BaseValidator):
         bt.logging.debug(f"Text prompts: {text_prompts}")
 
         cfg_scale = random.choice(CFG_SCALE_VALUES)
-        height = random.choice(HEIGHT_VALUES)
-        width = random.choice(WIDTH_VALUES)
+        height, width = random.choice(cst.ALLOWED_IMAGE_SIZES)
         samples = random.choice(SAMPLES_VALUES)
         steps = random.choice(STEPS_VALUES)
         sampler = random.choice(SAMPLER_VALUES)

@@ -1,3 +1,4 @@
+from ast import Tuple
 from PIL import Image
 import aiohttp
 import random
@@ -5,7 +6,10 @@ import base64
 import os
 import io
 import bittensor as bt
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional, Union, Tuple
+from PIL import Image
+from io import BytesIO
+
 
 from dotenv import load_dotenv
 from core import constants as cst, dataclasses as dc
@@ -19,9 +23,34 @@ if API_KEY is None:
     raise Exception("STABILITY_API_KEY is not set. Please run `export STABILITY_API_KEY=YOUR_API_KEY`")
 
 
+
+
+def resize_image(image_b64: str) -> str:
+    image_data = base64.b64decode(image_b64)
+    image = Image.open(BytesIO(image_data))
+    
+    best_size = find_closest_allowed_size(image)
+    resized_image = image.resize(best_size, Image.ANTIALIAS)
+    
+    byte_arr = BytesIO()
+    resized_image.save(byte_arr, format='JPEG')
+    encoded_resized_image = base64.b64encode(byte_arr.getvalue()).decode('utf-8')    
+    return encoded_resized_image
+
+def find_closest_allowed_size(image) -> Tuple[int, int]:
+    width, height = image.size
+    min_diff: float = float("inf")
+    best_size: Tuple[int, int] = None
+    for size in cst.ALLOWED_IMAGE_SIZES:
+        diff = abs(width - size[0]) + abs(height - size[1])
+        if diff < min_diff:
+            min_diff = diff
+            best_size = size
+    return best_size
+
+
 async def generate_images_from_text(
     text_prompts: List[dc.TextPrompt],
-    engine_id: str = "stable-diffusion-v1-6",
     cfg_scale: int = cst.DEFAULT_CFG_SCALE,
     height: int = cst.DEFAULT_HEIGHT,
     width: int = cst.DEFAULT_WIDTH,
@@ -29,6 +58,7 @@ async def generate_images_from_text(
     steps: int = cst.DEFAULT_STEPS,
     style_preset: Optional[str] = cst.DEFAULT_STYLE_PRESET,
     seed: int = random.randint(1, cst.LARGEST_SEED),
+    engine_id: str = cst.DEFAULT_ENGINE,
 ) -> List[str]:
     async with aiohttp.ClientSession() as session:
         response = await session.post(
@@ -52,9 +82,9 @@ async def generate_images_from_text(
 
         image_b64s = []
         if response.status != 200:
-            bt.logging.warning(
-                "Bad response code from stability :( {} {} {}".format(response.status, response.reason, response.text)
-            )
+            response_json = await response.json()
+            bt.logging.warning(f"USER ERROR: Bad response, with code {response.status} :( response json: {response_json}")
+            return response_json
 
         response_json = await response.json()
         for i, image in enumerate(response_json.get("artifacts", [])):
@@ -74,11 +104,12 @@ async def generate_images_from_image(
     style_preset: Optional[str] = cst.DEFAULT_STYLE_PRESET,
     sampler: Optional[str] = cst.DEFAULT_SAMPLER,
     seed: int = random.randint(1, cst.LARGEST_SEED),
-    engine_id: str = "stable-diffusion-xl-1024-v1-0",
+    engine_id: str = cst.DEFAULT_ENGINE,
 ) -> List[str]:
+    image_resized = resize_image(init_image)
     data = {
-        # "init_image": open(init_image_path, "rb"),
-        "init_image": base64.b64decode(init_image),  # THis might cause issues, may need to use IO or save to file first
+        "init_image": open(image_resized, "rb"),
+        "init_image": base64.b64decode(init_image),
         "image_strength": str(image_strength),
         "init_image_mode": init_image_mode,
         "cfg_scale": str(cfg_scale),
@@ -89,16 +120,13 @@ async def generate_images_from_image(
     for i, prompt in enumerate(text_prompts):
         prompt_dict = prompt.dict()
         data[f"text_prompts[{i}][text]"] = prompt_dict["text"]
-        data[f"text_prompts[{i}][weight]"] = str(prompt_dict["weight"])  # Convert weight to string if necessary
+        data[f"text_prompts[{i}][weight]"] = str(prompt_dict["weight"])
 
     if style_preset:
         data["style_preset"] = style_preset
     
     if sampler:
         data["sampler"] = sampler
-
-    data_without_init_image = {k: v for k, v in data.items() if k != "init_image"}
-    bt.logging.info(f"Data to use: {data_without_init_image}")
 
     async with aiohttp.ClientSession() as session:
         async with session.post(
@@ -108,7 +136,9 @@ async def generate_images_from_image(
         ) as response:
             image_b64s = []
             if response.status != 200:
-                bt.logging.warning("Bad response code from stability :( {} {}".format(response.status, response.reason))
+                response_json = await response.json()
+                bt.logging.warning(f"USER ERROR: Bad response, with code {response.status} :( response json: {response_json}")
+                return response_json
 
             response_json = await response.json()
             for i, image in enumerate(response_json.get("artifacts", [])):
