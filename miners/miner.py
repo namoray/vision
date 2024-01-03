@@ -451,4 +451,4 @@ if __name__ == "__main__":
     with MinerBoi() as miner:
         while True:
             bt.logging.info("Miner running... you can hopefully relax now :)")
-            time.sleep(60)
+            time.sleep(240)

@@ -138,7 +138,7 @@ async def generate_images_from_image(
             if response.status != 200:
                 response_json = await response.json()
                 bt.logging.warning(f"USER ERROR: Bad response, with code {response.status} :( response json: {response_json}")
-                return response_json
+                return image_b64s
 
             response_json = await response.json()
             for i, image in enumerate(response_json.get("artifacts", [])):
