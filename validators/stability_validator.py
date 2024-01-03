@@ -186,6 +186,16 @@ class StabilityValidator(BaseValidator):
             "style_preset": style_preset,
         }
         return {"text_prompts": text_prompts, **hyper_parameters}
+    
+    async def create_query_img2img_tasks(self, args, available_uids):
+        query_miners_for_images_tasks = []
+        for uid, axon in available_uids.items():
+            synapse = protocol.GenerateImagesFromImage(**args)
+            query_miners_for_images_tasks.append(asyncio.create_task(self.query_miner(axon, uid, synapse)))
+            bt.logging.debug(f"making new task")
+            await asyncio.sleep(1)
+        
+        return query_miners_for_images_tasks
 
     async def query_and_score_text_to_image(self, metagraph: bt.metagraph, available_uids: Dict[int, bt.axon]):
         bt.logging.debug(f"Scoring text to images for {len(available_uids)} miners.")
@@ -193,12 +203,13 @@ class StabilityValidator(BaseValidator):
         args = await self.get_args_for_text_to_image()
         bt.logging.debug(f"Args: {args}")
 
-        get_image_task = asyncio.create_task(stability_api.generate_images_from_text(**args))
 
         query_miners_for_images_tasks = []
         for uid, axon in available_uids.items():
             synapse = protocol.GenerateImagesFromText(**args)
             query_miners_for_images_tasks.append(asyncio.create_task(self.query_miner(axon, uid, synapse)))
+
+        get_image_task = asyncio.create_task(stability_api.generate_images_from_text(**args))
 
         expected_image_b64s = await get_image_task
         positive_prompt = args["text_prompts"][0].text 
@@ -240,10 +251,7 @@ class StabilityValidator(BaseValidator):
 
         get_image_task = asyncio.create_task(stability_api.generate_images_from_image(**args))
 
-        query_miners_for_images_tasks = []
-        for uid, axon in available_uids.items():
-            synapse = protocol.GenerateImagesFromImage(**args)
-            query_miners_for_images_tasks.append(asyncio.create_task(self.query_miner(axon, uid, synapse)))
+        query_miners_for_images_tasks = await self.create_query_img2img_tasks(args, available_uids)
 
         expected_image_b64s = await get_image_task
         positive_prompt = args["text_prompts"][0].text 
