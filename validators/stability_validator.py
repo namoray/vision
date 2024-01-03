@@ -149,6 +149,7 @@ class StabilityValidator(BaseValidator):
             sampler = random.choice(SAMPLER_VALUES)
             style_preset = random.choice(STYLE_PRESET_VALUES)
             image_strength = random.choice(IMAGE_STRENGTH_VALUES)
+            engine_id = cst.DEFAULT_ENGINE
 
             return {
                 "text_prompts": text_prompts,
@@ -159,6 +160,7 @@ class StabilityValidator(BaseValidator):
                 "sampler": sampler,
                 "style_preset": style_preset,
                 "image_strength": image_strength,
+                "engine_id": engine,
             }
 
     async def get_args_for_text_to_image(self):
@@ -240,22 +242,18 @@ class StabilityValidator(BaseValidator):
 
         get_image_task = asyncio.create_task(stability_api.generate_images_from_image(**args))
 
-        # query_miners_for_images_tasks = []
-        # for uid, axon in available_uids.items():
-        #     synapse = protocol.GenerateImagesFromImage(**args)
-        #     query_miners_for_images_tasks.append(asyncio.create_task(self.query_miner(axon, uid, synapse)))
+        query_miners_for_images_tasks = []
+        for uid, axon in available_uids.items():
+            synapse = protocol.GenerateImagesFromImage(**args)
+            query_miners_for_images_tasks.append(asyncio.create_task(self.query_miner(axon, uid, synapse)))
 
-        bt.logging.debug("Waiting to get the image from stable diffusion api")
         expected_image_b64s = await get_image_task
-        bt.logging.debug("Got it!")
         positive_prompt = args["text_prompts"][0].text 
         negative_prompt = args["text_prompts"][1].text if len(args["text_prompts"]) > 1 else ""
         if len(expected_image_b64s) > 0:
             self.update_cache_with_images_and_prompts(
                 expected_image_b64s,  positive_prompt, negative_prompt
             )
-
-        return
 
         results: list[tuple[int, Optional[protocol.GenerateImagesFromImage]]] = await asyncio.gather(
             *query_miners_for_images_tasks

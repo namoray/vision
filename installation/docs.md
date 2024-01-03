@@ -15,6 +15,9 @@ apt update && apt upgrade -y
 apt install nodejs npm -y
 npm i -g pm2
 ```
+
+### Add API keys
+echo "STABILITY_API_KEY=YOUR_KEY_HERE" >> .env
 ## Installing for miners
 Clone the repository, install requirements, get the model, configure api keys, badabing, badaboom: 
 ```bash

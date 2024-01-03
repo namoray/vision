@@ -106,9 +106,9 @@ async def generate_images_from_image(
     engine_id: str = cst.DEFAULT_ENGINE,
 ) -> List[str]:
     image_resized = resize_image(init_image)
-    bt.logging.debug("Resized image!")
+    bt.logging.debug("Guess who just resized an image!")
     data = {
-        "init_image": base64.b64decode(init_image),
+        "init_image": base64.b64decode(image_resized),
         "image_strength": str(image_strength),
         "init_image_mode": init_image_mode,
         "cfg_scale": str(cfg_scale),
