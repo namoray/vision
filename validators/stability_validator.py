@@ -15,7 +15,7 @@ from validators.base_validator import BaseValidator
 from template import protocol
 import os
 from dotenv import load_dotenv
-
+from PIL import Image
 load_dotenv()
 
 CFG_SCALE_VALUES = list(range(0, 36))
@@ -93,7 +93,20 @@ class StabilityValidator(BaseValidator):
         self, image_b64s: list[str], positive_prompt: str, negative_prompt: str
     ) -> None:
         key = str(uuid4())
-        self.stability_cache[key] = (image_b64s, positive_prompt, negative_prompt)
+    
+        compressed_images_b64s = []
+        for img_b64 in image_b64s:
+            img_bytes = base64.b64decode(img_b64)
+            img_io = io.BytesIO(img_bytes)
+            img_pil = Image.open(img_io)
+            output = io.BytesIO()
+            img_pil.save(output, format="WEBP", quality=80)
+            
+            img_b64_compressed = base64.b64encode(output.getvalue()).decode()
+            
+            compressed_images_b64s.append(img_b64_compressed)
+        
+        self.stability_cache[key] = (compressed_images_b64s, positive_prompt, negative_prompt)
         self.list_of_cache_keys.append(key)
 
     async def query_miner(self, axon: bt.axon, uid: int, syn: bt.Synapse) -> Tuple[int, bt.Synapse]:
