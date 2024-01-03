@@ -143,6 +143,8 @@ class MinerBoi:
     async def generate_images_from_image(
         self, synapse: protocol.GenerateImagesFromImage
     ) -> protocol.GenerateImagesFromImage:
+        
+        bt.logging.debug(f"engine id : {synapse.engine_id}")
         image_b64s = await stability_api.generate_images_from_image(
             init_image=synapse.init_image,
             text_prompts=synapse.text_prompts,
