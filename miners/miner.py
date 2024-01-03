@@ -127,7 +127,6 @@ class MinerBoi:
     ) -> protocol.GenerateImagesFromText:
         image_b64s = await stability_api.generate_images_from_text(
             text_prompts=synapse.text_prompts,
-            engine_id=synapse.engine_id,
             cfg_scale=synapse.cfg_scale,
             height=synapse.height,
             width=synapse.width,
@@ -156,7 +155,6 @@ class MinerBoi:
             image_strength=synapse.image_strength,
             style_preset=synapse.style_preset,
             seed=synapse.seed,
-            engine_id=synapse.engine_id,
         )
 
         # Remove to minimise data transferred

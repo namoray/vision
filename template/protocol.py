@@ -17,7 +17,6 @@ class GenerateImagesFromText(bt.Synapse):
     """Generates an image from a text prompt"""
 
     text_prompts: List[dc.TextPrompt] = Field([], description="Prompts for the image generation", title="text_prompts")
-    engine_id: str = Field(cst.DEFAULT_ENGINE, description="The name of the engine to use for image generation")
     cfg_scale: int = Field(cst.DEFAULT_CFG_SCALE, description="Scale for the configuration")
     height: int = Field(cst.DEFAULT_HEIGHT, description="Height of the generated image")
     width: int = Field(cst.DEFAULT_WIDTH, description="Width of the generated image")
@@ -38,7 +37,6 @@ class GenerateImagesFromImage(bt.Synapse):
     init_image: Optional[str] = Field(..., description="The base64 encoded image", title="init_image")
     text_prompts: List[dc.TextPrompt] = Field([], description="Prompts for the image generation", title="text_prompts")
     image_strength: float = Field(0.25, description="The strength of the init image")
-    engine_id: str = Field(cst.DEFAULT_ENGINE, description="The name of the engine to use for image generation")
     cfg_scale: int = Field(cst.DEFAULT_CFG_SCALE, description="Scale for the configuration")
     samples: int = Field(cst.DEFAULT_SAMPLES, description="Number of sample images to generate")
     steps: int = Field(cst.DEFAULT_STEPS, description="Number of steps in the image generation process")
