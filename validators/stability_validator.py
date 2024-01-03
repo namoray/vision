@@ -149,7 +149,6 @@ class StabilityValidator(BaseValidator):
             sampler = random.choice(SAMPLER_VALUES)
             style_preset = random.choice(STYLE_PRESET_VALUES)
             image_strength = random.choice(IMAGE_STRENGTH_VALUES)
-            engine_id = cst.DEFAULT_ENGINE
 
             return {
                 "text_prompts": text_prompts,
@@ -160,7 +159,6 @@ class StabilityValidator(BaseValidator):
                 "sampler": sampler,
                 "style_preset": style_preset,
                 "image_strength": image_strength,
-                "engine_id": engine,
             }
 
     async def get_args_for_text_to_image(self):
