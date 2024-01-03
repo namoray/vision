@@ -50,6 +50,13 @@ class GenerateImagesFromImage(bt.Synapse):
     def deserialize(self) -> Optional[List[str]]:
         return self.image_b64s
 
+class UpscaleImage(bt.Synapse):
+
+    init_image: Optional[str] = Field(..., description="The base64 encoded image", title="init_image")
+    height : Optional[int] = Field(None, description="Height of the upscaled image")
+    width : Optional[int] = Field(None, description="Width of the upscaled image")
+
+    image_b64s: Optional[List[str]] = Field(None, description="The base64 encoded images to return", title="image_b64s")
 
 class ClipEmbeddingImages(bt.Synapse):
     """Generates a clip embedding for images"""

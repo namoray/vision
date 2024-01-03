@@ -94,6 +94,9 @@ class MinerBoi:
         ).attach(
             forward_fn=self.generate_images_from_image,
             blacklist_fn=self.blacklist_generate_images_from_image,
+        ).attach(
+            forward_fn=self.upscale_image,
+            blacklist_fn=self.blacklist_upscale_image,
         )
 
         bt.logging.info(
@@ -163,6 +166,25 @@ class MinerBoi:
         synapse.image_b64s = image_b64s
 
         return synapse
+
+    async def upscale_image(
+        self, synapse: protocol.UpscaleImage
+    ) -> protocol.UpscaleImage:
+
+        bt.logging.debug(f"Here and about to upscale an image")
+        
+        image_b64s = await stability_api.upscale_image(
+            init_image=synapse.init_image,
+            height = synapse.height,
+            width = synapse.width,
+        )
+
+        # Remove to minimise data transferred
+        synapse.init_image = None
+        synapse.image_b64s = image_b64s
+
+        return synapse
+        
 
     async def get_segmentation(self, synapse: protocol.SegmentingSynapse) -> protocol.SegmentingSynapse:
         """
@@ -327,6 +349,9 @@ class MinerBoi:
         return await self.blacklist(synapse)
 
     async def blacklist_generate_images_from_image(self, synapse: protocol.GenerateImagesFromImage) -> Tuple[bool, str]:
+        return await self.blacklist(synapse)
+
+    async def blacklist_upscale_image(self, synapse: protocol.UpscaleImage) -> Tuple[bool, str]:
         return await self.blacklist(synapse)
 
     async def priority(self, synapse: T) -> float:

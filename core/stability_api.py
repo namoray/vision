@@ -145,3 +145,34 @@ async def generate_images_from_image(
                 image_b64s.append(image["base64"])
 
         return image_b64s
+
+
+async def upscale_image(
+    init_image: str,
+    height: Optional[int] = None,
+    width: Optional[int] = None,
+) -> List[str]:
+
+    data = {
+        "init_image": base64.b64decode(init_image),
+        "height": str(height),
+        "width": str(width),
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            f"{API_HOST}/v1/generation/{cst.UPSCALE_ENGINE}/image-to-image/upscale",
+            headers={"Accept": "application/json", "Authorization": f"Bearer {API_KEY}"},
+            data=data,
+        ) as response:
+            image_b64s = []
+            if response.status != 200:
+                response_json = await response.json()
+                bt.logging.warning(f"USER ERROR: Bad response, with code {response.status} :( response json: {response_json}")
+                return image_b64s
+
+            response_json = await response.json()
+            for i, image in enumerate(response_json.get("artifacts", [])):
+                image_b64s.append(image["base64"])
+
+        return image_b64s
