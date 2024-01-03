@@ -58,6 +58,7 @@ async def generate_images_from_text(
     seed: int = random.randint(1, cst.LARGEST_SEED),
     engine_id: str = cst.DEFAULT_ENGINE,
 ) -> List[str]:
+    
     async with aiohttp.ClientSession() as session:
         response = await session.post(
             f"{API_HOST}/v1/generation/{engine_id}/text-to-image",
