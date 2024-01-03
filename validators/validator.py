@@ -274,9 +274,9 @@ async def query_and_score_miners(
 
             ########### Scoring text_to_image ############
 
-            bt.logging.info("Scoring text_to_image now...")
+            # bt.logging.info("Scoring text_to_image now...")
 
-            scores = await stability_vali.query_and_score_text_to_image(metagraph, available_uids)
+            # scores = await stability_vali.query_and_score_text_to_image(metagraph, available_uids)
             
             ########### Scoring text_to_image ############
 

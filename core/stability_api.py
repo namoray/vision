@@ -23,14 +23,12 @@ if API_KEY is None:
     raise Exception("STABILITY_API_KEY is not set. Please run `export STABILITY_API_KEY=YOUR_API_KEY`")
 
 
-
-
 def resize_image(image_b64: str) -> str:
     image_data = base64.b64decode(image_b64)
     image = Image.open(BytesIO(image_data))
     
     best_size = find_closest_allowed_size(image)
-    resized_image = image.resize(best_size, Image.ANTIALIAS)
+    resized_image = image.resize(best_size, Image.Resampling.BICUBIC)
     
     byte_arr = BytesIO()
     resized_image.save(byte_arr, format='JPEG')
@@ -107,8 +105,8 @@ async def generate_images_from_image(
     engine_id: str = cst.DEFAULT_ENGINE,
 ) -> List[str]:
     image_resized = resize_image(init_image)
+    bt.logging.debug("Resized image!")
     data = {
-        "init_image": open(image_resized, "rb"),
         "init_image": base64.b64decode(init_image),
         "image_strength": str(image_strength),
         "init_image_mode": init_image_mode,
@@ -128,6 +126,7 @@ async def generate_images_from_image(
     if sampler:
         data["sampler"] = sampler
 
+    bt.logging.debug("Sending request!")
     async with aiohttp.ClientSession() as session:
         async with session.post(
             f"{API_HOST}/v1/generation/{engine_id}/image-to-image",
