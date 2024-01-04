@@ -16,6 +16,8 @@ from template import protocol
 import os
 from dotenv import load_dotenv
 from PIL import Image
+import markovify
+
 load_dotenv()
 
 CFG_SCALE_VALUES = list(range(0, 36))
@@ -86,7 +88,6 @@ class StabilityValidator(BaseValidator):
 
         self.dendrite = dendrite
         self.stability_cache = diskcache.Cache("validator_cache/stability_images", max_size=5 * 1024 * 1024 * 1024)
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.list_of_cache_keys = list(self.stability_cache.iterkeys())
 
     def update_cache_with_images_and_prompts(
@@ -161,8 +162,7 @@ class StabilityValidator(BaseValidator):
             }
 
     async def get_args_for_text_to_image(self):
-        markov_text = self.get_markov_text_for_prompt()
-        positive_prompt, negative_prompt = await self.get_positive_and_negative_prompt_from_markov_text(markov_text)
+        positive_prompt, negative_prompt = await self.get_positive_and_negative_prompt()
 
         text_prompts = self.get_text_prompt_from_positive_and_negative_prompts(positive_prompt, negative_prompt)
 
@@ -331,67 +331,35 @@ class StabilityValidator(BaseValidator):
         bt.logging.info("scores: {}".format(scores))
         return scores
 
-    async def get_positive_and_negative_prompt_from_markov_text(self, markov_text: str) -> Tuple[str, str]:
-        """Get positive and negative prompt from markov text."""
-        response = self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Make the below very similar but making more sense. One sentence. If there's two prompts, ignore one. Make sure it looks like a DESCRIPTION of an image. Try not to change the original text much.",
-                },
-                {"role": "user", "content": markov_text},
-            ],
-            temperature=0.2,
-        )
-        positive_prompt = response.choices[0].message.content
-
-        if random.random() < 0.5:
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "Take in a description of an image, and then give a few words describing what you don't want to be in the image. Just a few words is good. Seperate each word (or phrase) with a comma. Dont make it sound like a sentence. So just a few words or phrases seperated by commas. Don't use the prefix `no`",
-                    },
-                    {"role": "user", "content": positive_prompt},
-                ],
-                temperature=0.2,
-            )
-            negative_prompt = response.choices[0].message.content
-        else:
-            negative_prompt = ""
+    async def get_positive_and_negative_prompt(self) -> Tuple[str, str]:
+        """Get positive and negative prompt from markov generated text."""
+        positive_prompt = self.markov_text_generation_model.make_sentence(min_words=1, max_words=100)
+        
+        negative_prompt = self.markov_text_generation_model.make_sentence(min_words=1, max_words=20)
 
         return positive_prompt, negative_prompt
 
+    def generate_new_prompt(self, prompt):
+        words = prompt.split()
+        bigrams = [" ".join(words[i:i+2]) for i in range(len(words)-1)]
+        random_bigram = random.choice(bigrams)
+        attemps = 0
+        varied_text = prompt
+        while attemps < 10:
+            try:
+                varied_text = self.markov_text_generation_model.make_sentence_with_start(beginning=random_bigram)
+                break
+            except markovify.text.ParamError: # if bigram doesn't exist, try another one
+                random_bigram = random.choice(bigrams)
+                attemps += 1
+            
+        return varied_text
+
     async def get_refined_positive_and_negative_prompts(self, positive_prompt: str, negative_prompt: str):
-        response = self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You will be given a prompt for an image. It will include a `positive prompt`, which is things in the image, and a `negative prompt`, which are things not in the image. I want you to just pick one or two things to change about the image, and reflect that in the positive and negative prompts. Don't change it very much, keep it really similar. Return in this format only: \n POSITIVE_PROMPT: blahblah\nNEGATIVE_PROMPT: blahblah",
-                },
-                {"role": "user", "content": f"POSITIVE_PROMPT: {positive_prompt}\nNEGATIVE_PROMPT: {negative_prompt}"},
-            ],
-        )
-        revised_prompt = response.choices[0].message.content
+        """Get slightly refined positive & negative prompts from markov generated text"""
 
-        try:
-            positive_prompt_new = revised_prompt.split("POSITIVE_PROMPT: ")[1].split("\n")[0]
-        except IndexError:
-            bt.logging.error(f"Error parsing revised prompt: {revised_prompt}")
-            positive_prompt_new = ""
-        
-        try:
-            negative_prompt_new = revised_prompt.split("NEGATIVE_PROMPT: ")[1].split("\n")[0]
-        except IndexError:
-            negative_prompt_new = ""
-
-        if len(positive_prompt_new) == 0:
-            positive_prompt_new = positive_prompt
-        if len(negative_prompt_new) == 0:
-            negative_prompt_new = negative_prompt
+        positive_prompt_new = self.generate_new_prompt(positive_prompt)
+        negative_prompt_new = self.generate_new_prompt(negative_prompt)
 
         return positive_prompt_new, negative_prompt_new
 
