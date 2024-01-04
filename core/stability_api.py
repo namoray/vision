@@ -148,7 +148,7 @@ async def generate_images_from_image(
 
 
 async def upscale_image(
-    init_image: str,
+    image: str,
     height: Optional[int] = None,
     width: Optional[int] = None,
 ) -> List[str]:
