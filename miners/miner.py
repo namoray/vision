@@ -381,6 +381,9 @@ class MinerBoi:
 
     async def blacklist_upscale_image(self, synapse: protocol.UpscaleImage) -> Tuple[bool, str]:
         return await self.blacklist(synapse)
+    
+    async def blacklist_inpainting(self, synapse: protocol.GenerateImagesFromInpainting) -> Tuple[bool, str]:
+        return await self.blacklist(synapse)
 
     async def priority(self, synapse: T) -> float:
         """
