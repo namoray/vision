@@ -111,7 +111,7 @@ async def generate_images_from_image(
     bt.logging.debug(f"cfg_scale: {cfg_scale}")
     data = {
         "init_image": base64.b64decode(image_resized),
-        "image_strength": str(1.0),
+        "image_strength": str(image_strength),
         "init_image_mode": init_image_mode,
         "cfg_scale": str(cfg_scale),
         "samples": str(samples),
@@ -131,6 +131,7 @@ async def generate_images_from_image(
 
     bt.logging.debug("Sending request!")
     bt.logging.debug("data: ", {k: v for k, v in data.items() if k != "init_image"})
+    bt.logging.debug("engine_id: ", engine_id)
     async with aiohttp.ClientSession() as session:
         async with session.post(
             f"{API_HOST}/v1/generation/{engine_id}/image-to-image",
