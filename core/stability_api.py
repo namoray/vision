@@ -13,6 +13,7 @@ from io import BytesIO
 
 from dotenv import load_dotenv
 from core import constants as cst, dataclasses as dc
+from template.protocol import MaskSource
 
 load_dotenv()
 
@@ -26,14 +27,15 @@ if API_KEY is None:
 def resize_image(image_b64: str) -> str:
     image_data = base64.b64decode(image_b64)
     image = Image.open(BytesIO(image_data))
-    
+
     best_size = find_closest_allowed_size(image)
     resized_image = image.resize(best_size, Image.Resampling.BICUBIC)
-    
+
     byte_arr = BytesIO()
-    resized_image.save(byte_arr, format='JPEG')
-    encoded_resized_image = base64.b64encode(byte_arr.getvalue()).decode('utf-8')    
+    resized_image.save(byte_arr, format="JPEG")
+    encoded_resized_image = base64.b64encode(byte_arr.getvalue()).decode("utf-8")
     return encoded_resized_image
+
 
 def find_closest_allowed_size(image) -> Tuple[int, int]:
     width, height = image.size
@@ -58,7 +60,6 @@ async def generate_images_from_text(
     seed: int = random.randint(1, cst.LARGEST_SEED),
     engine_id: str = cst.DEFAULT_ENGINE,
 ) -> List[str]:
-    
     async with aiohttp.ClientSession() as session:
         response = await session.post(
             f"{API_HOST}/v1/generation/{engine_id}/text-to-image",
@@ -82,7 +83,9 @@ async def generate_images_from_text(
         image_b64s = []
         if response.status != 200:
             response_json = await response.json()
-            bt.logging.warning(f"USER ERROR: Bad response, with code {response.status} :( response json: {response_json}")
+            bt.logging.warning(
+                f"USER ERROR: Bad response, with code {response.status} :( response json: {response_json}"
+            )
             return response_json
 
         response_json = await response.json()
@@ -128,7 +131,7 @@ async def generate_images_from_image(
 
     if style_preset:
         data["style_preset"] = style_preset
-    
+
     if sampler:
         data["sampler"] = sampler
 
@@ -142,7 +145,9 @@ async def generate_images_from_image(
             image_b64s = []
             if response.status != 200:
                 response_json = await response.json()
-                bt.logging.warning(f"USER ERROR: Bad response, with code {response.status} :( response json: {response_json}")
+                bt.logging.warning(
+                    f"USER ERROR: Bad response, with code {response.status} :( response json: {response_json}"
+                )
                 return image_b64s
 
             response_json = await response.json()
@@ -152,13 +157,69 @@ async def generate_images_from_image(
         bt.logging.info(f"✅ Sucesfully generated {len(image_b64s)} image(s) from an image. I rock!")
         return image_b64s
 
+async def generate_images_from_inpainting(
+    init_image: str,
+    text_prompts: List[dc.TextPrompt],
+    mask_source: MaskSource,
+    mask_image: str,
+    cfg_scale: int = cst.DEFAULT_CFG_SCALE,
+    samples: int = cst.DEFAULT_SAMPLES,
+    steps: int = cst.DEFAULT_STEPS,
+    sampler: Optional[str] = cst.DEFAULT_SAMPLER,
+    style_preset: Optional[str] = cst.DEFAULT_STYLE_PRESET,
+    seed: int = random.randint(1, cst.LARGEST_SEED),
+    engine_id: str = cst.DEFAULT_ENGINE,
+):
+    image_resized = resize_image(init_image)
+    mask_image = resize_image(mask_image)
+    bt.logging.debug("Guess who just resized an image!")
+    data = {
+        "init_image": base64.b64decode(image_resized),
+        "mask_source": str(mask_source),
+        "mask_image": base64.b64decode(mask_image),
+        "cfg_scale": str(cfg_scale),
+        "samples": str(samples),
+        "steps": str(steps),
+        "seed": str(seed),
+    }
+    for i, prompt in enumerate(text_prompts):
+        prompt_dict = prompt.dict()
+        data[f"text_prompts[{i}][text]"] = prompt_dict["text"]
+        data[f"text_prompts[{i}][weight]"] = str(prompt_dict["weight"])
+
+    if style_preset:
+        data["style_preset"] = style_preset
+
+    if sampler:
+        data["sampler"] = sampler
+
+    bt.logging.debug("Sending request!")
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            f"{API_HOST}/v1/generation/{engine_id}/image-to-image/masking",
+            headers={"Accept": "application/json", "Authorization": f"Bearer {API_KEY}"},
+            data=data,
+        ) as response:
+            image_b64s = []
+            if response.status != 200:
+                response_json = await response.json()
+                bt.logging.warning(
+                    f"USER ERROR: Bad response, with code {response.status} :( response json: {response_json}"
+                )
+                return image_b64s
+
+            response_json = await response.json()
+            for i, image in enumerate(response_json.get("artifacts", [])):
+                image_b64s.append(image["base64"])
+
+        return image_b64s
+    
 
 async def upscale_image(
     image: str,
     height: Optional[int] = None,
     width: Optional[int] = None,
 ) -> List[str]:
-
     data = {
         "image": base64.b64decode(image),
         "height": str(height),
@@ -174,7 +235,9 @@ async def upscale_image(
             image_b64s = []
             if response.status != 200:
                 response_json = await response.json()
-                bt.logging.warning(f"USER ERROR: Bad response, with code {response.status} :( response json: {response_json}")
+                bt.logging.warning(
+                    f"USER ERROR: Bad response, with code {response.status} :( response json: {response_json}"
+                )
                 return image_b64s
 
             response_json = await response.json()

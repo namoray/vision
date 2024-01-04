@@ -23,6 +23,14 @@ DEFAULT_SAMPLER = None
 DEFAULT_ENGINE = "stable-diffusion-xl-1024-v1-0"
 UPSCALE_ENGINE = "esrgan-v1-x2plus"
 
-ALLOWED_IMAGE_SIZES: List[Tuple] = [(1024, 1024), (1152, 896), (1216, 832), (1344, 768), 
-                (1536, 640), (640, 1536), (768, 1344), (832, 1216), 
-                (896, 1152)]
+ALLOWED_IMAGE_SIZES: List[Tuple] = [
+    (1024, 1024),
+    (1152, 896),
+    (1216, 832),
+    (1344, 768),
+    (1536, 640),
+    (640, 1536),
+    (768, 1344),
+    (832, 1216),
+    (896, 1152),
+]

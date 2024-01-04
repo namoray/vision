@@ -146,9 +146,8 @@ class MinerBoi:
     async def generate_images_from_image(
         self, synapse: protocol.GenerateImagesFromImage
     ) -> protocol.GenerateImagesFromImage:
-
         bt.logging.debug(f"Here and about to generate an image")
-        
+
         image_b64s = await stability_api.generate_images_from_image(
             init_image=synapse.init_image,
             text_prompts=synapse.text_prompts,
@@ -168,16 +167,13 @@ class MinerBoi:
 
         return synapse
 
-    async def upscale_image(
-        self, synapse: protocol.UpscaleImage
-    ) -> protocol.UpscaleImage:
-
+    async def upscale_image(self, synapse: protocol.UpscaleImage) -> protocol.UpscaleImage:
         bt.logging.debug(f"Here and about to upscale an image")
-        
+
         image_b64s = await stability_api.upscale_image(
             image=synapse.image,
-            height = synapse.height,
-            width = synapse.width,
+            height=synapse.height,
+            width=synapse.width,
         )
 
         # Remove to minimise data transferred
@@ -185,7 +181,6 @@ class MinerBoi:
         synapse.image_b64s = image_b64s
 
         return synapse
-        
 
     async def get_segmentation(self, synapse: protocol.SegmentingSynapse) -> protocol.SegmentingSynapse:
         """

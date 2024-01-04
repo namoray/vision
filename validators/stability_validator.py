@@ -17,6 +17,7 @@ import os
 from dotenv import load_dotenv
 from PIL import Image
 import markovify
+from typing import Dict, Callable, Coroutine, Type
 
 load_dotenv()
 
@@ -94,7 +95,7 @@ class StabilityValidator(BaseValidator):
         self, image_b64s: list[str], positive_prompt: str, negative_prompt: str
     ) -> None:
         key = str(uuid4())
-    
+
         compressed_images_b64s = []
         for img_b64 in image_b64s:
             img_bytes = base64.b64decode(img_b64)
@@ -102,21 +103,18 @@ class StabilityValidator(BaseValidator):
             img_pil = Image.open(img_io)
             output = io.BytesIO()
             img_pil.save(output, format="WEBP", quality=80)
-            
+
             img_b64_compressed = base64.b64encode(output.getvalue()).decode()
-            
+
             compressed_images_b64s.append(img_b64_compressed)
-        
+
         self.stability_cache[key] = (compressed_images_b64s, positive_prompt, negative_prompt)
         self.list_of_cache_keys.append(key)
-
 
     def get_markov_text_for_prompt(self):
         return self.markov_text_generation_model.make_short_sentence(max_chars=200)
 
-    def get_text_prompt_from_positive_and_negative_prompts(
-        self, positive_prompt: str, negative_prompt: str
-    ):
+    def get_text_prompt_from_positive_and_negative_prompts(self, positive_prompt: str, negative_prompt: str):
         positive_weight = utils.generate_random_weight()
         if random.random() < 0.85:
             text_prompts = [dc.TextPrompt(**{"text": positive_prompt, "weight": positive_weight})]
@@ -126,7 +124,7 @@ class StabilityValidator(BaseValidator):
         if negative_prompt:
             negative_weight = -1.0 * utils.generate_random_weight()
             text_prompts.append(dc.TextPrompt(**{"text": negative_prompt, "weight": negative_weight}))
-        
+
         return text_prompts
 
     async def get_args_for_image_to_image(self):
@@ -138,7 +136,9 @@ class StabilityValidator(BaseValidator):
                 random.choice(self.list_of_cache_keys)
             )
             init_image = random.choice(random_images)
-            new_positive_prompt, new_negative_prompt = await self.get_refined_positive_and_negative_prompts(positive_prompt=positive_prompt, negative_prompt=negative_prompt)
+            new_positive_prompt, new_negative_prompt = await self.get_refined_positive_and_negative_prompts(
+                positive_prompt=positive_prompt, negative_prompt=negative_prompt
+            )
             text_prompts = self.get_text_prompt_from_positive_and_negative_prompts(
                 new_positive_prompt, new_negative_prompt
             )
@@ -175,7 +175,6 @@ class StabilityValidator(BaseValidator):
         sampler = random.choice(SAMPLER_VALUES)
         style_preset = random.choice(STYLE_PRESET_VALUES)
 
-
         hyper_parameters = {
             "cfg_scale": cfg_scale,
             "height": height,
@@ -192,41 +191,48 @@ class StabilityValidator(BaseValidator):
 
         random_image = await utils.get_random_image(x_dim, y_dim)
 
-        base = random.choice([0,1 ])
+        base = random.choice([0, 1])
 
-        rand_n= random.randint(512, 2048)
+        rand_n = random.randint(512, 2048)
 
         if base == 1:
             return {"image": random_image, "height": rand_n}
         else:
             return {"image": random_image, "width": rand_n}
-        
-        
-        
     
-    async def create_query_img2img_tasks(self, args, available_uids):
+    async def get_args_for_inpainting(self):
+        ...
+
+    async def query_and_score(
+        self,
+        available_uids: Dict[int, bt.axon],
+        get_args: Callable[[], Coroutine],
+        query_protocol: type[protocol.ProtocolBase],
+        stability_api_function: Callable[..., Coroutine],
+    ) -> Dict[int, int]:
+        task_type = query_protocol.__name__
+        bt.logging.debug(f"Scoring for {len(available_uids)} miners on task type: {task_type}.")
+
+        args = await get_args()
+
+        if args is None:
+            return {}
+
+        get_image_task = asyncio.create_task(stability_api_function(**args))
+
         query_miners_for_images_tasks = []
         for uid, axon in available_uids.items():
-            synapse = protocol.GenerateImagesFromImage(**args)
+            synapse = query_protocol(**args)
             query_miners_for_images_tasks.append(asyncio.create_task(self.query_miner(axon, uid, synapse)))
-            bt.logging.debug(f"making new task")
-            await asyncio.sleep(1)
-        
-        return query_miners_for_images_tasks
-    
-    async def query_and_score_upscale(self, available_uids: Dict[int, bt.axon]):
-        bt.logging.debug(f"Scoring upscale for {len(available_uids)} miners.")
-
-        args = await self.get_args_for_upscale()
-
-        query_miners_for_images_tasks = []
-        for uid, axon in available_uids.items():
-            synapse = protocol.UpscaleImage(**args)
-            query_miners_for_images_tasks.append(asyncio.create_task(self.query_miner(axon, uid, synapse)))
-
-        get_image_task = asyncio.create_task(stability_api.upscale_image(**args))
 
         expected_image_b64s = await get_image_task
+
+        if not isinstance(query_protocol, protocol.UpscaleImage):
+            positive_prompt = args["text_prompts"][0].text
+            negative_prompt = args["text_prompts"][1].text if len(args["text_prompts"]) > 1 else ""
+            if len(expected_image_b64s) > 0:
+                self.update_cache_with_images_and_prompts(expected_image_b64s, positive_prompt, negative_prompt)
+
         results = await asyncio.gather(*query_miners_for_images_tasks)
 
         scores = {}
@@ -245,90 +251,31 @@ class StabilityValidator(BaseValidator):
         bt.logging.info("scores: {}".format(scores))
         return scores
 
-
-    async def query_and_score_text_to_image(self, metagraph: bt.metagraph, available_uids: Dict[int, bt.axon]):
-        bt.logging.debug(f"Scoring text to images for {len(available_uids)} miners.")
-
-        args = await self.get_args_for_text_to_image()
-        bt.logging.debug(f"Args: {args}")
-
-
-        query_miners_for_images_tasks = []
-        for uid, axon in available_uids.items():
-            synapse = protocol.GenerateImagesFromText(**args)
-            query_miners_for_images_tasks.append(asyncio.create_task(self.query_miner(axon, uid, synapse)))
-
-        get_image_task = asyncio.create_task(stability_api.generate_images_from_text(**args))
-
-        expected_image_b64s = await get_image_task
-        positive_prompt = args["text_prompts"][0].text 
-        negative_prompt = args["text_prompts"][1].text if len(args["text_prompts"]) > 1 else ""
-        if len(expected_image_b64s) > 0:
-            self.update_cache_with_images_and_prompts(
-                expected_image_b64s,  positive_prompt, negative_prompt
-            )
-
-        bt.logging.debug(f"Expecting {len(expected_image_b64s)} image(s) to score")
-
-        results: list[tuple[int, Optional[protocol.GenerateImagesFromText]]] = await asyncio.gather(
-            *query_miners_for_images_tasks
+    async def query_and_score_text_to_image(self, available_uids: Dict[int, bt.axon]):
+        return await self.query_and_score(
+            available_uids,
+            self.get_args_for_text_to_image,
+            protocol.GenerateImagesFromText,
+            stability_api.generate_images_from_text,
         )
-        scores = {}
-        for uid, response_synapse in results:
-            if response_synapse is None or response_synapse.image_b64s is None:
-                continue
 
-            bt.logging.debug(f"Recieved {len(response_synapse.image_b64s)} images")
-            score = (
-                1
-                if response_synapse.image_b64s is not None
-                and len(response_synapse.image_b64s) == len(expected_image_b64s)
-                else 0
-            )
-            scores[uid] = score
-
-        bt.logging.info("scores: {}".format(scores))
-        return scores
-
-    async def query_and_score_image_to_image(self, metagraph: bt.metagraph, available_uids: Dict[int, bt.axon]):
-        bt.logging.debug(f"Scoring image to image for {len(available_uids)} miners.")
-
-        args = await self.get_args_for_image_to_image()
-
-        if args is None:
-            return {}
-
-        get_image_task = asyncio.create_task(stability_api.generate_images_from_image(**args))
-
-        query_miners_for_images_tasks = await self.create_query_img2img_tasks(args, available_uids)
-
-        expected_image_b64s = await get_image_task
-        positive_prompt = args["text_prompts"][0].text 
-        negative_prompt = args["text_prompts"][1].text if len(args["text_prompts"]) > 1 else ""
-        if len(expected_image_b64s) > 0:
-            self.update_cache_with_images_and_prompts(
-                expected_image_b64s,  positive_prompt, negative_prompt
-            )
-
-        results: list[tuple[int, Optional[protocol.GenerateImagesFromImage]]] = await asyncio.gather(
-            *query_miners_for_images_tasks
+    async def query_and_score_image_to_image(self, available_uids: Dict[int, bt.axon]):
+        return await self.query_and_score(
+            available_uids,
+            self.get_args_for_image_to_image,
+            protocol.GenerateImagesFromImage,
+            stability_api.generate_images_from_image,
         )
-        bt.logging.info("Got all images!")
-        scores = {}
-        for uid, response_synapse in results:
-            if response_synapse is None or response_synapse.image_b64s is None:
-                continue
 
-            score = (
-                1
-                if response_synapse.image_b64s is not None
-                and len(response_synapse.image_b64s) == len(expected_image_b64s)
-                else 0
-            )
-            scores[uid] = score
-
-        bt.logging.info("scores: {}".format(scores))
-        return scores
+    async def query_and_score_upscale(self, available_uids):
+        return await self.query_and_score(
+            available_uids, self.get_args_for_upscale, protocol.UpscaleImage, stability_api.upscale_image
+        )
+    
+    async def query_and_score_inpainting(self, available_uids):
+        return await self.query_and_score(
+            available_uids, self.get_args_for_inpainting, protocol.GenerateImagesFromInpainting, stability_api.inpainting
+        )
 
     async def get_positive_and_negative_prompt(self) -> Tuple[str, str]:
         """Get positive and negative prompt from markov generated text."""
