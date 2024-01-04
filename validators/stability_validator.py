@@ -165,8 +165,6 @@ class StabilityValidator(BaseValidator):
 
         text_prompts = self.get_text_prompt_from_positive_and_negative_prompts(positive_prompt, negative_prompt)
 
-        bt.logging.debug(f"Text prompts: {text_prompts}")
-
         cfg_scale = random.choice(CFG_SCALE_VALUES)
         height, width = random.choice(cst.ALLOWED_IMAGE_SIZES)
         samples = random.choice(SAMPLES_VALUES)
@@ -227,8 +225,6 @@ class StabilityValidator(BaseValidator):
 
         expected_image_b64s = await get_image_task
 
-        bt.logging.debug(f"{query_protocol}, {isinstance(query_protocol, protocol.UpscaleImage)}")
-
         if save_to_cache:
             positive_prompt = args["text_prompts"][0].text
             negative_prompt = args["text_prompts"][1].text if len(args["text_prompts"]) > 1 else ""
@@ -288,6 +284,8 @@ class StabilityValidator(BaseValidator):
         return positive_prompt, negative_prompt
 
     def generate_new_prompt(self, prompt):
+        if not prompt:
+            return prompt
         words = prompt.split()
         bigrams = [" ".join(words[i:i+2]) for i in range(len(words)-1)]
         random_bigram = random.choice(bigrams)
@@ -297,7 +295,7 @@ class StabilityValidator(BaseValidator):
             try:
                 varied_text = self.markov_text_generation_model.make_sentence_with_start(beginning=random_bigram)
                 break
-            except markovify.text.ParamError: # if bigram doesn't exist, try another one
+            except (markovify.text.ParamError, KeyError):
                 random_bigram = random.choice(bigrams)
                 attemps += 1
             
