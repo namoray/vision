@@ -111,7 +111,7 @@ async def generate_images_from_image(
     bt.logging.debug(f"cfg_scale: {cfg_scale}")
     data = {
         "init_image": base64.b64decode(image_resized),
-        "image_strength": str(0),
+        "image_strength": str(1.0),
         "init_image_mode": init_image_mode,
         "cfg_scale": str(cfg_scale),
         "samples": str(samples),
