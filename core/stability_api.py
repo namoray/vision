@@ -92,7 +92,6 @@ async def generate_images_from_text(
         for i, image in enumerate(response_json.get("artifacts", [])):
             image_b64s.append(image["base64"])
 
-
         bt.logging.info(f"✅ And from the ashes of text, rose {len(image_b64s)} image(s). nice.")
 
         return image_b64s
@@ -154,6 +153,7 @@ async def generate_images_from_image(
         bt.logging.info(f"✅ Sucesfully generated {len(image_b64s)} image(s) from an image. I rock!")
         return image_b64s
 
+
 async def generate_images_from_inpainting(
     init_image: str,
     text_prompts: List[dc.TextPrompt],
@@ -210,7 +210,7 @@ async def generate_images_from_inpainting(
                 image_b64s.append(image["base64"])
 
         return image_b64s
-    
+
 
 async def upscale_image(
     image: str,

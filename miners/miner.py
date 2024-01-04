@@ -149,7 +149,6 @@ class MinerBoi:
     async def generate_images_from_image(
         self, synapse: protocol.GenerateImagesFromImage
     ) -> protocol.GenerateImagesFromImage:
-
         image_b64s = await stability_api.generate_images_from_image(
             init_image=synapse.init_image,
             text_prompts=synapse.text_prompts,
@@ -162,7 +161,7 @@ class MinerBoi:
             style_preset=synapse.style_preset,
             seed=synapse.seed,
         )
- 
+
         # Remove to minimise data transferred
         synapse.init_image = None
         synapse.image_b64s = image_b64s
@@ -172,7 +171,6 @@ class MinerBoi:
     async def generate_images_from_inpainting(
         self, synapse: protocol.GenerateImagesFromInpainting
     ) -> protocol.GenerateImagesFromInpainting:
-
         image_b64s = await stability_api.generate_images_from_inpainting(
             init_image=synapse.init_image,
             mask_image=synapse.mask_image,
@@ -194,10 +192,7 @@ class MinerBoi:
 
         return synapse
 
-    
-
     async def upscale_image(self, synapse: protocol.UpscaleImage) -> protocol.UpscaleImage:
-
         image_b64s = await stability_api.upscale_image(
             image=synapse.image,
             height=synapse.height,
@@ -377,8 +372,10 @@ class MinerBoi:
 
     async def blacklist_upscale_image(self, synapse: protocol.UpscaleImage) -> Tuple[bool, str]:
         return await self.blacklist(synapse)
-    
-    async def blacklist_generate_images_from_inpainting(self, synapse: protocol.GenerateImagesFromInpainting) -> Tuple[bool, str]:
+
+    async def blacklist_generate_images_from_inpainting(
+        self, synapse: protocol.GenerateImagesFromInpainting
+    ) -> Tuple[bool, str]:
         return await self.blacklist(synapse)
 
     async def priority(self, synapse: T) -> float:

@@ -196,7 +196,7 @@ class StabilityValidator(BaseValidator):
             return {"image": random_image, "height": rand_n}
         else:
             return {"image": random_image, "width": rand_n}
-    
+
     async def get_args_for_inpainting(self):
         ...
 
@@ -206,7 +206,7 @@ class StabilityValidator(BaseValidator):
         get_args: Callable[[], Coroutine],
         query_protocol: bt.Synapse,
         stability_api_function: Callable[..., Coroutine],
-        save_to_cache: bool = True
+        save_to_cache: bool = True,
     ) -> Dict[int, int]:
         task_type = query_protocol.__name__
         bt.logging.debug(f"Scoring for {len(available_uids)} miners on task type: {task_type}.")
@@ -267,18 +267,25 @@ class StabilityValidator(BaseValidator):
 
     async def query_and_score_upscale(self, available_uids):
         return await self.query_and_score(
-            available_uids, self.get_args_for_upscale, protocol.UpscaleImage, stability_api.upscale_image, save_to_cache=False
+            available_uids,
+            self.get_args_for_upscale,
+            protocol.UpscaleImage,
+            stability_api.upscale_image,
+            save_to_cache=False,
         )
-    
+
     async def query_and_score_inpainting(self, available_uids):
         return await self.query_and_score(
-            available_uids, self.get_args_for_inpainting, protocol.GenerateImagesFromInpainting, stability_api.inpainting
+            available_uids,
+            self.get_args_for_inpainting,
+            protocol.GenerateImagesFromInpainting,
+            stability_api.inpainting,
         )
 
     async def get_positive_and_negative_prompt(self) -> Tuple[str, str]:
         """Get positive and negative prompt from markov generated text."""
         positive_prompt = self.markov_text_generation_model.make_sentence(min_words=1, max_words=100)
-        
+
         negative_prompt = self.markov_text_generation_model.make_sentence(min_words=1, max_words=20)
 
         return positive_prompt, negative_prompt
@@ -287,7 +294,7 @@ class StabilityValidator(BaseValidator):
         if not prompt:
             return prompt
         words = prompt.split()
-        bigrams = [" ".join(words[i:i+2]) for i in range(len(words)-1)]
+        bigrams = [" ".join(words[i : i + 2]) for i in range(len(words) - 1)]
         random_bigram = random.choice(bigrams)
         attemps = 0
         varied_text = prompt
@@ -298,7 +305,7 @@ class StabilityValidator(BaseValidator):
             except (markovify.text.ParamError, KeyError):
                 random_bigram = random.choice(bigrams)
                 attemps += 1
-            
+
         return varied_text
 
     async def get_refined_positive_and_negative_prompts(self, positive_prompt: str, negative_prompt: str):

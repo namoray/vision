@@ -52,7 +52,6 @@ class GenerateImagesFromImage(bt.Synapse):
         return self.image_b64s
 
 
-
 class MaskSource(str, Enum):
     MASK_IMAGE_WHITE = "MASK_IMAGE_WHITE"
     MASK_IMAGE_BLACK = "MASK_IMAGE_BLACK"
