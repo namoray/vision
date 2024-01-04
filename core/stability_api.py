@@ -107,6 +107,8 @@ async def generate_images_from_image(
 ) -> List[str]:
     image_resized = resize_image(init_image)
     bt.logging.debug("Guess who just resized an image!")
+    bt.logging.debug(f"Image strength: {image_strength}")
+    bt.logging.debug(f"cfg_scale: {cfg_scale}")
     data = {
         "init_image": base64.b64decode(image_resized),
         "image_strength": str(image_strength),

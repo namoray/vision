@@ -215,7 +215,7 @@ class MinerBoi:
                 bt.logging.error(f" USER ERROR: {synapse.error_message}")
                 return synapse
             image_cv2 = utils.convert_b64_to_cv2_img(synapse.image_b64)
-            bt.logging.info("Image not found in cache, gonsta store it now")
+            bt.logging.info("Image not found in cache, gonsta store it now (this is normal)")
             self.cache.set(image_uuid, image_cv2)
             synapse.image_uuid = image_uuid
 
