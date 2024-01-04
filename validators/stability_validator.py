@@ -9,7 +9,6 @@ from uuid import uuid4
 import numpy as np
 import diskcache
 import bittensor as bt
-from openai import OpenAI
 from core import stability_api, utils, dataclasses as dc, constants as cst
 from validators.base_validator import BaseValidator
 from template import protocol

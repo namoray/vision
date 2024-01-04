@@ -64,7 +64,7 @@ class GenerateImagesFromInpainting(bt.Synapse):
 
     init_image: Optional[str] = Field(..., description="The base64 encoded image", title="init_image")
     text_prompts: List[dc.TextPrompt] = Field([], description="Prompts for the image generation", title="text_prompts")
-    mask_source: MaskSource = Field(..., description="The base64 encoded mask", title="mask_source")
+    mask_source: Optional[MaskSource] = Field(None, description="The base64 encoded mask", title="mask_source")
     mask_image: Optional[str] = Field(None, description="The base64 encoded mask", title="mask_source")
     cfg_scale: int = Field(cst.DEFAULT_CFG_SCALE, description="Scale for the configuration")
     samples: int = Field(cst.DEFAULT_SAMPLES, description="Number of sample images to generate")

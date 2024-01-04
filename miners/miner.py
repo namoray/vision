@@ -98,6 +98,9 @@ class MinerBoi:
         ).attach(
             forward_fn=self.upscale_image,
             blacklist_fn=self.blacklist_upscale_image,
+        ).attach(
+            forward_fn=self.generate_images_from_inpainting,
+            blacklist_fn=self.blacklist_generate_images_from_inpainting,
         )
 
         bt.logging.info(
@@ -166,6 +169,35 @@ class MinerBoi:
         synapse.image_b64s = image_b64s
 
         return synapse
+
+    async def generate_images_from_inpainting(
+        self, synapse: protocol.GenerateImagesFromInpainting
+    ) -> protocol.GenerateImagesFromInpainting:
+        
+        bt.logging.debug(f"Here and about to generate an image")
+
+        image_b64s = await stability_api.generate_images_from_inpainting(
+            init_image=synapse.init_image,
+            mask_image=synapse.mask_image,
+            mask_source=synapse.mask_source,
+            text_prompts=synapse.text_prompts,
+            cfg_scale=synapse.cfg_scale,
+            samples=synapse.samples,
+            sampler=synapse.sampler,
+            steps=synapse.steps,
+            style_preset=synapse.style_preset,
+            seed=synapse.seed,
+        )
+
+        # Remove to minimise data transferred
+        synapse.init_image = None
+        synapse.mask_image = None
+        synapse.mask_source = None
+        synapse.image_b64s = image_b64s
+
+        return synapse
+
+    
 
     async def upscale_image(self, synapse: protocol.UpscaleImage) -> protocol.UpscaleImage:
         bt.logging.debug(f"Here and about to upscale an image")
