@@ -89,6 +89,9 @@ async def generate_images_from_text(
         for i, image in enumerate(response_json.get("artifacts", [])):
             image_b64s.append(image["base64"])
 
+
+        bt.logging.info(f"✅ And from the ashes of text, rose {len(image_b64s)} image(s). nice.")
+
         return image_b64s
 
 
@@ -130,8 +133,6 @@ async def generate_images_from_image(
         data["sampler"] = sampler
 
     bt.logging.debug("Sending request!")
-    bt.logging.debug("data: ", {k: v for k, v in data.items() if k != "init_image"})
-    bt.logging.debug("engine_id: ", engine_id)
     async with aiohttp.ClientSession() as session:
         async with session.post(
             f"{API_HOST}/v1/generation/{engine_id}/image-to-image",
@@ -148,6 +149,7 @@ async def generate_images_from_image(
             for i, image in enumerate(response_json.get("artifacts", [])):
                 image_b64s.append(image["base64"])
 
+        bt.logging.info(f"✅ Sucesfully generated {len(image_b64s)} image(s) from an image. I rock!")
         return image_b64s
 
 
@@ -178,5 +180,7 @@ async def upscale_image(
             response_json = await response.json()
             for i, image in enumerate(response_json.get("artifacts", [])):
                 image_b64s.append(image["base64"])
+
+        bt.logging.info(f"✅ I've only gone an upscaled {len(image_b64s)} image(s) haven't I")
 
         return image_b64s
