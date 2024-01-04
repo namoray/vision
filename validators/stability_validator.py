@@ -197,12 +197,12 @@ class StabilityValidator(BaseValidator):
 
         if base == 1:
             height = random.randint(base, max_number)
-            width = None
+            return {"image": random_image, "height": height}
         else:
-            height = None
             width = random.randint(base, max_number)
+            {"image": random_image, "width": width}
         
-        return {"image": random_image, "height": height, "width": width}
+        
         
     
     async def create_query_img2img_tasks(self, args, available_uids):
