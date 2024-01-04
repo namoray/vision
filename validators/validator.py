@@ -282,8 +282,14 @@ async def query_and_score_miners(
 
             bt.logging.info("Scoring text_to_image now...")
 
-            scores = await stability_vali.query_and_score_image_to_image(metagraph, available_uids)
+            # scores = await stability_vali.query_and_score_image_to_image(metagraph, available_uids)
 
+
+            ########### Scoring upscale ###########
+
+            bt.logging.info("Scoring Upscaler now...")
+
+            scores = await stability_vali.query_and_score_upscale(available_uids)
             ########### SCORING SEGMENTATION WITHOUT THE CACHE ############
 
             # bt.logging.info(

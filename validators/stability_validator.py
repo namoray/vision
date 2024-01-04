@@ -109,20 +109,6 @@ class StabilityValidator(BaseValidator):
         self.stability_cache[key] = (compressed_images_b64s, positive_prompt, negative_prompt)
         self.list_of_cache_keys.append(key)
 
-    async def query_miner(self, axon: bt.axon, uid: int, syn: bt.Synapse) -> Tuple[int, bt.Synapse]:
-        try:
-            responses = await self.dendrite(
-                [axon],
-                syn,
-                deserialize=False,
-                timeout=self.timeout,
-                streaming=self.streaming,
-            )
-            return await self.handle_response(uid, responses)
-
-        except Exception as e:
-            bt.logging.error(f"Exception during query for uid {uid}: {e}")
-            return uid, None
 
     def get_markov_text_for_prompt(self):
         return self.markov_text_generation_model.make_short_sentence(max_chars=200)
@@ -199,6 +185,25 @@ class StabilityValidator(BaseValidator):
             "style_preset": style_preset,
         }
         return {"text_prompts": text_prompts, **hyper_parameters}
+
+    async def get_args_for_upscale(self):
+        x_dim = random.randint(200, 1920)
+        y_dim = random.randint(200, 1920)
+
+        random_image = await utils.get_random_image(x_dim, y_dim)
+
+        base = random.choice([0,1 ])
+        max_number = 2048 ** 2 // (x_dim * y_dim)
+
+        if base == 1:
+            height = random.randint(base, max_number)
+            width = None
+        else:
+            height = None
+            width = random.randint(base, max_number)
+        
+        return {"init_image": random_image, "height": height, "width": width}
+        
     
     async def create_query_img2img_tasks(self, args, available_uids):
         query_miners_for_images_tasks = []
@@ -209,6 +214,38 @@ class StabilityValidator(BaseValidator):
             await asyncio.sleep(1)
         
         return query_miners_for_images_tasks
+    
+    async def query_and_score_upscale(self, available_uids: Dict[int, bt.axon]):
+        bt.logging.debug(f"Scoring upscale for {len(available_uids)} miners.")
+
+        args = await self.get_args_for_upscale()
+
+        query_miners_for_images_tasks = []
+        for uid, axon in available_uids.items():
+            synapse = protocol.UpscaleImage(**args)
+            query_miners_for_images_tasks.append(asyncio.create_task(self.query_miner(axon, uid, synapse)))
+
+        get_image_task = asyncio.create_task(stability_api.upscale_image(**args))
+
+        expected_image_b64s = await get_image_task
+        results = await asyncio.gather(*query_miners_for_images_tasks)
+
+        scores = {}
+        for uid, response_synapse in results:
+            if response_synapse is None or response_synapse.image_b64s is None:
+                continue
+
+            score = (
+                1
+                if response_synapse.image_b64s is not None
+                and len(response_synapse.image_b64s) == len(expected_image_b64s)
+                else 0
+            )
+            scores[uid] = score
+
+        bt.logging.info("scores: {}".format(scores))
+        return scores
+
 
     async def query_and_score_text_to_image(self, metagraph: bt.metagraph, available_uids: Dict[int, bt.axon]):
         bt.logging.debug(f"Scoring text to images for {len(available_uids)} miners.")

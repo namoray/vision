@@ -154,7 +154,7 @@ async def upscale_image(
 ) -> List[str]:
 
     data = {
-        "init_image": base64.b64decode(init_image),
+        "image": base64.b64decode(init_image),
         "height": str(height),
         "width": str(width),
     }
