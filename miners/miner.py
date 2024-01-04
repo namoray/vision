@@ -162,7 +162,7 @@ class MinerBoi:
             style_preset=synapse.style_preset,
             seed=synapse.seed,
         )
-
+ 
         # Remove to minimise data transferred
         synapse.init_image = None
         synapse.image_b64s = image_b64s
