@@ -28,7 +28,7 @@ async def get_random_image(x_dim: int, y_dim: int) -> str:
         str: The base64 encoded representation of the generated image.
     """
     async with aiohttp.ClientSession() as session:
-        url = f"https://source.unsplash.com/random/{x_dim}x{y_dim}"
+        url = f"https://picsum.photos/{x_dim}/{y_dim}"
         async with session.get(url) as resp:
             data = await resp.read()
 
