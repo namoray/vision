@@ -52,7 +52,7 @@ class GenerateImagesFromImage(bt.Synapse):
 
 class UpscaleImage(bt.Synapse):
 
-    image: Optional[str] = Field(..., description="The base64 encoded image", title="init_image")
+    image: Optional[str] = Field(..., description="The base64 encoded image", title="image")
     height : Optional[int] = Field(None, description="Height of the upscaled image")
     width : Optional[int] = Field(None, description="Width of the upscaled image")
 

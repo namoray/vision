@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import base64
 import copy
+from email.mime import image
 import io
 import threading
 import time
@@ -174,13 +175,13 @@ class MinerBoi:
         bt.logging.debug(f"Here and about to upscale an image")
         
         image_b64s = await stability_api.upscale_image(
-            init_image=synapse.init_image,
+            image=synapse.image,
             height = synapse.height,
             width = synapse.width,
         )
 
         # Remove to minimise data transferred
-        synapse.init_image = None
+        synapse.image = None
         synapse.image_b64s = image_b64s
 
         return synapse
