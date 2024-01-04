@@ -2,11 +2,12 @@ import argparse
 import asyncio
 import base64
 import copy
+from email.mime import image
 import io
 import threading
 import time
 import traceback
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, TypeVar
 
 import bittensor as bt
 import clip
@@ -19,9 +20,13 @@ from segment_anything import SamPredictor, sam_model_registry
 from core import constants as cst
 from core import utils
 from miners.config import check_config, get_config
-from template.protocol import ClipEmbeddingImages, ClipEmbeddingTexts, IsAlive, SegmentingSynapse
+from template import protocol
+from core import stability_api
 
 # import base miner class which takes care of most of the boilerplate
+
+
+T = TypeVar("T", bound=bt.Synapse)
 
 
 class MinerBoi:
@@ -38,6 +43,8 @@ class MinerBoi:
 
         self.wallet = wallet or bt.wallet(config=self.config)
         bt.logging.info(f"Wallet {self.wallet}")
+
+        bt.logging.info(f"Config: {self.config}")
 
         self.subtensor = subtensor or bt.subtensor(config=self.config)
         bt.logging.info(f"Subtensor: {self.subtensor}")
@@ -75,14 +82,27 @@ class MinerBoi:
             blacklist_fn=self.blacklist_segmentation,
         ).attach(
             forward_fn=self._is_alive,
-            blacklist_fn=self.blacklist_isalive,
+            blacklist_fn=self.blacklist_is_alive,
         ).attach(
             forward_fn=self.get_image_embeddings,
             blacklist_fn=self.blacklist_image_embeddings,
         ).attach(
             forward_fn=self.get_text_embeddings,
             blacklist_fn=self.blacklist_text_embeddings,
+        ).attach(
+            forward_fn=self.generate_images_from_text,
+            blacklist_fn=self.blacklist_generate_images_from_text,
+        ).attach(
+            forward_fn=self.generate_images_from_image,
+            blacklist_fn=self.blacklist_generate_images_from_image,
+        ).attach(
+            forward_fn=self.upscale_image,
+            blacklist_fn=self.blacklist_upscale_image,
+        ).attach(
+            forward_fn=self.generate_images_from_inpainting,
+            blacklist_fn=self.blacklist_generate_images_from_inpainting,
         )
+
         bt.logging.info(
             f"Serving attached axons on network:"
             f"{self.config.subtensor.chain_endpoint} with netuid: {self.config.netuid}"
@@ -100,7 +120,7 @@ class MinerBoi:
 
         self.cache = diskcache.Cache("images_cache", size_limit=cst.MINER_CACHE_SIZE)
 
-    def _is_alive(self, synapse: IsAlive) -> IsAlive:
+    def _is_alive(self, synapse: protocol.IsAlive) -> protocol.IsAlive:
         bt.logging.info("I'm alive!")
         synapse.answer = "alive"
         return synapse
@@ -109,16 +129,92 @@ class MinerBoi:
         parser = argparse.ArgumentParser(description="Streaming Miner Configs")
         return bt.config(parser)
 
-    async def get_segmentation(self, synapse: SegmentingSynapse) -> SegmentingSynapse:
+    async def generate_images_from_text(
+        self, synapse: protocol.GenerateImagesFromText
+    ) -> protocol.GenerateImagesFromText:
+        image_b64s = await stability_api.generate_images_from_text(
+            text_prompts=synapse.text_prompts,
+            cfg_scale=synapse.cfg_scale,
+            height=synapse.height,
+            width=synapse.width,
+            samples=synapse.samples,
+            steps=synapse.steps,
+            style_preset=synapse.style_preset,
+            seed=synapse.seed,
+        )
+
+        synapse.image_b64s = image_b64s
+        return synapse
+
+    async def generate_images_from_image(
+        self, synapse: protocol.GenerateImagesFromImage
+    ) -> protocol.GenerateImagesFromImage:
+        image_b64s = await stability_api.generate_images_from_image(
+            init_image=synapse.init_image,
+            text_prompts=synapse.text_prompts,
+            cfg_scale=synapse.cfg_scale,
+            samples=synapse.samples,
+            sampler=synapse.sampler,
+            steps=synapse.steps,
+            init_image_mode=synapse.init_image_mode,
+            image_strength=synapse.image_strength,
+            style_preset=synapse.style_preset,
+            seed=synapse.seed,
+        )
+
+        # Remove to minimise data transferred
+        synapse.init_image = None
+        synapse.image_b64s = image_b64s
+
+        return synapse
+
+    async def generate_images_from_inpainting(
+        self, synapse: protocol.GenerateImagesFromInpainting
+    ) -> protocol.GenerateImagesFromInpainting:
+        image_b64s = await stability_api.generate_images_from_inpainting(
+            init_image=synapse.init_image,
+            mask_image=synapse.mask_image,
+            mask_source=synapse.mask_source,
+            text_prompts=synapse.text_prompts,
+            cfg_scale=synapse.cfg_scale,
+            samples=synapse.samples,
+            sampler=synapse.sampler,
+            steps=synapse.steps,
+            style_preset=synapse.style_preset,
+            seed=synapse.seed,
+        )
+
+        # Remove to minimise data transferred
+        synapse.init_image = None
+        synapse.mask_image = None
+        synapse.mask_source = None
+        synapse.image_b64s = image_b64s
+
+        return synapse
+
+    async def upscale_image(self, synapse: protocol.UpscaleImage) -> protocol.UpscaleImage:
+        image_b64s = await stability_api.upscale_image(
+            image=synapse.image,
+            height=synapse.height,
+            width=synapse.width,
+        )
+
+        # Remove to minimise data transferred
+        synapse.image = None
+        synapse.image_b64s = image_b64s
+
+        return synapse
+
+    async def get_segmentation(self, synapse: protocol.SegmentingSynapse) -> protocol.SegmentingSynapse:
         """
         Generates the masks for an image, points, labels & boxes. This function is the core.
         You know you love it.
 
         Parameters:
-        - synapse (SegmentingSynapse)
+        - synapse (protocol.SegmentingSynapse)
 
         Returns:
-        - synapse (SegmentingSynapse): Now with el masks in there
+        - synapse (protocol.SegmentingSynapse): Now with el masks in there
         """
         bt.logging.debug(f"Gonna generate some masks like the good little miner I am")
 
@@ -137,7 +233,7 @@ class MinerBoi:
                 bt.logging.error(f" USER ERROR: {synapse.error_message}")
                 return synapse
             image_cv2 = utils.convert_b64_to_cv2_img(synapse.image_b64)
-            bt.logging.info("Image not found in cache, gonsta store it now")
+            bt.logging.info("Image not found in cache, gonsta store it now (this is normal)")
             self.cache.set(image_uuid, image_cv2)
             synapse.image_uuid = image_uuid
 
@@ -203,7 +299,7 @@ class MinerBoi:
 
         return synapse
 
-    async def get_image_embeddings(self, synapse: ClipEmbeddingImages) -> ClipEmbeddingImages:
+    async def get_image_embeddings(self, synapse: protocol.ClipEmbeddingImages) -> protocol.ClipEmbeddingImages:
         if synapse.image_b64s is None:
             synapse.error_message = "❌ You must supply the images that you want to embed"
             bt.logging.warning(f"USER ERROR: {synapse.error_message}, synapse: {synapse}")
@@ -226,7 +322,7 @@ class MinerBoi:
 
         return synapse
 
-    async def get_text_embeddings(self, synapse: ClipEmbeddingTexts) -> ClipEmbeddingTexts:
+    async def get_text_embeddings(self, synapse: protocol.ClipEmbeddingTexts) -> protocol.ClipEmbeddingTexts:
         if synapse.text_prompts is None:
             synapse.error_message = "❌ You must supply the text prompts that you want to embed"
             bt.logging.warning(f"USER ERROR: {synapse.error_message}, synapse: {synapse}")
@@ -243,12 +339,12 @@ class MinerBoi:
         synapse.text_embeddings = list_text_embeddings
         bt.logging.info(f"✅ Generated {len(list_text_embeddings)} text embedding(s)? Completed it mate")
 
-        # # Removing this to not transfer it all back over the web again.
+        # Removing this to not transfer it all back over the web again.
         synapse.text_prompts = None
 
         return synapse
 
-    async def blacklist_isalive(self, synapse: IsAlive) -> Tuple[bool, str]:
+    async def blacklist(self, synapse: T) -> Tuple[bool, str]:
         return False, synapse.dendrite.hotkey
         if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
             bt.logging.trace(f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}")
@@ -256,64 +352,58 @@ class MinerBoi:
         bt.logging.trace(f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}")
         return False, synapse.dendrite.hotkey
 
-    async def blacklist_segmentation(self, synapse: SegmentingSynapse) -> Tuple[bool, str]:
-        if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
-            bt.logging.trace(f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}")
-            return True, synapse.dendrite.hotkey
-        bt.logging.trace(f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}")
-        return False, synapse.dendrite.hotkey
+    async def blacklist_is_alive(self, synapse: protocol.IsAlive) -> Tuple[bool, str]:
+        return await self.blacklist(synapse)
 
-    async def blacklist_image_embeddings(self, synapse: ClipEmbeddingImages) -> Tuple[bool, str]:
-        return False, synapse.dendrite.hotkey
-        if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
-            bt.logging.trace(f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}")
-            return True, synapse.dendrite.hotkey
-        bt.logging.trace(f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}")
-        return False, synapse.dendrite.hotkey
+    async def blacklist_segmentation(self, synapse: protocol.SegmentingSynapse) -> Tuple[bool, str]:
+        return await self.blacklist(synapse)
 
-    async def blacklist_text_embeddings(self, synapse: ClipEmbeddingTexts) -> Tuple[bool, str]:
-        return False, synapse.dendrite.hotkey
-        if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
-            bt.logging.trace(f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}")
-            return True, synapse.dendrite.hotkey
-        bt.logging.trace(f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}")
-        return False, synapse.dendrite.hotkey
+    async def blacklist_image_embeddings(self, synapse: protocol.ClipEmbeddingImages) -> Tuple[bool, str]:
+        return await self.blacklist(synapse)
 
-    async def priority_isalive(self, synapse: IsAlive) -> float:
+    async def blacklist_text_embeddings(self, synapse: protocol.ClipEmbeddingTexts) -> Tuple[bool, str]:
+        return await self.blacklist(synapse)
+
+    async def blacklist_generate_images_from_text(self, synapse: protocol.GenerateImagesFromText) -> Tuple[bool, str]:
+        return await self.blacklist(synapse)
+
+    async def blacklist_generate_images_from_image(self, synapse: protocol.GenerateImagesFromImage) -> Tuple[bool, str]:
+        return await self.blacklist(synapse)
+
+    async def blacklist_upscale_image(self, synapse: protocol.UpscaleImage) -> Tuple[bool, str]:
+        return await self.blacklist(synapse)
+
+    async def blacklist_generate_images_from_inpainting(
+        self, synapse: protocol.GenerateImagesFromInpainting
+    ) -> Tuple[bool, str]:
+        return await self.blacklist(synapse)
+
+    async def priority(self, synapse: T) -> float:
         """
         The priority function determines the order in which requests are handled.
         """
         caller_uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
-        prirority = float(self.metagraph.S[caller_uid])
-        bt.logging.trace(f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority)
-        return prirority
+        priority = float(self.metagraph.S[caller_uid])
+        bt.logging.trace(f"Prioritizing {synapse.dendrite.hotkey} with value: ", priority)
+        return priority
 
-    async def priority_segmentation(self, synapse: SegmentingSynapse) -> float:
-        """
-        The priority function determines the order in which requests are handled.
-        """
-        caller_uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
-        prirority = float(self.metagraph.S[caller_uid])
-        bt.logging.trace(f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority)
-        return prirority
+    async def priority_isalive(self, synapse: protocol.IsAlive) -> float:
+        return await self.priority(synapse)
 
-    async def priority_image_embeddings(self, synapse: ClipEmbeddingImages) -> float:
-        """
-        The priority function determines the order in which requests are handled.
-        """
-        caller_uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
-        prirority = float(self.metagraph.S[caller_uid])
-        bt.logging.trace(f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority)
-        return prirority
+    async def priority_segmentation(self, synapse: protocol.SegmentingSynapse) -> float:
+        return await self.priority(synapse)
 
-    async def priority_text_embeddings(self, synapse: ClipEmbeddingTexts) -> float:
-        """
-        The priority function determines the order in which requests are handled.
-        """
-        caller_uid = self.metagraph.hotkeys.index(synapse.dendrite.hotkey)
-        prirority = float(self.metagraph.S[caller_uid])
-        bt.logging.trace(f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority)
-        return prirority
+    async def priority_image_embeddings(self, synapse: protocol.ClipEmbeddingImages) -> float:
+        return await self.priority(synapse)
+
+    async def priority_text_embeddings(self, synapse: protocol.ClipEmbeddingTexts) -> float:
+        return await self.priority(synapse)
+
+    async def priority_generate_images_from_text(self, synapse: protocol.GenerateImagesFromText) -> float:
+        return await self.priority(synapse)
+
+    async def priority_generate_images_from_image(self, synapse: protocol.GenerateImagesFromImage) -> float:
+        return await self.priority(synapse)
 
     def run(self):
         if not self.subtensor.is_hotkey_registered(
@@ -410,4 +500,4 @@ if __name__ == "__main__":
     with MinerBoi() as miner:
         while True:
             bt.logging.info("Miner running... you can hopefully relax now :)")
-            time.sleep(60)
+            time.sleep(240)

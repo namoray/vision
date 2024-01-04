@@ -9,10 +9,10 @@ from typing import Dict, List, Tuple
 import bittensor as bt
 import clip
 import diskcache
-import markovify
+
 import numpy as np
 import torch
-from datasets import load_dataset
+
 from PIL import Image
 
 from template.protocol import ClipEmbeddingImages, ClipEmbeddingTexts
@@ -26,9 +26,6 @@ class ClipValidator(BaseValidator):
         self.cache = diskcache.Cache(
             "validator_cache",
         )
-        dataset = load_dataset("multi-train/coco_captions_1107")
-        text = [i["query"] for i in dataset["train"]]
-        self.markov_text_generation_model = markovify.Text(" ".join(text))
 
         self.clip_model, self.clip_preprocess = clip.load("ViT-B/32", device=self.device)
 

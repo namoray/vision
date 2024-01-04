@@ -6,3 +6,6 @@ else
     echo "$FILE does not exist, starting download."
     curl -O $URL
 fi
+
+
+# huggingface-cli download TheBloke/phi-2-GGUF phi-2.Q4_K_M.gguf --local-dir . --local-dir-use-symlinks False

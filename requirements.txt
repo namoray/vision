@@ -13,3 +13,5 @@ git+https://github.com/openai/CLIP.git
 datasets==2.15.*
 markovify==0.9.*
 python-Levenshtein==0.23.*
+aiohttp
+python-dotenv

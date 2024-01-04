@@ -18,6 +18,7 @@ from core import utils
 from template.protocol import IsAlive
 from validators.clip_validator import ClipValidator
 from validators.segmentation_validator import SegmentationValidator
+from validators.stability_validator import StabilityValidator
 
 moving_average_scores = torch.zeros(256)
 wandb_runs = {}
@@ -97,7 +98,8 @@ def initialize_components(config):
 def initialize_validators(vali_config):
     segmentation_vali = SegmentationValidator(**vali_config)
     clip_vali = ClipValidator(**vali_config)
-    return segmentation_vali, clip_vali
+    stability_vali = StabilityValidator(**vali_config)
+    return segmentation_vali, clip_vali, stability_vali
 
 
 async def check_uid(dendrite: bt.dendrite, axon: bt.axon, uid: int) -> Union[bt.axon, None]:
@@ -120,8 +122,9 @@ async def get_available_uids(dendrite: bt.dendrite, metagraph: bt.metagraph) -> 
     tasks = {uid.item(): check_uid(dendrite, metagraph.axons[uid.item()], uid.item()) for uid in metagraph.uids}
     results = await asyncio.gather(*tasks.values())
 
-    # Create a dictionary of UID to axon info for active UIDs
-    available_uids = {uid: axon_info for uid, axon_info in zip(tasks.keys(), results) if axon_info is not None}
+    key_result_pairs = list(zip(tasks.keys(), results))
+    random.shuffle(key_result_pairs)
+    available_uids = {uid: axon_info for uid, axon_info in key_result_pairs if axon_info is not None}
 
     return available_uids
 
@@ -131,7 +134,7 @@ def set_weights(
 ) -> None:
     global moving_average_scores
 
-    alpha = 0.2
+    alpha = 0.1
     moving_average_scores = alpha * scores + (1 - alpha) * moving_average_scores
 
     uids_data = metagraph.uids.data
@@ -255,6 +258,7 @@ async def query_and_score_miners(
 ):
     segmenting_vali: SegmentationValidator = validators[0]
     clip_vali: ClipValidator = validators[1]
+    stability_vali: StabilityValidator = validators[2]
     while True:
         try:
             hotkeys_to_uids = utils.get_hotkeys_to_uids(metagraph)
@@ -267,107 +271,172 @@ async def query_and_score_miners(
 
             images_with_labels, miners_and_image_b64_labels = await get_random_images(uids=available_uids)
 
-            torch.cuda.empty_cache()
+            random_number_to_choose_scoring_func = random.random()
 
-            ########### SCORING WITHOUT THE CACHE ############
-
-            bt.logging.info(
-                f"Scoring miners with image b64 now! We have {len(images_with_labels)} images to score, for {len(miners_and_image_b64_labels)} miners"
-            )
-            (
-                segmentation_scores,
-                miner_uids_to_image_uuid,
-            ) = await segmenting_vali.score_miners_no_image_uuid(
-                metagraph, images_with_labels, miners_and_image_b64_labels
-            )
-
-            miner_hotkey_to_image_uuid = {
-                uids_to_hotkeys[uid]: image_uuid for uid, image_uuid in miner_uids_to_image_uuid.items()
-            }
-            bt.logging.info(f"✅scores from non cache part: {segmentation_scores}")
-            total_scores = utils.update_total_scores(total_scores, segmentation_scores, weight=0.5)
-
-            ############ SCORING WITHOUT THE CACHE ############
-
-            bt.logging.info("Scoring without the cache now...")
-
-            miner_hotkeys_to_image_uuid_and_image = segmenting_vali.update_and_clear_and_fetch_uuid_from_cache(
-                miner_hotkey_to_image_uuid,
-                images_with_labels,
-                miners_and_image_b64_labels,
-                hotkeys_to_uids,
-            )
-
-            amount_of_times_to_test_each_hotkey = random.choices(
-                cst.POSSIBLE_VALUES_TO_TEST_EACH_HOTKEY,
-                cst.WEIGHTS_FOR_NUMBER_OF_TIMES_TO_TEST_EACH_HOTKEY,
-                k=1,
-            )[0]
-
-            tasks = [
-                bound_score_cache_responses_for_hotkey(
-                    hotkey,
-                    miner_hotkeys_to_image_uuid_and_image[hotkey],
-                    amount_of_times_to_test_each_hotkey,
-                    segmenting_vali,
+            if random_number_to_choose_scoring_func < 0.05:
+                scores = await score_text_to_image(available_uids, stability_vali)
+                total_scores = utils.update_total_scores(total_scores, scores, weight=0.02)
+            elif random_number_to_choose_scoring_func < 0.10:
+                scores = await score_image_to_image(available_uids, stability_vali)
+                total_scores = utils.update_total_scores(total_scores, scores, weight=0.02)
+            elif random_number_to_choose_scoring_func < 0.12:
+                scores = await score_upscale(available_uids, stability_vali)
+                total_scores = utils.update_total_scores(total_scores, scores, weight=0.02)
+            else:
+                (
+                    segmentation_scores,
+                    cache_scores,
+                    image_embedding_scores,
+                    text_embedding_scores,
+                ) = await score_segmentation_and_embeddings(
                     metagraph,
+                    available_uids,
+                    clip_vali,
+                    segmenting_vali,
+                    miners_and_image_b64_labels,
+                    images_with_labels,
+                    uids_to_hotkeys,
                     hotkeys_to_uids,
                 )
-                for hotkey in miner_hotkeys_to_image_uuid_and_image
-            ]
+                total_scores = utils.update_total_scores(total_scores, segmentation_scores, weight=0.25)
+                total_scores = utils.update_total_scores(total_scores, cache_scores, weight=0.25)
+                total_scores = utils.update_total_scores(total_scores, image_embedding_scores, weight=0.25)
+                total_scores = utils.update_total_scores(total_scores, text_embedding_scores, weight=0.25)
 
-            average_scores_and_times = await asyncio.gather(*tasks)
-            time_weighted_scores = utils.calculate_time_weighted_scores(average_scores_and_times)
-
-            scores: Dict[int, float] = {}
-            for hotkey, time_weighted_score in time_weighted_scores:
-                uid = hotkeys_to_uids[hotkey]
-                scores[uid] = time_weighted_score
-
-            bt.logging.info(f"✅ scores from cache part: {scores}")
-
-            total_scores = utils.update_total_scores(total_scores, scores, weight=0.5)
-
-            torch.cuda.empty_cache()
-
-            ############ SCORING IMAGE EMBEDDINGS ############
-
-            bt.logging.info("Scoring the image embeddings now...")
-
-            image_b64s = list(images_with_labels.values())
-            clip_image_embedding_scores = await clip_vali.get_scores_for_image_embeddings(
-                image_b64s, metagraph, available_uids
-            )
-
-            bt.logging.info(f"✅ scores from image embedding part: {clip_image_embedding_scores}")
-
-            total_scores = utils.update_total_scores(total_scores, clip_image_embedding_scores, weight=0.25)
-
-            torch.cuda.empty_cache()
-
-            ############ SCORING TEXT EMBEDDINGS ############
-
-            bt.logging.info("Scoring the text embeddings now...")
-
-            clip_text_embedding_scores = await clip_vali.get_scores_for_text_embeddings(metagraph, available_uids)
-
-            bt.logging.info(f"✅ scores from text embedding part: {clip_text_embedding_scores}")
-
-            total_scores = utils.update_total_scores(total_scores, clip_text_embedding_scores, weight=0.25)
-
-            torch.cuda.empty_cache()
-
-            bt.logging.info("Updating weights !")
             update_weights(total_scores, config, subtensor, wallet, metagraph)
 
-            bt.logging.info("Bout to sleep for a bit, done scoring for now :)")
-
-            torch.cuda.empty_cache()
-            await asyncio.sleep(random.random() * 60)
+            await asyncio.sleep(random.random() * 20)
 
         except Exception as e:
             bt.logging.error(f"General exception: {e}\n{traceback.format_exc()}")
             await asyncio.sleep(100)
+
+
+async def score_text_to_image(
+    available_uids: Dict[str, bt.axon],
+    stability_vali: StabilityValidator,
+) -> Dict[int, float]:
+    bt.logging.info("⏰ Scoring text_to_image now...")
+
+    scores = await stability_vali.query_and_score_text_to_image(available_uids)
+    return scores
+
+
+async def score_image_to_image(
+    available_uids: Dict[str, bt.axon],
+    stability_vali: StabilityValidator,
+) -> Dict[int, float]:
+    bt.logging.info("⏰ Scoring image_to_image now...")
+
+    scores = await stability_vali.query_and_score_image_to_image(available_uids)
+    return scores
+
+
+async def score_upscale(
+    available_uids: Dict[str, bt.axon],
+    stability_vali: StabilityValidator,
+) -> Dict[int, float]:
+    bt.logging.info("⏰ Scoring Upscaler now...")
+
+    scores = await stability_vali.query_and_score_upscale(available_uids)
+    return scores
+
+
+async def score_segmentation_and_embeddings(
+    metagraph: bt.metagraph,
+    available_uids: Dict[int, bt.axon],
+    clip_vali: ClipValidator,
+    segmenting_vali: SegmentationValidator,
+    miners_and_image_b64_labels: Dict[int, str],
+    images_with_labels: Dict[int, str],
+    uids_to_hotkeys: Dict[int, str],
+    hotkeys_to_uids: Dict[str, int],
+) -> Dict[int, float]:
+    bt.logging.info(
+        f"Scoring miners with image b64 now! We have {len(images_with_labels)} images to score, for {len(miners_and_image_b64_labels)} miners"
+    )
+    (
+        segmentation_scores,
+        miner_uids_to_image_uuid,
+    ) = await segmenting_vali.score_miners_no_image_uuid(metagraph, images_with_labels, miners_and_image_b64_labels)
+
+    miner_hotkey_to_image_uuid = {
+        uids_to_hotkeys[uid]: image_uuid for uid, image_uuid in miner_uids_to_image_uuid.items()
+    }
+    bt.logging.info(f"✅scores from non cache part: {segmentation_scores}")
+
+    ############ SCORING WITHOUT THE CACHE ############
+
+    bt.logging.info("Scoring without the cache now...")
+
+    miner_hotkeys_to_image_uuid_and_image = segmenting_vali.update_and_clear_and_fetch_uuid_from_cache(
+        miner_hotkey_to_image_uuid,
+        images_with_labels,
+        miners_and_image_b64_labels,
+        hotkeys_to_uids,
+    )
+
+    amount_of_times_to_test_each_hotkey = random.choices(
+        cst.POSSIBLE_VALUES_TO_TEST_EACH_HOTKEY,
+        cst.WEIGHTS_FOR_NUMBER_OF_TIMES_TO_TEST_EACH_HOTKEY,
+        k=1,
+    )[0]
+
+    tasks = [
+        bound_score_cache_responses_for_hotkey(
+            hotkey,
+            miner_hotkeys_to_image_uuid_and_image[hotkey],
+            amount_of_times_to_test_each_hotkey,
+            segmenting_vali,
+            metagraph,
+            hotkeys_to_uids,
+        )
+        for hotkey in miner_hotkeys_to_image_uuid_and_image
+    ]
+
+    average_scores_and_times = await asyncio.gather(*tasks)
+    time_weighted_scores = utils.calculate_time_weighted_scores(average_scores_and_times)
+
+    cache_scores: Dict[int, float] = {}
+    for hotkey, time_weighted_score in time_weighted_scores:
+        uid = hotkeys_to_uids[hotkey]
+        cache_scores[uid] = time_weighted_score
+
+    bt.logging.info(f"✅ scores from cache part: {cache_scores}")
+
+    image_embedding_scores = await score_image_embeddings(metagraph, available_uids, clip_vali, images_with_labels)
+
+    text_embedding_scores = await score_text_embeddings(metagraph, available_uids, clip_vali)
+
+    return segmentation_scores, cache_scores, image_embedding_scores, text_embedding_scores
+
+
+async def score_image_embeddings(
+    metagraph: bt.metagraph,
+    available_uids: Dict[int, bt.axon],
+    clip_vali: ClipValidator,
+    images_with_labels: Dict[int, str],
+) -> Dict[int, float]:
+    bt.logging.info("Scoring the image embeddings now...")
+
+    image_b64s = list(images_with_labels.values())
+    clip_image_embedding_scores = await clip_vali.get_scores_for_image_embeddings(image_b64s, metagraph, available_uids)
+
+    bt.logging.info(f"✅ scores from image embedding part: {clip_image_embedding_scores}")
+    torch.cuda.empty_cache()
+    return clip_image_embedding_scores
+
+
+async def score_text_embeddings(
+    metagraph: bt.metagraph, available_uids: Dict[int, bt.axon], clip_vali: ClipValidator
+) -> Dict[int, float]:
+    bt.logging.info("Scoring the text embeddings now...")
+
+    clip_text_embedding_scores = await clip_vali.get_scores_for_text_embeddings(metagraph, available_uids)
+
+    bt.logging.info(f"✅ scores from text embedding part: {clip_text_embedding_scores}")
+    torch.cuda.empty_cache()
+    return clip_text_embedding_scores
 
 
 def main():

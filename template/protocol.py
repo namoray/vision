@@ -1,8 +1,10 @@
 import base64
 from typing import List, Optional, Tuple, Union
-
+from core import dataclasses as dc, constants as cst
 import bittensor as bt
 from pydantic import Field, root_validator, validator
+import random
+from enum import Enum
 
 
 class IsAlive(bt.Synapse):
@@ -10,6 +12,78 @@ class IsAlive(bt.Synapse):
 
     def deserialize(self) -> Optional[str]:
         return self.answer
+
+
+class GenerateImagesFromText(bt.Synapse):
+    """Generates an image from a text prompt"""
+
+    text_prompts: List[dc.TextPrompt] = Field([], description="Prompts for the image generation", title="text_prompts")
+    cfg_scale: int = Field(cst.DEFAULT_CFG_SCALE, description="Scale for the configuration")
+    height: int = Field(cst.DEFAULT_HEIGHT, description="Height of the generated image")
+    width: int = Field(cst.DEFAULT_WIDTH, description="Width of the generated image")
+    samples: int = Field(cst.DEFAULT_SAMPLES, description="Number of sample images to generate")
+    steps: int = Field(cst.DEFAULT_STEPS, description="Number of steps in the image generation process")
+    style_preset: str = Field(cst.DEFAULT_STYLE_PRESET, description="Preset style for the image")
+    seed: int = Field(default=random.randint(1, cst.LARGEST_SEED), description="Random seed for generating the image")
+
+    image_b64s: Optional[List[str]] = Field(None, description="The base64 encoded images to return", title="image_b64s")
+
+    def deserialize(self) -> Optional[List[str]]:
+        return self.image_b64s
+
+
+class GenerateImagesFromImage(bt.Synapse):
+    """Generates an image from an image (and text) prompt"""
+
+    init_image: Optional[str] = Field(..., description="The base64 encoded image", title="init_image")
+    text_prompts: List[dc.TextPrompt] = Field([], description="Prompts for the image generation", title="text_prompts")
+    image_strength: float = Field(0.0, description="The strength of the init image")
+    cfg_scale: float = Field(cst.DEFAULT_CFG_SCALE, description="Scale for the configuration")
+    samples: int = Field(cst.DEFAULT_SAMPLES, description="Number of sample images to generate")
+    steps: int = Field(cst.DEFAULT_STEPS, description="Number of steps in the image generation process")
+    sampler: Optional[str] = Field(None, description="The sampler to use for image generation")
+    style_preset: str = Field(cst.DEFAULT_STYLE_PRESET, description="Preset style for the image")
+    seed: int = Field(default=random.randint(1, cst.LARGEST_SEED), description="Random seed for generating the image")
+    init_image_mode: Optional[str] = Field("IMAGE_STRENGTH", description="The mode of the init image")
+
+    image_b64s: Optional[List[str]] = Field(None, description="The base64 encoded images to return", title="image_b64s")
+
+    def deserialize(self) -> Optional[List[str]]:
+        return self.image_b64s
+
+
+class MaskSource(str, Enum):
+    MASK_IMAGE_WHITE = "MASK_IMAGE_WHITE"
+    MASK_IMAGE_BLACK = "MASK_IMAGE_BLACK"
+    INIT_IMAGE_ALPHA = "INIT_IMAGE_ALPHA"
+
+
+class GenerateImagesFromInpainting(bt.Synapse):
+    """Generates an image from an image (and text) prompt"""
+
+    init_image: Optional[str] = Field(..., description="The base64 encoded image", title="init_image")
+    text_prompts: List[dc.TextPrompt] = Field([], description="Prompts for the image generation", title="text_prompts")
+    mask_source: Optional[MaskSource] = Field(None, description="The base64 encoded mask", title="mask_source")
+    mask_image: Optional[str] = Field(None, description="The base64 encoded mask", title="mask_source")
+    cfg_scale: int = Field(cst.DEFAULT_CFG_SCALE, description="Scale for the configuration")
+    samples: int = Field(cst.DEFAULT_SAMPLES, description="Number of sample images to generate")
+    steps: int = Field(cst.DEFAULT_STEPS, description="Number of steps in the image generation process")
+    sampler: Optional[str] = Field(None, description="The sampler to use for image generation")
+    style_preset: str = Field(cst.DEFAULT_STYLE_PRESET, description="Preset style for the image")
+    seed: int = Field(default=random.randint(1, cst.LARGEST_SEED), description="Random seed for generating the image")
+
+    image_b64s: Optional[List[str]] = Field(None, description="The base64 encoded images to return", title="image_b64s")
+
+    def deserialize(self) -> Optional[List[str]]:
+        return self.image_b64s
+
+
+class UpscaleImage(bt.Synapse):
+    image: Optional[str] = Field(..., description="The base64 encoded image", title="image")
+    height: Optional[int] = Field(None, description="Height of the upscaled image")
+    width: Optional[int] = Field(None, description="Width of the upscaled image")
+
+    image_b64s: Optional[List[str]] = Field(None, description="The base64 encoded images to return", title="image_b64s")
 
 
 class ClipEmbeddingImages(bt.Synapse):
