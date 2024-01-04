@@ -270,7 +270,7 @@ async def query_and_score_miners(
 
             images_with_labels, miners_and_image_b64_labels = await get_random_images(uids=available_uids)
 
-            random_number_to_choose_scoring_func = random.random() / 8
+            random_number_to_choose_scoring_func = random.random()
 
             if random_number_to_choose_scoring_func < 0.05:
                 scores = await score_text_to_image(available_uids, stability_vali)
