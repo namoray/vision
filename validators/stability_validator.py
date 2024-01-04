@@ -207,8 +207,9 @@ class StabilityValidator(BaseValidator):
         self,
         available_uids: Dict[int, bt.axon],
         get_args: Callable[[], Coroutine],
-        query_protocol: type[protocol.ProtocolBase],
+        query_protocol: bt.Synapse,
         stability_api_function: Callable[..., Coroutine],
+        save_to_cache: bool = True
     ) -> Dict[int, int]:
         task_type = query_protocol.__name__
         bt.logging.debug(f"Scoring for {len(available_uids)} miners on task type: {task_type}.")
@@ -227,7 +228,9 @@ class StabilityValidator(BaseValidator):
 
         expected_image_b64s = await get_image_task
 
-        if not isinstance(query_protocol, protocol.UpscaleImage):
+        bt.logging.debug(f"{query_protocol}, {isinstance(query_protocol, protocol.UpscaleImage)}")
+
+        if save_to_cache:
             positive_prompt = args["text_prompts"][0].text
             negative_prompt = args["text_prompts"][1].text if len(args["text_prompts"]) > 1 else ""
             if len(expected_image_b64s) > 0:
@@ -269,7 +272,7 @@ class StabilityValidator(BaseValidator):
 
     async def query_and_score_upscale(self, available_uids):
         return await self.query_and_score(
-            available_uids, self.get_args_for_upscale, protocol.UpscaleImage, stability_api.upscale_image
+            available_uids, self.get_args_for_upscale, protocol.UpscaleImage, stability_api.upscale_image, save_to_cache=False
         )
     
     async def query_and_score_inpainting(self, available_uids):
