@@ -22,6 +22,8 @@ API_KEY = os.getenv("STABILITY_API_KEY")
 
 if API_KEY is None:
     raise Exception('STABILITY_API_KEY is not set. Please run `echo "STABILITY_API_KEY=YOUR_API_KEY" >> .env` and try again.')
+else:
+    bt.logging.info(f"Successfully loaded an API key! 🚀")
 
 
 def resize_image(image_b64: str) -> str:
