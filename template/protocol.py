@@ -36,7 +36,7 @@ class GenerateImagesFromImage(bt.Synapse):
 
     init_image: Optional[str] = Field(..., description="The base64 encoded image", title="init_image")
     text_prompts: List[dc.TextPrompt] = Field([], description="Prompts for the image generation", title="text_prompts")
-    image_strength: float = Field(0.25, description="The strength of the init image")
+    image_strength: float = Field(0.0, description="The strength of the init image")
     cfg_scale: int = Field(cst.DEFAULT_CFG_SCALE, description="Scale for the configuration")
     samples: int = Field(cst.DEFAULT_SAMPLES, description="Number of sample images to generate")
     steps: int = Field(cst.DEFAULT_STEPS, description="Number of steps in the image generation process")
