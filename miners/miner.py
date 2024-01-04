@@ -149,7 +149,6 @@ class MinerBoi:
     async def generate_images_from_image(
         self, synapse: protocol.GenerateImagesFromImage
     ) -> protocol.GenerateImagesFromImage:
-        bt.logging.debug(f"Here and about to generate an image")
 
         image_b64s = await stability_api.generate_images_from_image(
             init_image=synapse.init_image,
@@ -173,8 +172,6 @@ class MinerBoi:
     async def generate_images_from_inpainting(
         self, synapse: protocol.GenerateImagesFromInpainting
     ) -> protocol.GenerateImagesFromInpainting:
-        
-        bt.logging.debug(f"Here and about to generate an image")
 
         image_b64s = await stability_api.generate_images_from_inpainting(
             init_image=synapse.init_image,
@@ -200,7 +197,6 @@ class MinerBoi:
     
 
     async def upscale_image(self, synapse: protocol.UpscaleImage) -> protocol.UpscaleImage:
-        bt.logging.debug(f"Here and about to upscale an image")
 
         image_b64s = await stability_api.upscale_image(
             image=synapse.image,
