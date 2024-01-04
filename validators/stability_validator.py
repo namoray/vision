@@ -196,10 +196,10 @@ class StabilityValidator(BaseValidator):
         max_number = 2048 ** 2 // (x_dim * y_dim)
 
         if base == 1:
-            height = random.randint(base, max_number)
+            height = random.randint(max(base, 512), max_number)
             return {"image": random_image, "height": height}
         else:
-            width = random.randint(base, max_number)
+            width = random.randint(max(base, 512), max_number)
             {"image": random_image, "width": width}
         
         
