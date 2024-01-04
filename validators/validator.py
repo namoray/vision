@@ -122,8 +122,9 @@ async def get_available_uids(dendrite: bt.dendrite, metagraph: bt.metagraph) -> 
     tasks = {uid.item(): check_uid(dendrite, metagraph.axons[uid.item()], uid.item()) for uid in metagraph.uids}
     results = await asyncio.gather(*tasks.values())
 
-    # Create a dictionary of UID to axon info for active UIDs
-    available_uids = {uid: axon_info for uid, axon_info in zip(tasks.keys(), results) if axon_info is not None}
+    key_result_pairs = list(zip(tasks.keys(), results))
+    random.shuffle(key_result_pairs)
+    available_uids = {uid: axon_info for uid, axon_info in key_result_pairs if axon_info is not None}
 
     return available_uids
 
