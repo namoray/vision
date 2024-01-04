@@ -187,20 +187,19 @@ class StabilityValidator(BaseValidator):
         return {"text_prompts": text_prompts, **hyper_parameters}
 
     async def get_args_for_upscale(self):
-        x_dim = random.randint(200, 1920)
-        y_dim = random.randint(200, 1920)
+        x_dim = random.randint(200, 1024)
+        y_dim = random.randint(200, 1024)
 
         random_image = await utils.get_random_image(x_dim, y_dim)
 
         base = random.choice([0,1 ])
-        max_number = 2048 ** 2 // (x_dim * y_dim)
+
+        rand_n= random.randint(512, 2048)
 
         if base == 1:
-            height = random.randint(max(base, 512), max_number)
-            return {"image": random_image, "height": height}
+            return {"image": random_image, "height": rand_n}
         else:
-            width = random.randint(max(base, 512), max_number)
-            {"image": random_image, "width": width}
+            return {"image": random_image, "width": rand_n}
         
         
         
