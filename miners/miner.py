@@ -350,6 +350,7 @@ class MinerBoi:
             return True, synapse.dendrite.hotkey
     
         stake = self.metagraph.S[synapse.dendrite.hotkey]
+        bt.logging.debug(f"Stake of {synapse.dendrite.hotkey} is {stake}")
         if stake < 5000:
             bt.logging.trace(f"Blacklisting hotkey, stake too low! {synapse.dendrite.hotkey}")
             return True, synapse.dendrite.hotkey
