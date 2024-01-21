@@ -345,10 +345,15 @@ class MinerBoi:
         return synapse
 
     async def blacklist(self, synapse: T) -> Tuple[bool, str]:
-        return False, synapse.dendrite.hotkey
         if synapse.dendrite.hotkey not in self.metagraph.hotkeys:
             bt.logging.trace(f"Blacklisting unrecognized hotkey {synapse.dendrite.hotkey}")
             return True, synapse.dendrite.hotkey
+    
+        stake = self.metagraph.S[synapse.dendrite.hotkey]
+        if stake < 5000:
+            bt.logging.trace(f"Blacklisting hotkey, stake too low! {synapse.dendrite.hotkey}")
+            return True, synapse.dendrite.hotkey
+
         bt.logging.trace(f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}")
         return False, synapse.dendrite.hotkey
 
