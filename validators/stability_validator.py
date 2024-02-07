@@ -83,16 +83,27 @@ SAMPLER_VALUES = [
 
 
 def get_similarity_score_from_image_b64s(expected_b64s: Optional[List[str]], response_b64s: Optional[List[str]]) -> float:
+    """
+    Calculates the similarity of two images given their base64 representation.
+
+    - Dot product to find the similarity to give a value -1 <= x <= 1
+    - If < 0 then it's pure garbage
+    - Else then divide the ratios of the smallest to largest to penalise magnitude deviations, and multiply that by the sim
+
+    The way to maximise this function is when the expected images (at each index) are identical. Any deviation from that will result in
+    a lower score
+    """
     similarites = []
     if expected_b64s is None or response_b64s is None:
-        return 0
+        return float(expected_b64s == response_b64s)  # If we both messed up then the prompt must have been wrong
 
     for b64_img1, b64_img2 in zip(expected_b64s, response_b64s):
         try:
             byte_img1 = base64.b64decode(b64_img1)
             byte_img2 = base64.b64decode(b64_img2)
         except binascii.Error:
-            return 0
+            print('here')
+            return 0  # Stability's images are base64 encoded so we know it wasn't `our` problem
 
         np_img1 = np.array(Image.open(io.BytesIO(byte_img1)))
         np_img2 = np.array(Image.open(io.BytesIO(byte_img2)))
@@ -100,11 +111,22 @@ def get_similarity_score_from_image_b64s(expected_b64s: Optional[List[str]], res
         flattened_img1 = np_img1.flatten().astype(float)
         flattened_img2 = np_img2.flatten().astype(float)
 
-        cosine_sim = np.dot(flattened_img1, flattened_img2) / (np.linalg.norm(flattened_img1) * np.linalg.norm(flattened_img2))
-        similarites.append(cosine_sim)
+        norm1 = np.linalg.norm(flattened_img1)
+        norm2 = np.linalg.norm(flattened_img2)
+
+        if norm1 == 0 or norm2 == 0:
+            similarites.append(float(np.all(flattened_img1 == 0) and np.all(flattened_img2 == 0)))
+            continue
+
+        cosine_sim = np.dot(flattened_img1, flattened_img2) / (norm1 * norm2)
+        if cosine_sim <= 0:
+            similarites.append(0)
+            continue
+        sim = cosine_sim * ( min(norm1, norm2) / max(norm1, norm2)) 
+        sim = sim ** 6  # Raise to a high power to really make sure the images are similar
+        similarites.append(round(sim, 3))
 
     return sum(similarites) / len(similarites) if len(similarites) > 0 else 0
-
 
 
 class StabilityValidator(BaseValidator):
@@ -260,7 +282,7 @@ class StabilityValidator(BaseValidator):
 
         scores = {}
         for uid, response_synapse in results:
-            if response_synapse is None or response_synapse.image_b64s is None:
+            if response_synapse is None:
                 continue
             
             score = get_similarity_score_from_image_b64s(expected_image_b64s, response_synapse.image_b64s)
