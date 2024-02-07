@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from PIL import Image
 import markovify
 from typing import Dict, Callable, Coroutine, Type
-
+import binascii
 load_dotenv()
 
 CFG_SCALE_VALUES = list(range(0, 36))
@@ -80,6 +80,31 @@ SAMPLER_VALUES = [
     None,
     None,
 ]
+
+
+def get_similarity_score_from_image_b64s(expected_b64s: Optional[List[str]], response_b64s: Optional[List[str]]) -> float:
+    similarites = []
+    if expected_b64s is None or response_b64s is None:
+        return 0
+
+    for b64_img1, b64_img2 in zip(expected_b64s, response_b64s):
+        try:
+            byte_img1 = base64.b64decode(b64_img1)
+            byte_img2 = base64.b64decode(b64_img2)
+        except binascii.Error:
+            return 0
+
+        np_img1 = np.array(Image.open(io.BytesIO(byte_img1)))
+        np_img2 = np.array(Image.open(io.BytesIO(byte_img2)))
+
+        flattened_img1 = np_img1.flatten().astype(float)
+        flattened_img2 = np_img2.flatten().astype(float)
+
+        cosine_sim = np.dot(flattened_img1, flattened_img2) / (np.linalg.norm(flattened_img1) * np.linalg.norm(flattened_img2))
+        similarites.append(cosine_sim)
+
+    return sum(similarites) / len(similarites) if len(similarites) > 0 else 0
+
 
 
 class StabilityValidator(BaseValidator):
@@ -237,13 +262,9 @@ class StabilityValidator(BaseValidator):
         for uid, response_synapse in results:
             if response_synapse is None or response_synapse.image_b64s is None:
                 continue
+            
+            score = get_similarity_score_from_image_b64s(expected_image_b64s, response_synapse.image_b64s)
 
-            score = (
-                1
-                if response_synapse.image_b64s is not None
-                and len(response_synapse.image_b64s) == len(expected_image_b64s)
-                else 0
-            )
             scores[uid] = score
 
         bt.logging.info("scores: {}".format(scores))
