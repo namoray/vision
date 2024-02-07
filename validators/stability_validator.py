@@ -123,7 +123,7 @@ def get_similarity_score_from_image_b64s(expected_b64s: Optional[List[str]], res
             similarites.append(0)
             continue
         sim = cosine_sim * ( min(norm1, norm2) / max(norm1, norm2)) 
-        sim = sim ** 6  # Raise to a high power to really make sure the images are similar
+        sim = sim ** 6  # Raise to a high power to really make sure the images are similar. Still maps to [0, 1]
         similarites.append(round(sim, 3))
 
     return sum(similarites) / len(similarites) if len(similarites) > 0 else 0
@@ -195,6 +195,7 @@ class StabilityValidator(BaseValidator):
             sampler = random.choice(SAMPLER_VALUES)
             style_preset = random.choice(STYLE_PRESET_VALUES)
             image_strength = random.choice(IMAGE_STRENGTH_VALUES)
+            seed = random.randint(1, cst.LARGEST_SEED)
 
             return {
                 "text_prompts": text_prompts,
@@ -205,6 +206,7 @@ class StabilityValidator(BaseValidator):
                 "sampler": sampler,
                 "style_preset": style_preset,
                 "image_strength": image_strength,
+                "seed": seed,
             }
 
     async def get_args_for_text_to_image(self):
@@ -218,6 +220,7 @@ class StabilityValidator(BaseValidator):
         steps = random.choice(STEPS_VALUES)
         sampler = random.choice(SAMPLER_VALUES)
         style_preset = random.choice(STYLE_PRESET_VALUES)
+        seed = random.randint(1, cst.LARGEST_SEED)
 
         hyper_parameters = {
             "cfg_scale": cfg_scale,
@@ -226,6 +229,7 @@ class StabilityValidator(BaseValidator):
             "samples": samples,
             "steps": steps,
             "style_preset": style_preset,
+            "seed": seed,
         }
         return {"text_prompts": text_prompts, **hyper_parameters}
 
