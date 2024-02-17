@@ -406,8 +406,8 @@ class CoreValidator:
 
         if result1.axon_uid and result2.axon_uid:
             bt.logging.info(
-                f"\nResult 1 : Response time: {result1.response_time}, score: {axon_scores[result1.axon_uid]}"
-                f"\nResult 2 : Response time: {result2.response_time}, score: {axon_scores[result2.axon_uid]}"
+                f"\nResult 1 : Response time: {result1.response_time}, score: {axon_scores.get(result1.axon_uid, None)}"
+                f"\nResult 2 : Response time: {result2.response_time}, score: {axon_scores.get(result2.axon_uid, None)}"
             )
 
         quickest_response_time = min(
