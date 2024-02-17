@@ -22,7 +22,6 @@ import uvicorn
 import asyncio
 
 
-# How can I show these docs without it being ddos-able?
 app = FastAPI(debug=False)
 core_validator = cv.CoreValidator()
 
@@ -40,7 +39,7 @@ async def _check_images_are_nsfw(formatted_response: BaseModel) -> bool:
     async with httpx.AsyncClient() as client:
         response = await client.post(
             url,
-            json=formatted_response.dict(),
+            json={"image_b64": formatted_response.image_b64s[0]},
         )
     return response.json()
 

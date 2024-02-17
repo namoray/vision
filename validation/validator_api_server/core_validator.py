@@ -432,6 +432,9 @@ class CoreValidator:
         endpoint = _pascal_to_kebab(synapse.__class__.__name__)
         expected_output = await self._query_checking_server_for_expected_result(endpoint, synapse, outgoing_model)
 
+        if expected_output is None:
+            return {}
+
         if result1.response_time is None and result2.response_time is None:
             return {}
 
