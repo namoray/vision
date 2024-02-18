@@ -8,8 +8,9 @@ from core import constants as core_cst
 from models import base_models, protocols, utility_models, request_models
 from validation.validator_api_server import core_validator as cv
 from validation.validator_api_server import validation_utils
-
-
+from db import sql
+from fastapi.responses import JSONResponse, Response
+from starlette.status import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_429_TOO_MANY_REQUESTS
 
 from fastapi import Request
 
@@ -205,49 +206,51 @@ ENDPOINT_TO_CREDITS_USED = {
 }
 
 
-# @app.middleware("http")
-# async def api_key_validator(request, call_next):
 
-#     if request.url.path in ["/docs", "/openapi.json", "/favicon.ico", "/redoc"]:
-#         return await call_next(request)
 
-#     api_key = _get_api_key(request)
-#     if not api_key:
-#         return JSONResponse(
-#             status_code=HTTP_400_BAD_REQUEST,
-#             content={"detail": "API key is missing"},
-#         )
+@app.middleware("http")
+async def api_key_validator(request, call_next):
 
-#     with sql.get_db_connection() as conn:
-#         api_key_info = sql.get_api_key_info(conn, api_key)
+    if request.url.path in ["/docs", "/openapi.json", "/favicon.ico", "/redoc"]:
+        return await call_next(request)
 
-#     if api_key_info is None:
-#         return JSONResponse(status_code=HTTP_401_UNAUTHORIZED, content={"detail": "Invalid API key"})
+    api_key = _get_api_key(request)
+    if not api_key:
+        return JSONResponse(
+            status_code=HTTP_400_BAD_REQUEST,
+            content={"detail": "API key is missing"},
+        )
 
-#     bt.logging.warning(f"api key info keys: {api_key_info.keys()}")
+    with sql.get_db_connection() as conn:
+        api_key_info = sql.get_api_key_info(conn, api_key)
 
-#     endpoint = request.url.path.split("/")[-1]
-#     credits_required = ENDPOINT_TO_CREDITS_USED.get(endpoint, 1)
+    if api_key_info is None:
+        return JSONResponse(status_code=HTTP_401_UNAUTHORIZED, content={"detail": "Invalid API key"})
 
-#     # Now check credits
-#     if api_key_info[sql.BALANCE] is not None and api_key_info[sql.BALANCE] <= credits_required:
-#         return JSONResponse(status_code=HTTP_429_TOO_MANY_REQUESTS, content={"detail": "Insufficient credits - sorry!"})
+    bt.logging.warning(f"api key info keys: {api_key_info.keys()}")
 
-#     # Now check rate limiting
-#     with sql.get_db_connection() as conn:
-#         rate_limit_exceeded = sql.rate_limit_exceeded(conn, api_key_info)
-#         if rate_limit_exceeded:
-#             return JSONResponse(status_code=HTTP_429_TOO_MANY_REQUESTS, content={"detail": "Rate limit exceeded - sorry!"})
+    endpoint = request.url.path.split("/")[-1]
+    credits_required = ENDPOINT_TO_CREDITS_USED.get(endpoint, 1)
 
-#     response: Response = await call_next(request)
+    # Now check credits
+    if api_key_info[sql.BALANCE] is not None and api_key_info[sql.BALANCE] <= credits_required:
+        return JSONResponse(status_code=HTTP_429_TOO_MANY_REQUESTS, content={"detail": "Insufficient credits - sorry!"})
 
-#     bt.logging.debug(f"response: {response}")
-#     if response.status_code == 200:
-#         with sql.get_db_connection() as conn:
-#             sql.update_requests_and_credits(conn, api_key_info, credits_required)
-#             sql.log_request(conn, api_key_info, request.url.path, credits_required)
-#             conn.commit()
-#     return response
+    # Now check rate limiting
+    with sql.get_db_connection() as conn:
+        rate_limit_exceeded = sql.rate_limit_exceeded(conn, api_key_info)
+        if rate_limit_exceeded:
+            return JSONResponse(status_code=HTTP_429_TOO_MANY_REQUESTS, content={"detail": "Rate limit exceeded - sorry!"})
+
+    response: Response = await call_next(request)
+
+    bt.logging.debug(f"response: {response}")
+    if response.status_code == 200:
+        with sql.get_db_connection() as conn:
+            sql.update_requests_and_credits(conn, api_key_info, credits_required)
+            sql.log_request(conn, api_key_info, request.url.path, credits_required)
+            conn.commit()
+    return response
 
 
 
