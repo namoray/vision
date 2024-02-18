@@ -109,7 +109,7 @@ class CoreValidator:
     ) -> Optional[utility_models.QueryResult]:
         url = self.BASE_CHECKING_SERVER_URL + core_cst.CHECKING_ENDPOINT_PREFIX + "/" + endpoint
         try:
-            async with httpx.AsyncClient(timeout=30) as client:
+            async with httpx.AsyncClient(timeout=45) as client:
                 response = await client.post(url, data=json.dumps(synapse.dict()))
 
             if response.status_code == 200:
@@ -123,7 +123,7 @@ class CoreValidator:
         endpoint = _pascal_to_kebab(operation)
         url = self.BASE_CHECKING_SERVER_URL + core_cst.SYNTHETIC_ENDPOINT_PREFIX + "/" + endpoint
         try:
-            async with httpx.AsyncClient(timeout=30) as client:
+            async with httpx.AsyncClient(timeout=45) as client:
                 response = await client.get(url)
 
             if response.status_code == 200:

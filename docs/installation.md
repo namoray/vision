@@ -72,12 +72,3 @@ After, you can run
 
 ### With auto updates
 NOTE: Auto updates only with automatically update non major versions - it won't update 2.x.x to 3.x.x.
-
-```bash
-pm2 start --name run_validator_auto_update "python run_validator_auto_update.py"
-```
-
-### Without auto updates
-```bash
-./validation/run_all_servers.sh
-```
