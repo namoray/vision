@@ -86,6 +86,8 @@ async def inpaint() -> base_models.InpaintIncoming:
     ]
     params = generate_params(engine, PARAMS_TO_VARY)
 
+    params["steps"] = min(params["steps"], 25)
+
 
     return base_models.InpaintIncoming(
         text_prompts=text_prompts,

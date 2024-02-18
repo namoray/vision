@@ -70,6 +70,10 @@ def pad_image_mask_nd(img: np.ndarray, multiple: int, pad_value: int = 255) -> n
 
 
 def image_is_nsfw(image: Image) -> bool:
+    image_np = np.array(image)
+    if np.all(image_np == 0):
+        return True
+
     safety_feature_extractor, safety_checker = resource_management.SingletonResourceManager().get_resource(cst.IMAGE_SAFETY_CHECKERS)
     safety_checker_device = resource_management.SingletonResourceManager()._config[cst.IMAGE_SAFETY_CHECKERS]
     with autocast():

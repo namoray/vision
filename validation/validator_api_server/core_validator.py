@@ -85,20 +85,24 @@ class CoreValidator:
         return base_config
 
     def start_continuous_tasks(self):
-        self.resync_task = asyncio.create_task(self.periodically_resync_miners_and_synapses())
+        self.resync_task = asyncio.create_task(self.periodically_resync_and_set_weights())
         self.resync_task.add_done_callback(validation_utils.log_task_exception)
 
         self.score_task = asyncio.create_task(self.synthetically_score())
         self.score_task.add_done_callback(validation_utils.log_task_exception)
 
-        self.weight_task = asyncio.create_task(self.set_weights_every_epoch())
-        self.weight_task.add_done_callback(validation_utils.log_task_exception)
-
-    async def periodically_resync_miners_and_synapses(self) -> None:
+    async def periodically_resync_and_set_weights(self) -> None:
+        time_between_resyncing = core_cst.BLOCK_TIME_IN_S * core_cst.BLOCKS_PER_EPOCH // 2
         while True:
             await self.resync_metagraph()
 
-            await asyncio.sleep(core_cst.BLOCK_TIME_IN_S * core_cst.BLOCKS_PER_EPOCH // 2)
+            await asyncio.sleep(time_between_resyncing)
+
+            await self.resync_metagraph()
+            await self.set_weights()
+
+            await asyncio.sleep(time_between_resyncing)
+
 
     async def _query_checking_server_for_expected_result(
         self, endpoint: str, synapse: bt.Synapse, outgoing_model: BaseModel
@@ -170,14 +174,6 @@ class CoreValidator:
 
             time_to_execute_query = time.time() - time_before_query
             await asyncio.sleep(max(20 - time_to_execute_query, 0))
-
-    async def set_weights_every_epoch(self):
-        OFFSET = 11  # It takes time to set weights ya know
-        while True:
-            await asyncio.sleep(core_cst.BLOCKS_PER_EPOCH * core_cst.BLOCK_TIME_IN_S - OFFSET)
-            await self.set_weights()
-            await asyncio.sleep(1)
-
     async def fetch_available_operations_for_each_axon(self) -> None:
         uid_to_query_task = {}
 
@@ -224,15 +220,13 @@ class CoreValidator:
 
         self.previous_uid_infos.append(copy.deepcopy([uid_info for _, uid_info in self.uid_to_uid_info.items()]))
 
-        for uid, uid_info in self.uid_to_uid_info.items():
-            uid_info.reset_scores()
-
         self.metagraph.sync(subtensor=self.subtensor, lite=True)
 
         bt.logging.info("Done syncing, now just extracting the valuable info")
         incentives_tensor, axon_indexes_tensor = self.metagraph.incentive.sort(descending=True)
 
         with self.threading_lock:
+            self.uid_to_uid_info = {}
             self.uids: List[int] = self.metagraph.uids.tolist()
             self.axon_indexes = axon_indexes_tensor.tolist()
             self.incentives = incentives_tensor.tolist()
@@ -240,14 +234,8 @@ class CoreValidator:
 
             for i in self.axon_indexes:
                 uid = self.uids[i]
+                self.uid_to_uid_info[uid] = utility_models.UIDinfo(uid=uid, axon=self.axons[i], incentive=self.incentives[i])
 
-                if uid not in self.uid_to_uid_info:
-                    self.uid_to_uid_info[uid] = utility_models.UIDinfo(uid=uid, axon=self.axons[i])
-
-                info = self.uid_to_uid_info[uid]
-                info.uid = uid
-                info.axon = self.axons[i]
-                info.incentive = self.incentives[i]
 
             incentives_with_uids = list(zip(self.incentives, self.uids))
             non_zero_incentives_with_uids = [item for item in incentives_with_uids if item[0] > 0]
@@ -678,5 +666,3 @@ class CoreValidator:
         )
 
         bt.logging.info("✅ Done setting weights!")
-
-        bt.logging.info("Reset all the organic and synthetic scores! ✅")

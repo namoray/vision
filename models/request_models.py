@@ -23,9 +23,12 @@ ALLOWED_PARAMS_FOR_ENGINE = {
                            "generator": lambda: random.random()* 0.75},
     },
     utility_models.EngineEnum.KANDINSKY_22.value: {
-        "steps": {"checker": lambda x: isinstance(x, int) and x in range(25, 41),
-                  "error_message": "should be an integer between 25 and 40 (inclusive)",
-                  "generator": lambda: random.choice([i for i in range(25, 41)])},
+        "steps": {"checker": lambda x: isinstance(x, int) and x in range(20, 41),
+                  "error_message": "should be an integer between 20 and 40 (inclusive)",
+                  "generator": lambda: random.choice([i for i in range(20, 41)])},
+        "inpaint_steps": {"checker": lambda x: isinstance(x, int) and x in range(15, 25),
+                          "error_message": "should be an integer between 15 and 24 (inclusive)",
+                          "generator": lambda: random.choice([i for i in range(15, 25)])},
         "height": {"checker": lambda h: 512 <= h <= 1920 and h % 64 == 0,
                    "error_message": "should be in between 512 and 1920 (inclusive) and multiple of 64",
                    "generator": lambda: random.choice([i for i in range(512, 1920 + 64, 64)])},
@@ -218,7 +221,7 @@ class InpaintRequest(BaseModel):
 
 
 
-        params_and_values = [("steps", steps), ("cfg_scale", cfg_scale)]
+        params_and_values = [("inpaint_steps", steps), ("cfg_scale", cfg_scale)]
 
         if engine not in ALLOWED_PARAMS_FOR_ENGINE:
             raise ValueError(f"Engine {engine} not supported")

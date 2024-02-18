@@ -23,12 +23,12 @@ NETWORK = "test"
 
 OPERATION_TIMEOUTS: Dict[str, float] = {
     "AvailableOperations": 12,
-    "ClipEmbeddings": 4,
-    "TextToImage": 15,
-    "ImageToImage": 15,
-    "Upscale": 10,
-    "Inpaint": 15,
-    "Scribble": 12,
+    "ClipEmbeddings": 6,
+    "TextToImage": 20,
+    "ImageToImage": 20,
+    "Upscale": 20,
+    "Inpaint": 20,
+    "Scribble": 20,
     # "Segment": 15,
 }
 
