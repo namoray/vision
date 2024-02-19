@@ -5,11 +5,12 @@ NOTE: first setup takes a while, there's a lot of models!
 ### Hardware
 Setups tested for mining so far:
 
+
 **NOTE** Some GPUS (especially on runpod) are unable to load the pipelines into memory.
 
-If you see an issue where the checking servers / safety servers are unable to start, chances are your gpu is dodgy.
+If you see an issue where the checking servers / safety servers are unable to start, chances are your GPU is incompatible.
 
-See below for tested GPU's:
+There is a bug with the hugging face diffusers library and certain GPU's.
 
 | Name  | CUDA Version | Ubuntu Version | Python Version | Works |
 |-------|--------------|----------------|----------------|-------|
@@ -21,10 +22,15 @@ See below for tested GPU's:
 | L40 | 12.0   | 22.04 | 3.10.12 | ❌ |
 | A100 SXM | 11.8  | 22.04 | 3.10.12 | ❌|
 
-
 Note: That's not to say you can't use other GPU's!
 
-* Recommended
+* Recommended - I advise you to use a A6000
+
+### Validators
+GPU: 1x80 GB or 1x24GB or 1x48GB
+
+Storage: 200Gb
+
 ## Setup steps
 
 ### Clone the repo

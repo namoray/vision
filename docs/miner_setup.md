@@ -15,6 +15,14 @@ Setups tested for mining so far:
 | A100 SXM | 11.8  | 22.04 | 3.10.12 | ❌|
 
 
+### Miners
+GPU: 1x80 GB or 2x24GB or 1x48GB
+
+Storage: 200Gb
+
+RAM: 32Gb
+
+
 Note: That's not to say you can't use other GPU's!
 
 ## Setup steps
@@ -108,4 +116,4 @@ pm2 start --name NAME_FOR_MINER_HERE mining/run_miner.py --interpreter python3 -
 ```
 
 **NOTE**
-If you want to run multiple miners on the same machine, I would advise just running one first, to let it download all the necessary models and configuration, then start your others up :)
+If you want to run multiple miners on the same machine, I would advise just running one of the pm2 commands first from 

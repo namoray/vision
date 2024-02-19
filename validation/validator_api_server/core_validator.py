@@ -92,7 +92,7 @@ class CoreValidator:
         self.score_task.add_done_callback(validation_utils.log_task_exception)
 
     async def periodically_resync_and_set_weights(self) -> None:
-        time_between_resyncing =  20 #core_cst.BLOCK_TIME_IN_S * core_cst.BLOCKS_PER_EPOCH // 2
+        time_between_resyncing =  core_cst.BLOCK_TIME_IN_S * core_cst.BLOCKS_PER_EPOCH // 2
         while True:
             await self.resync_metagraph()
 

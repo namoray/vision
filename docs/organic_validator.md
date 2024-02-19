@@ -25,6 +25,12 @@ Note: That's not to say you can't use other GPU's!
 
 * Recommended - I advise you to use a A6000
 
+### Validators
+GPU: 1x80 GB or 1x24GB or 1x48GB
+
+Storage: 200Gb
+
+
 # Setup steps
 
 ### Clone the repo
