@@ -90,7 +90,7 @@ Simple step this one - note it may take a while if you have poor bandwidth (not 
 ### Define the configuration for your miners to run
 Since you have already installed vision (with `pip install -e .`), you can now use the Vision cli to define the configuration you want.
 
-I'd recommend sdxl turbo & kandinsky being on separate GPU's (unless )
+I'd recommend sdxl turbo & kandinsky being on separate GPU's, as they take a lot of vram (unless you have 80gb+)
 ```bash
 vision create-config
 ```
