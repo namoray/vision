@@ -221,7 +221,7 @@ class SingletonResourceManager:
 
     def load_scribble_resources(self):
         scribble_device = self._config.get(cst.MODEL_SCRIBBLE, cst.DEVICE_DEFAULT)
-        scribble_scheduler = DDPMScheduler.from_pretrained(cst.DREAMSHAPER_PIPELINE_REPO, subfolder="scheduler", torch_dtype=torch.bfloat16, cache_dir=cst.MODELS_CACHE).to(scribble_device)
+        scribble_scheduler = DDPMScheduler.from_pretrained(cst.DREAMSHAPER_PIPELINE_REPO, subfolder="scheduler", torch_dtype=torch.bfloat16, cache_dir=cst.MODELS_CACHE)
         scribble_controlnet = ControlNetModel.from_pretrained(cst.CONTROL_MODEL_REPO, torch_dtype=torch.bfloat16, cache_dir=cst.MODELS_CACHE)
         scribble_pipeline = StableDiffusionControlNetPipeline.from_pretrained(
             cst.DREAMSHAPER_PIPELINE_REPO,
@@ -229,7 +229,7 @@ class SingletonResourceManager:
             controlnet=scribble_controlnet,
             torch_dtype=torch.bfloat16,
             cache_dir=cst.MODELS_CACHE
-        )
+        ).to(scribble_device)
 
         self._loaded_resources[cst.MODEL_SCRIBBLE] = scribble_pipeline
         self._update_available_operations(protocols.Scribble.__name__, True)
