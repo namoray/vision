@@ -36,7 +36,7 @@ async def upscale_logic(body: base_models.UpscaleIncoming) -> base_models.Upscal
         output.error_message = "Upscaled image is NSFW"
         return output
 
-    bt.logging.info("✅ Took an image and made an image 😎")
+    bt.logging.info("✅ Took an image and made it crisper 😎")
     output.image_b64s = [core_utils.get_b64_from_pipeline_image(upscaled_image)]
 
     return output

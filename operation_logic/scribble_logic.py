@@ -53,6 +53,6 @@ async def scribble_logic(body: base_models.ScribbleIncoming) -> base_models.Scri
         output.error_message = cst.NSFW_RESPONSE_ERROR
         return output
 
-    bt.logging.info("✅ Took an image and made an image 😎")
+    bt.logging.info("✅ Took a scribble and made a masterpiece 😎")
     output.image_b64s = [core_utils.get_b64_from_pipeline_image(processed_image)]
     return output

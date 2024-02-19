@@ -81,7 +81,7 @@ async def inpaint_logic(body: base_models.InpaintIncoming) -> base_models.Inpain
         output.error_message = cst.NSFW_RESPONSE_ERROR
         return output
 
-    bt.logging.info("✅ Took an image and made an image 😎")
+    bt.logging.info("✅ Took an image & did some painting 😎")
 
     output.image_b64s = [core_utils.get_b64_from_pipeline_image(processed_image)]
     return output
