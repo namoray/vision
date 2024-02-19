@@ -140,7 +140,7 @@ def get_config():
             start_command = (
                 f'mining/run_miner.py --interpreter python3 -- --axon.port {axon_port} --axon.external_ip {axon_external_ip}'
                 f" --wallet.name {wallet_name} --wallet.hotkey {hotkey} --subtensor.network {subtensor_network}"
-                f' --netuid 51 --logging.debug'
+                f' --netuid 19 --logging.debug'
             )
             if subtensor_chain_endpoint is not None:
                 start_command += f" --subtensor.chain_endpoint {subtensor_chain_endpoint}"
