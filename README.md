@@ -29,7 +29,9 @@ We have SDXL Turbo, Kandinsky, Inpainting, Scribble, Controlnets, Upscaling, Ima
 ## Requirements
 
 ### Miners
-GPU: 1x80 GB or 2x24GB or 1x48GB
+GPU: 1x80 GB or 3x24gb or 2x48gb vram
+
+You might be able to use 2x24gb vram or 1x48gb vram, but as models change this is subject to change
 
 Storage: 200Gb
 

@@ -9,7 +9,7 @@ Setups tested for mining so far:
 | H1OO  | 12.0 | 22.04 | 3.10.12 | ✅  |
 | A100 | 11.8  | 22.04 | 3.10.12 | ✅ / ❌ (hit and miss) |
 | RTX 4090 | 11.8  | 22.04 | 3.10.12 | ✅ |
-| A6000* | 12.0   | 22.04 | 3.10.12 |✅ |
+| A6000 | 12.0   | 22.04 | 3.10.12 |✅ |
 | A40 | 12.0   | 22.04 | 3.10.12 | ✅ |
 | L40 | 12.0   | 22.04 | 3.10.12 | ❌ |
 | A100 SXM | 11.8  | 22.04 | 3.10.12 | ❌|
@@ -90,7 +90,7 @@ Simple step this one - note it may take a while if you have poor bandwidth (not 
 ### Define the configuration for your miners to run
 Since you have already installed vision (with `pip install -e .`), you can now use the Vision cli to define the configuration you want.
 
-
+I'd recommend sdxl turbo & kandinsky being on separate GPU's (unless )
 ```bash
 vision create-config
 ```
