@@ -54,3 +54,16 @@ Setups tested for mining so far:
 | A100 SXM | 11.8  | 22.04 | 3.10.12 |  ❌ |
 
 Note: That's not to say you can't use other GPU's!
+
+## Future of 19 + DSIS 🚀
+
+The DSIS framework is committed to supporting a variety of models and workflows, optimizing inference. It primarily focuses on maintaining the highest throughput possible for production cases and APIs, while building a dynamic marketplace. The first phase focuses on a reward system proportional to the number of models run.
+
+We already provide API access for high-scale inference, but we will do even more.
+
+**Key future features include:**
+
+-  **Subnet 19 for End Users**: Auto-scaling, fault tolerance, and reliability aspects will be catered to end users through Subnet 19.
+-  **Simplified Validator Services**: Providing comprehensive services to validators with one-click validator launches and simple GUI's for managing access & payments
+-  **Dynamic Resource Balance**: Allowing the running of an arbitrary number of models, at an enterprise scale
+-  **Intersubnet Collaborations**: Maximizing value extraction from other subnets and enabling the use of bittensor in a plug-and-play fashion.
