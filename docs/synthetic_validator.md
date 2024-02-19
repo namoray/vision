@@ -13,12 +13,14 @@ See below for tested GPU's:
 
 | Name  | CUDA Version | Ubuntu Version | Python Version | Works |
 |-------|--------------|----------------|----------------|-------|
-| A100 | 11.8  | 22.04 | 3.10.12 |  ✅ / ❌ (hit and miss) |
+| H1OO  | 12.0 | 22.04 | 3.10.12 | ✅  |
+| A100 | 11.8  | 22.04 | 3.10.12 | ✅ / ❌ (hit and miss) |
 | RTX 4090 | 11.8  | 22.04 | 3.10.12 | ✅ |
 | A6000* | 12.0   | 22.04 | 3.10.12 |✅ |
 | A40 | 12.0   | 22.04 | 3.10.12 | ✅ |
 | L40 | 12.0   | 22.04 | 3.10.12 | ❌ |
-| A100 SXM | 11.8  | 22.04 | 3.10.12 |   ❌|
+| A100 SXM | 11.8  | 22.04 | 3.10.12 | ❌|
+
 
 Note: That's not to say you can't use other GPU's!
 
@@ -43,9 +45,9 @@ apt install nodejs npm -y
 npm i -g pm2
 apt-get install -y jq
 
-### Install vim so you can edit the config easily
+### Install nano so you can edit the config easily
 apt-get update
-apt-get install vim -y
+apt-get install nano -y
 
 ### Install lsof so you can see ports not in use
 apt-get install lsof
@@ -59,9 +61,9 @@ sudo apt install nodejs npm -y
 sudo npm i -g pm2
 sudo apt-get install -y jq
 
-### Install vim so you can edit the config easily
+### Install nano so you can edit the config easily
 sudo apt-get update
-sudo apt-get install vim -y
+sudo apt-get install nano -y
 
 ### Install lsof so you can see ports not in use
 sudo apt-get install lsof

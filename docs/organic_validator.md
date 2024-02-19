@@ -13,6 +13,7 @@ There is a bug with the hugging face diffusers library and certain GPU's.
 
 | Name  | CUDA Version | Ubuntu Version | Python Version | Works |
 |-------|--------------|----------------|----------------|-------|
+| H1OO  | 12.0 | 22.04 | 3.10.12 | ✅  |
 | A100 | 11.8  | 22.04 | 3.10.12 | ✅ / ❌ (hit and miss) |
 | RTX 4090 | 11.8  | 22.04 | 3.10.12 | ✅ |
 | A6000* | 12.0   | 22.04 | 3.10.12 |✅ |
