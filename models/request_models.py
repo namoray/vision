@@ -9,12 +9,12 @@ ALLOWED_PARAMS_FOR_ENGINE = {
         "steps": {"checker": lambda x: isinstance(x, int) and x in range(3, 13),
                   "error_message": "should be an integer between 3 and 12 (inclusive)",
                   "generator": lambda: random.choice([i for i in range(3, 13)])},
-        "height": {"checker": lambda h: 512 <= h <= 1920 and h % 64 == 0,
-                   "error_message": "should be in between 512 and 1920 (inclusive) and multiple of 64",
-                   "generator": lambda: random.choice([i for i in range(512, 1920 + 64, 64)])},
-        "width": {"checker": lambda w: 512 <= w <= 1920 and w % 64 == 0,
-                  "error_message": "should be in between 512 and 1920 (inclusive) and multiple of 64",
-                  "generator": lambda: random.choice([i for i in range(512, 1920 + 64, 64)])},
+        "height": {"checker": lambda h: 512 <= h <= 1344 and h % 64 == 0,
+                   "error_message": "should be in between 512 and 1344 (inclusive) and multiple of 64",
+                   "generator": lambda: random.choice([i for i in range(512, 1344 + 64, 64)])},
+        "width": {"checker": lambda w: 512 <= w <= 1344 and w % 64 == 0,
+                  "error_message": "should be in between 512 and 1344 (inclusive) and multiple of 64",
+                  "generator": lambda: random.choice([i for i in range(512, 1344 + 64, 64)])},
         "cfg_scale": {"checker": lambda c: 1 <= c <= 4,
                       "error_message": "should be between 1 and 4",
                       "generator": lambda: random.random()* 3 + 1},
@@ -29,12 +29,12 @@ ALLOWED_PARAMS_FOR_ENGINE = {
         "inpaint_steps": {"checker": lambda x: isinstance(x, int) and x in range(15, 25),
                           "error_message": "should be an integer between 15 and 24 (inclusive)",
                           "generator": lambda: random.choice([i for i in range(15, 25)])},
-        "height": {"checker": lambda h: 512 <= h <= 1920 and h % 64 == 0,
-                   "error_message": "should be in between 512 and 1920 (inclusive) and multiple of 64",
-                   "generator": lambda: random.choice([i for i in range(512, 1920 + 64, 64)])},
-        "width": {"checker": lambda w: 512 <= w <= 1920 and w % 64 == 0,
-                  "error_message": "should be in between 512 and 1920 (inclusive) and multiple of 64",
-                  "generator": lambda: random.choice([i for i in range(512, 1920 + 64, 64)])},
+        "height": {"checker": lambda h: 512 <= h <= 1344 and h % 64 == 0,
+                   "error_message": "should be in between 512 and 1344 (inclusive) and multiple of 64",
+                   "generator": lambda: random.choice([i for i in range(512, 1344 + 64, 64)])},
+        "width": {"checker": lambda w: 512 <= w <= 1344 and w % 64 == 0,
+                  "error_message": "should be in between 512 and 1344 (inclusive) and multiple of 64",
+                  "generator": lambda: random.choice([i for i in range(512, 1344 + 64, 64)])},
         "cfg_scale": {"checker": lambda c: 2 <= c <= 8,
                       "error_message": "should be between 2 and 8",
                       "generator": lambda: random.random()* 6 + 2},
@@ -46,12 +46,12 @@ ALLOWED_PARAMS_FOR_ENGINE = {
         "steps": {"checker": lambda x: isinstance(x, int) and x in range(7, 26),
                   "error_message": "should be an integer between 7 and 25 (inclusive)",
                   "generator": lambda: random.choice([i for i in range(7, 26)])},
-        "height": {"checker": lambda h: 512 <= h <= 1920 and h % 64 == 0,
-                   "error_message": "should be in between 512 and 1920 (inclusive) and multiple of 64",
-                   "generator": lambda: random.choice([i for i in range(512, 1920 + 64, 64)])},
-        "width": {"checker": lambda w: 512 <= w <= 1920 and w % 64 == 0,
-                  "error_message": "should be in between 512 and 1920 (inclusive) and multiple of 64",
-                  "generator": lambda: random.choice([i for i in range(512, 1920 + 64, 64)])},
+        "height": {"checker": lambda h: 512 <= h <= 1344 and h % 64 == 0,
+                   "error_message": "should be in between 512 and 1344 (inclusive) and multiple of 64",
+                   "generator": lambda: random.choice([i for i in range(512, 1344 + 64, 64)])},
+        "width": {"checker": lambda w: 512 <= w <= 1344 and w % 64 == 0,
+                  "error_message": "should be in between 512 and 1344 (inclusive) and multiple of 64",
+                  "generator": lambda: random.choice([i for i in range(512, 1344 + 64, 64)])},
         "cfg_scale": {"checker": lambda c: 2 <= c <= 8,
                       "error_message": "should be between 2 and 8",
                       "generator": lambda: random.random()* 6 + 2},
@@ -68,14 +68,14 @@ class TextToImageRequest(BaseModel):
 
     - SDXL TURBO
     -- steps: 3 to 12
-    -- height: 512 to 1920 (and multiple of 64)
-    -- width: 512 to 1920 (and multiple of 64)
+    -- height: 512 to 1024 (and multiple of 64)
+    -- width: 512 to 1024 (and multiple of 64)
     -- cfg_scale: 1 to 4
 
     - Kandinsky 2.2
     -- steps: 25 to 40
-    -- height: 512 to 1920 (and multiple of 64)
-    -- width: 512 to 1920 (and multiple of 64)
+    -- height: 512 to 1024 (and multiple of 64)
+    -- width: 512 to 1024 (and multiple of 64)
     -- cfg_scale: 2 to 8
     """
 
@@ -130,15 +130,15 @@ class ImageToImageRequest(BaseModel):
 
     - SDXL TURBO
     -- steps: 3 to 12
-    -- height: 512 to 1920 (and multiple of 64)
-    -- width: 512 to 1920 (and multiple of 64)
+    -- height: 512 to 1024 (and multiple of 64)
+    -- width: 512 to 1024 (and multiple of 64)
     -- cfg_scale: 1 to 4
     -- image_strength: 0.0 to 0.75
 
     - Kandinsky 2.2
     -- steps: 25 to 40
-    -- height: 512 to 1920 (and multiple of 64)
-    -- width: 512 to 1920 (and multiple of 64)
+    -- height: 512 to 1024 (and multiple of 64)
+    -- width: 512 to 1024 (and multiple of 64)
     -- cfg_scale: 2 to 8
     -- image_strength: 0.0 to 0.75
     """
@@ -240,8 +240,8 @@ class ScribbleRequest(BaseModel):
 
     - SD-1.5:
     -- steps: 7 to 25
-    -- height: 512 to 1920 (and multiple of 64)
-    -- width: 512 to 1920 (and multiple of 64)
+    -- height: 512 to 1024 (and multiple of 64)
+    -- width: 512 to 1024 (and multiple of 64)
     -- cfg_scale: 2 to 8
     -- image_strength: 0.0 to 0.75
     """

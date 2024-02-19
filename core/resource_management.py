@@ -114,6 +114,8 @@ class SingletonResourceManager:
 
         # if self._config[cst.MODEL_SAM] is not None:
         #     self.load_resource(cst.MODEL_SAM)
+        if self._config[cst.IS_VALIDATOR]:
+            self.load_validator_resources()
 
         if self._config[cst.MODEL_CLIP] is not None:
             self.load_resource(cst.MODEL_CLIP)
@@ -130,8 +132,6 @@ class SingletonResourceManager:
         if self._config[cst.MODEL_UPSCALE] is not None:
             self.load_resource(cst.MODEL_UPSCALE)
 
-        if self._config[cst.IS_VALIDATOR]:
-            self.load_validator_resources()
 
         self.load_resource(cst.MODEL_CACHE)
 
@@ -185,6 +185,13 @@ class SingletonResourceManager:
         sdxl_turbo_base_pipe.scheduler = scheduler
         sdxl_img2img_pipe = AutoPipelineForImage2Image.from_pipe(sdxl_turbo_base_pipe).to(sdxl_turbo_device)
 
+        if self._config[cst.IS_VALIDATOR]:
+            sdxl_turbo_base_pipe.enable_model_cpu_offload(device=sdxl_turbo_device)
+            sdxl_img2img_pipe.enable_model_cpu_offload(device=sdxl_turbo_device)
+        else:
+            sdxl_turbo_base_pipe = sdxl_turbo_base_pipe.to(sdxl_turbo_device)
+            sdxl_img2img_pipe = sdxl_img2img_pipe.to(sdxl_turbo_device)
+
         self._loaded_resources[cst.MODEL_SDXL_TURBO] = (sdxl_turbo_base_pipe, sdxl_img2img_pipe)
         self._update_available_operations(protocols.TextToImage.__name__, True)
         self._update_available_operations(protocols.ImageToImage.__name__, True)
@@ -201,13 +208,22 @@ class SingletonResourceManager:
             cst.KANDINSKY_2_2_DECODER_MODEL_ID,
             torch_dtype=torch.bfloat16,
             cache_dir=cst.MODELS_CACHE,
-        ).to(kandinsky_device)
+        )
 
         inpaint = KandinskyV22InpaintPipeline.from_pretrained(
             cst.KANDINSKY_2_2_DECODER_INPAINT_MODEL_ID,
             torch_dtype=torch.bfloat16,
             cache_dir=cst.MODELS_CACHE,
-        ).to(kandinsky_device)
+        )
+
+        if self._config[cst.IS_VALIDATOR]:
+            text2img.enable_model_cpu_offload(device=kandinsky_device)
+            inpaint.enable_model_cpu_offload(device=kandinsky_device)
+        else:
+            text2img = text2img.to(kandinsky_device)
+            inpaint = inpaint.to(kandinsky_device)
+
+
 
         kandinsky_pipe = kandinsky_utils.KandinskyPipe_2_2(
             prior=prior,
@@ -230,7 +246,13 @@ class SingletonResourceManager:
             controlnet=scribble_controlnet,
             torch_dtype=torch.bfloat16,
             cache_dir=cst.MODELS_CACHE
-        ).to(scribble_device)
+        )
+
+        if self._config[cst.IS_VALIDATOR]:
+            scribble_pipeline.enable_model_cpu_offload(device=scribble_device)
+        else:
+            scribble_pipeline = scribble_pipeline.to(scribble_device)
+
 
         self._loaded_resources[cst.MODEL_SCRIBBLE] = scribble_pipeline
         self._update_available_operations(protocols.Scribble.__name__, True)
