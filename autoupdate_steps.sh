@@ -3,7 +3,12 @@
 # THIS FILE CONTAINS THE STEPS NEEDED TO AUTOMATICALLY UPDATE THE REPO ON A TAG CHANGE
 # THIS FILE ITSELF MAY CHANGE FROM UPDATE TO UPDATE, SO WE CAN DYNAMICALLY FIX ANY ISSUES
 
+pm2 delete "api_server"
+pm2 delete "safety_server"
+pm2 delete "checking_server"
+
 ./get_models.sh
+
 
 if command -v pip &> /dev/null
 then
