@@ -34,7 +34,7 @@ apt install nodejs npm -y
 npm i -g pm2
 apt-get install -y jq
 
-### Install vim so you can edit the config easily
+### Install nano so you can edit the config easily
 apt-get update
 apt-get install nano
 ```
@@ -47,7 +47,7 @@ sudo apt install nodejs npm -y
 sudo npm i -g pm2
 sudo apt-get install -y jq
 
-### Install vim so you can edit the config easily
+### Install nano so you can edit the config easily
 sudo apt-get update
 sudo apt-get install nano
 ```
@@ -87,9 +87,9 @@ vision create-config
 
 This will automagically spit out a config.yaml file with all your preferences. You can use
 ```bash
-vim config.yaml
+nano config.yaml
 ```
-at any time to edit it, or `cat config.yaml` to view it! (If you didn't install vim, you can try `nano config.yaml`)
+at any time to edit it, or `cat config.yaml` to view it! (If you didn't install nano, you can try `nano config.yaml`)
 
 It will also create a start_miners.sh script to automatically run the miners according the config you generated.
 

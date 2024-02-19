@@ -44,9 +44,9 @@ apt install nodejs npm -y
 npm i -g pm2
 apt-get install -y jq
 
-### Install vim so you can edit the config easily
+### Install nano so you can edit the config easily
 apt-get update
-apt-get install vim
+apt-get install nano
 
 ### Install lsof so you can see ports not in use
 apt-get install lsof
@@ -60,9 +60,9 @@ sudo apt install nodejs npm -y
 sudo npm i -g pm2
 sudo apt-get install -y jq
 
-### Install vim so you can edit the config easily
+### Install nano so you can edit the config easily
 sudo apt-get update
-sudo apt-get install vim
+sudo apt-get install nano
 
 ### Install lsof so you can see ports not in use
 sudo apt-get install lsof
@@ -144,6 +144,7 @@ pm2 start --name run_validator_auto_update "python run_validator_auto_update.py"
 This uses the config defined in the `config.yaml`.
 
 # Selling your bandwidth
+
 ### Creating the database
 
 ```bash
@@ -153,7 +154,7 @@ chmod +x /usr/local/bin/dbmate
 dbmate --url "sqlite:validator_database.db" up
 ```
 
-#### Managing access
+### Managing access
 
 To manage access to the your api server and sell access to anyone you like, using the vision-cli is the easiest way.
 
@@ -191,3 +192,9 @@ Now you can do:
 vision list-keys
 ```
 To see the API key. Give / sell this access to whoever you want to have access to your API server to query the network organically - these will be scored too!
+
+## Allowing people to access your server
+For them to use your server, you will need to communicate:
+
+- Your server address (IP_ADDRESS:PORT)
+- Use /redoc or /docs for automatic documentation on how to use it!
