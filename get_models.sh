@@ -1,3 +1,4 @@
+#!/bin/bash
 if [ -f dreamshaper_xl.safetensors ]; then
     echo "Dreamshaper model exists, no need to download"
 else

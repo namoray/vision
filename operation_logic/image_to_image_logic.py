@@ -66,5 +66,7 @@ async def image_to_image_logic(
         output.error_message = cst.NSFW_RESPONSE_ERROR
         return output
 
+    bt.logging.info("✅ Took an image and made an image 😎")
+
     output.image_b64s = [core_utils.get_b64_from_pipeline_image(processed_image)]
     return output

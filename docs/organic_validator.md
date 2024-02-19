@@ -6,18 +6,19 @@ Setups tested for mining so far:
 
 | Name  | CUDA Version | Ubuntu Version | Python Version | Works |
 |-------|--------------|----------------|----------------|-------|
-| A100** | 11.8  | 22.04 | 3.10.12 |  ✅ |
+| A100 | 11.8  | 22.04 | 3.10.12 |  ✅ / ❌ (hit and miss) |
 | RTX 4090 | 11.8  | 22.04 | 3.10.12 | ✅ |
-| A600 | 12.0   | 22.04 | 3.10.12 |✅ |
+| A6000* | 12.0   | 22.04 | 3.10.12 |✅ |
 | A40 | 12.0   | 22.04 | 3.10.12 | ✅ |
-| L40 | 12.0   | 22.04 | 3.10.12 | ✅ |
-| A100 SXM | 11.8  | 22.04 | 3.10.12 |  ❌ |
+| L40 | 12.0   | 22.04 | 3.10.12 | ❌ |
+| A100 SXM | 11.8  | 22.04 | 3.10.12 |   ❌|
 
 Note: That's not to say you can't use other GPU's!
 
-** I would recommend the A100 for the easiest life going forward.
-As the requirements increase, the A100 will be the most cost effective and simple to use for validators.
+* Recommended
+
 ## Setup steps
+
 
 ### Clone the repo
 ```bash

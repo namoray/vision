@@ -18,8 +18,8 @@ while True:
 
     if should_update_local(local_tag, remote_tag):
         print("Local repo is not up-to-date. Updating...")
-        update_cmd = 'git pull origin ' + remote_tag
-        process = subprocess.Popen(update_cmd.split(), stdout=subprocess.PIPE)
+        reset_cmd = 'git reset --hard ' + remote_tag
+        process = subprocess.Popen(reset_cmd.split(), stdout=subprocess.PIPE)
         output, error = process.communicate()
 
         if error:
@@ -27,11 +27,12 @@ while True:
         else:
             print("Updated local repo to latest version: {}", format(remote_tag))
 
-            print("Starting the validator servers...")
+            print("Running the autoupdate steps...")
             # Trigger shell script. Make sure this file path starts from root
-            subprocess.call(["./validation/run_all_servers.sh"], shell=True)
+            subprocess.call(["./autoupdate_steps.sh"], shell=True)
 
-            print("Finished starting all the validator servers! Ready to go 😎")
+            print("Finished running the autoupdate steps! Ready to go 😎")
+
 
     else:
         print("Repo is up-to-date.")
