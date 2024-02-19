@@ -113,7 +113,7 @@ MODELS_CACHE = "models_cache"
 # Kandinsky params
 
 PRIOR_STEPS = 25
-PRIOR_GUIDANCE_SCALE = 4.0
+PRIOR_GUIDANCE_SCALE = 1.0
 
 KANDINSKY_2_2_DECODER_MODEL_ID = "kandinsky-community/kandinsky-2-2-decoder"
 KANDINSKY_2_2_PRIOR_MODEL_ID = "kandinsky-community/kandinsky-2-2-prior"

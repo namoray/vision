@@ -67,7 +67,7 @@ class KandinskyPipe_2_2:
                 prompt=prompt,
                 num_inference_steps=cst.PRIOR_STEPS,
                 guidance_scale=cst.PRIOR_GUIDANCE_SCALE,
-                num_images_per_prompt=num_outputs,
+                num_images_per_prompt=1,
                 generator=generator,
             )
             neg_emb = self.prior(
@@ -97,7 +97,7 @@ class KandinskyPipe_2_2:
                 negative_prompt=negative_prompt,
                 num_inference_steps=cst.PRIOR_STEPS,
                 guidance_scale=cst.PRIOR_GUIDANCE_SCALE,
-                num_images_per_prompt=num_outputs,
+                num_images_per_prompt=1,
                 generator=generator,
             )
             output_images = self.text2img(
@@ -115,14 +115,14 @@ class KandinskyPipe_2_2:
                 prompt=prompt,
                 num_inference_steps=cst.PRIOR_STEPS,
                 guidance_scale=cst.PRIOR_GUIDANCE_SCALE,
-                num_images_per_prompt=num_outputs,
+                num_images_per_prompt=1,
                 generator=generator,
             )
             neg_emb = self.prior(
                 prompt=negative_prompt,
                 num_inference_steps=cst.PRIOR_STEPS,
                 guidance_scale=cst.PRIOR_GUIDANCE_SCALE,
-                num_images_per_prompt=num_outputs,
+                num_images_per_prompt=1,
                 generator=generator,
             )
             pipe_output = self.inpaint(
