@@ -13,9 +13,9 @@ operation_name = "AvailableOperations"
 class AvailableOperations(abstract_operation.Operation):
     @staticmethod
     async def forward(synapse: protocols.AvailableOperations) -> protocols.AvailableOperations:
-        # This needs to be defined in some config somewhere
+
         synapse.available_operations = resource_management.SingletonResourceManager().get_available_operations()
-        bt.logging.info(f"Available operations: {synapse.available_operations}")
+        bt.logging.info(f"✅ Available operations: {synapse.available_operations}")
         return synapse
 
     @staticmethod

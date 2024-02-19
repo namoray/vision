@@ -9,7 +9,7 @@ from core import resource_management
 from core import utils as core_utils
 from models import base_models
 from operation_logic import utils as operation_utils
-
+import bittensor as bt
 
 async def scribble_logic(body: base_models.ScribbleIncoming) -> base_models.ScribbleOutgoing:
     scribble_pipeline = resource_management.SingletonResourceManager().get_resource(cst.MODEL_SCRIBBLE)
@@ -49,8 +49,10 @@ async def scribble_logic(body: base_models.ScribbleIncoming) -> base_models.Scri
     ).images[0]
 
     if operation_utils.image_is_nsfw(processed_image):
+        bt.logging.info("NSFW image detected 👿, returning a corresponding error and no image")
         output.error_message = cst.NSFW_RESPONSE_ERROR
         return output
 
+    bt.logging.info("✅ Took an image and made an image 😎")
     output.image_b64s = [core_utils.get_b64_from_pipeline_image(processed_image)]
     return output

@@ -7,7 +7,7 @@ from core import constants as cst, utils as core_utils
 from core import resource_management
 from operation_logic import utils as operation_utils
 from models import base_models
-
+import bittensor as bt
 
 MAX_PIX_COUNT = 4194304
 
@@ -32,9 +32,11 @@ async def upscale_logic(body: base_models.UpscaleIncoming) -> base_models.Upscal
     upscaled_image = upscale_model.predict(image, batch_size=4)
 
     if operation_utils.image_is_nsfw(upscaled_image):
+        bt.logging.info("NSFW image detected 👿, returning a corresponding error and no image")
         output.error_message = "Upscaled image is NSFW"
         return output
 
+    bt.logging.info("✅ Took an image and made an image 😎")
     output.image_b64s = [core_utils.get_b64_from_pipeline_image(upscaled_image)]
 
     return output

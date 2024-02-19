@@ -171,6 +171,11 @@ vision create-key 10 60 test
 ```
 Creates a test key with a balance of 10 (which corresponds to 10 images), a rate limit of 60 requests per minute = 1/s, and a name 'test'.
 
+**Recommend values:**
+- Balance: Depends on how much you want to sell! Each credit is an image (so a balance of 1000 will allow 1000 images to be generated)
+- Rate limit: I would recommend a rate limit of ~20/minute for casual users trying out the API, and around ~120/minute for production users
+- Name: Just for you to remember who you want to use that key :)
+
 Now you can do:
 ```bash
 vision list-keys

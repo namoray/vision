@@ -9,7 +9,7 @@ from core import resource_management
 from core import utils as core_utils
 from models import base_models, utility_models
 from operation_logic import utils as operation_utils
-
+import bittensor as bt
 
 async def image_to_image_logic(
     body: base_models.ImageToImageIncoming,
@@ -62,6 +62,7 @@ async def image_to_image_logic(
     ).images[0]
 
     if operation_utils.image_is_nsfw(processed_image):
+        bt.logging.info("NSFW image detected 👿, returning a corresponding error and no image")
         output.error_message = cst.NSFW_RESPONSE_ERROR
         return output
 
