@@ -23,7 +23,6 @@ from diffusers import (
     StableDiffusionControlNetPipeline,
     StableDiffusionPipeline,
     StableDiffusionXLPipeline,
-    DPMSolverMultistepScheduler
 )
 
 from core import constants as cst
@@ -180,17 +179,9 @@ class SingletonResourceManager:
         sdxl_turbo_device = self._config.get(cst.MODEL_SDXL_TURBO, cst.DEVICE_DEFAULT)
         sdxl_turbo_base_pipe = StableDiffusionXLPipeline.from_single_file(cst.DREAMSHAPER_XL_LOCAL_FILE, torch_dtype=torch.bfloat16).to(sdxl_turbo_device)
         config = sdxl_turbo_base_pipe.scheduler.config
-        config["use_karras_sigmas"] = True
-        scheduler = DPMSolverMultistepScheduler.from_config(config)
+        scheduler = DDPMScheduler.from_config(config)
         sdxl_turbo_base_pipe.scheduler = scheduler
         sdxl_img2img_pipe = AutoPipelineForImage2Image.from_pipe(sdxl_turbo_base_pipe).to(sdxl_turbo_device)
-
-        if self._config[cst.IS_VALIDATOR]:
-            sdxl_turbo_base_pipe.enable_model_cpu_offload(device=sdxl_turbo_device)
-            sdxl_img2img_pipe.enable_model_cpu_offload(device=sdxl_turbo_device)
-        else:
-            sdxl_turbo_base_pipe = sdxl_turbo_base_pipe.to(sdxl_turbo_device)
-            sdxl_img2img_pipe = sdxl_img2img_pipe.to(sdxl_turbo_device)
 
         self._loaded_resources[cst.MODEL_SDXL_TURBO] = (sdxl_turbo_base_pipe, sdxl_img2img_pipe)
         self._update_available_operations(protocols.TextToImage.__name__, True)
@@ -208,22 +199,14 @@ class SingletonResourceManager:
             cst.KANDINSKY_2_2_DECODER_MODEL_ID,
             torch_dtype=torch.bfloat16,
             cache_dir=cst.MODELS_CACHE,
-        )
+        ).to(kandinsky_device)
+
 
         inpaint = KandinskyV22InpaintPipeline.from_pretrained(
             cst.KANDINSKY_2_2_DECODER_INPAINT_MODEL_ID,
             torch_dtype=torch.bfloat16,
             cache_dir=cst.MODELS_CACHE,
-        )
-
-        if self._config[cst.IS_VALIDATOR]:
-            text2img.enable_model_cpu_offload(device=kandinsky_device)
-            inpaint.enable_model_cpu_offload(device=kandinsky_device)
-        else:
-            text2img = text2img.to(kandinsky_device)
-            inpaint = inpaint.to(kandinsky_device)
-
-
+        ).to(kandinsky_device)
 
         kandinsky_pipe = kandinsky_utils.KandinskyPipe_2_2(
             prior=prior,
@@ -238,7 +221,7 @@ class SingletonResourceManager:
 
     def load_scribble_resources(self):
         scribble_device = self._config.get(cst.MODEL_SCRIBBLE, cst.DEVICE_DEFAULT)
-        scribble_scheduler = DDPMScheduler.from_pretrained(cst.DREAMSHAPER_PIPELINE_REPO, subfolder="scheduler", torch_dtype=torch.bfloat16, cache_dir=cst.MODELS_CACHE)
+        scribble_scheduler = DDPMScheduler.from_pretrained(cst.DREAMSHAPER_PIPELINE_REPO, subfolder="scheduler", torch_dtype=torch.bfloat16, cache_dir=cst.MODELS_CACHE).to(scribble_device)
         scribble_controlnet = ControlNetModel.from_pretrained(cst.CONTROL_MODEL_REPO, torch_dtype=torch.bfloat16, cache_dir=cst.MODELS_CACHE)
         scribble_pipeline = StableDiffusionControlNetPipeline.from_pretrained(
             cst.DREAMSHAPER_PIPELINE_REPO,
@@ -247,12 +230,6 @@ class SingletonResourceManager:
             torch_dtype=torch.bfloat16,
             cache_dir=cst.MODELS_CACHE
         )
-
-        if self._config[cst.IS_VALIDATOR]:
-            scribble_pipeline.enable_model_cpu_offload(device=scribble_device)
-        else:
-            scribble_pipeline = scribble_pipeline.to(scribble_device)
-
 
         self._loaded_resources[cst.MODEL_SCRIBBLE] = scribble_pipeline
         self._update_available_operations(protocols.Scribble.__name__, True)
@@ -338,7 +315,6 @@ class SingletonResourceManager:
         for resource_name in list(self._loaded_resources.keys()):
             if resource_name not in [
                 cst.MODEL_CACHE,
-
                 cst.MODEL_MARKOV,
                 cst.PROMPT_SAFETY_CHECKERS,
                 cst.IMAGE_SAFETY_CHECKERS,
@@ -349,7 +325,6 @@ class SingletonResourceManager:
         for resource_name in list(self._loaded_resources.keys()):
             if resource_name not in [
                 cst.MODEL_CACHE,
-
                 cst.MODEL_MARKOV,
                 cst.PROMPT_SAFETY_CHECKERS,
                 cst.IMAGE_SAFETY_CHECKERS,
