@@ -80,7 +80,6 @@ def image_is_nsfw(image: Image) -> bool:
         safety_checker_input = safety_feature_extractor(images=image, return_tensors="pt").to(safety_checker_device)
         result, has_nsfw_concepts = safety_checker.forward(clip_input=safety_checker_input.pixel_values, images=image)
 
-        print(result, has_nsfw_concepts)
         return has_nsfw_concepts
 
 

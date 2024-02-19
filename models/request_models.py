@@ -3,6 +3,7 @@ from typing import Optional, List
 from models import utility_models
 import random
 from core import constants as cst, dataclasses as dc
+import bittensor as bt
 
 ALLOWED_PARAMS_FOR_ENGINE = {
     utility_models.EngineEnum.SDXL_TURBO.value: {
@@ -114,6 +115,9 @@ class TextToImageRequest(BaseModel):
             raise ValueError(f"Engine {engine} not supported")
         allowed_params = ALLOWED_PARAMS_FOR_ENGINE[engine]
         for param, value in params_and_values:
+
+            if param not in allowed_params or value is None:
+                continue
             checker = allowed_params[param]['checker']
             if not checker(value):
                 error_message = allowed_params[param]['error_message']
@@ -175,19 +179,20 @@ class ImageToImageRequest(BaseModel):
         height = values.get('height')
         width = values.get('width')
         cfg_scale = values.get('cfg_scale')
-        image_strength = values.get('image_strength')
 
-
-
-        params_and_values = [("steps", steps), ("height", height), ("width", width), ("cfg_scale", cfg_scale), ("image_strength", image_strength)]
+        params_and_values = [("steps", steps), ("height", height), ("width", width), ("cfg_scale", cfg_scale)]
 
         if engine not in ALLOWED_PARAMS_FOR_ENGINE:
             raise ValueError(f"Engine {engine} not supported")
         allowed_params = ALLOWED_PARAMS_FOR_ENGINE[engine]
         for param, value in params_and_values:
-            checker = allowed_params[param]
+
+            if param not in allowed_params or value is None:
+                continue
+            checker = allowed_params[param]['checker']
             if not checker(value):
-                raise ValueError(f"Value {value} for {param} not allowed for the engine {engine}.")
+                error_message = allowed_params[param]['error_message']
+                raise ValueError(f"Invalid value {value} provided for {param}, with engine {engine}. The value {error_message}")
 
         return values
 
@@ -217,19 +222,23 @@ class InpaintRequest(BaseModel):
 
         engine = values.get('engine')
         steps = values.get('steps')
+        height = values.get('height')
+        width = values.get('width')
         cfg_scale = values.get('cfg_scale')
 
-
-
-        params_and_values = [("inpaint_steps", steps), ("cfg_scale", cfg_scale)]
+        params_and_values = [("steps", steps), ("height", height), ("width", width), ("cfg_scale", cfg_scale)]
 
         if engine not in ALLOWED_PARAMS_FOR_ENGINE:
             raise ValueError(f"Engine {engine} not supported")
         allowed_params = ALLOWED_PARAMS_FOR_ENGINE[engine]
         for param, value in params_and_values:
-            checker = allowed_params[param]
+
+            if param not in allowed_params or value is None:
+                continue
+            checker = allowed_params[param]['checker']
             if not checker(value):
-                raise ValueError(f"Value {value} for {param} not allowed for the engine {engine}.")
+                error_message = allowed_params[param]['error_message']
+                raise ValueError(f"Invalid value {value} provided for {param}, with engine {engine}. The value {error_message}")
 
         return values
 
@@ -268,6 +277,7 @@ class ScribbleRequest(BaseModel):
         if not values:
             raise ValueError("Text prompts cannot be empty")
         return values
+    
     @root_validator
     def allowed_params_validator(cls, values):
 
@@ -276,19 +286,20 @@ class ScribbleRequest(BaseModel):
         height = values.get('height')
         width = values.get('width')
         cfg_scale = values.get('cfg_scale')
-        image_strength = values.get('image_strength')
 
-
-
-        params_and_values = [("steps", steps), ("height", height), ("width", width), ("cfg_scale", cfg_scale), ("image_strength", image_strength)]
+        params_and_values = [("steps", steps), ("height", height), ("width", width), ("cfg_scale", cfg_scale)]
 
         if engine not in ALLOWED_PARAMS_FOR_ENGINE:
             raise ValueError(f"Engine {engine} not supported")
         allowed_params = ALLOWED_PARAMS_FOR_ENGINE[engine]
         for param, value in params_and_values:
-            checker = allowed_params[param]
+
+            if param not in allowed_params or value is None:
+                continue
+            checker = allowed_params[param]['checker']
             if not checker(value):
-                raise ValueError(f"Value {value} for {param} not allowed.")
+                error_message = allowed_params[param]['error_message']
+                raise ValueError(f"Invalid value {value} provided for {param}, with engine {engine}. The value {error_message}")
 
         return values
 
