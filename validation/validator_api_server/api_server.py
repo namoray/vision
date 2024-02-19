@@ -229,9 +229,6 @@ async def api_key_validator(request, call_next):
 
     if api_key_info is None:
         return JSONResponse(status_code=HTTP_401_UNAUTHORIZED, content={"detail": "Invalid API key"})
-
-    bt.logging.warning(f"api key info keys: {api_key_info.keys()}")
-
     endpoint = request.url.path.split("/")[-1]
     credits_required = ENDPOINT_TO_CREDITS_USED.get(endpoint, 1)
 
