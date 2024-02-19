@@ -211,9 +211,6 @@ ENDPOINT_TO_CREDITS_USED = {
     "upscale": 1,
 }
 
-
-
-
 @app.middleware("http")
 async def api_key_validator(request, call_next):
 
