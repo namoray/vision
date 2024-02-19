@@ -95,7 +95,7 @@ def get_config():
 
         config[hotkey] = {}
 
-        one_gpu = get_input({"default": "n", "message": "Do you want to use a single gpu for all models (mainly for validators)? (y/n)", "process_function": bool_processing_func})
+        one_gpu = get_input({"default": "y", "message": "Do you want to use a single gpu for all models (mainly for validators)? (y/n)", "process_function": bool_processing_func})
         if one_gpu:
             gpu = get_input({"default": "0", "message": "Which gpu do you want to use? ", "process_function": device_processing_func})
             config[hotkey][core_cst.SINGULAR_GPU] = gpu

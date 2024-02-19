@@ -36,7 +36,7 @@ apt-get install -y jq
 
 ### Install vim so you can edit the config easily
 apt-get update
-apt-get install vim
+apt-get install nano
 ```
 
 If you are on a bare metal machine (e.g. Vast) where you require `sudo`, use the following:
@@ -49,7 +49,7 @@ sudo apt-get install -y jq
 
 ### Install vim so you can edit the config easily
 sudo apt-get update
-sudo apt-get install vim
+sudo apt-get install nano
 ```
 
 ### Install python dependencies

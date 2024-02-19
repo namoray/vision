@@ -13,3 +13,4 @@ No external facing server is needed, and you do not expose any servers to the ou
 To setup a validator of this kind, you'll need to create the config for it.
 
 [Synthetic validator setup](synthetic_validator.md)
+[Organic validator setup](organic_validator.md)

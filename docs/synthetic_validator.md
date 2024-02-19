@@ -1,5 +1,6 @@
 # Full instructions for setup
 
+NOTE: first setup takes a while, there's a lot of models!
 
 ### Hardware
 Setups tested for mining so far:
@@ -44,7 +45,7 @@ apt-get install -y jq
 
 ### Install vim so you can edit the config easily
 apt-get update
-apt-get install vim
+apt-get install vim -y
 
 ### Install lsof so you can see ports not in use
 apt-get install lsof
@@ -60,7 +61,7 @@ sudo apt-get install -y jq
 
 ### Install vim so you can edit the config easily
 sudo apt-get update
-sudo apt-get install vim
+sudo apt-get install vim -y
 
 ### Install lsof so you can see ports not in use
 sudo apt-get install lsof

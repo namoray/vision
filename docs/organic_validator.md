@@ -4,21 +4,27 @@
 ### Hardware
 Setups tested for mining so far:
 
+
+**NOTE** Some GPUS (especially on runpod) are unable to load the pipelines into memory.
+
+If you see an issue where the checking servers / safety servers are unable to start, chances are your GPU is incompatible.
+
+There is a bug with the hugging face diffusers library and certain GPU's.
+
 | Name  | CUDA Version | Ubuntu Version | Python Version | Works |
 |-------|--------------|----------------|----------------|-------|
-| A100 | 11.8  | 22.04 | 3.10.12 |  ✅ / ❌ (hit and miss) |
+| A100 | 11.8  | 22.04 | 3.10.12 | ✅ / ❌ (hit and miss) |
 | RTX 4090 | 11.8  | 22.04 | 3.10.12 | ✅ |
 | A6000* | 12.0   | 22.04 | 3.10.12 |✅ |
 | A40 | 12.0   | 22.04 | 3.10.12 | ✅ |
 | L40 | 12.0   | 22.04 | 3.10.12 | ❌ |
-| A100 SXM | 11.8  | 22.04 | 3.10.12 |   ❌|
+| A100 SXM | 11.8  | 22.04 | 3.10.12 | ❌|
 
 Note: That's not to say you can't use other GPU's!
 
-* Recommended
+* Recommended - I advise you to use a A6000
 
-## Setup steps
-
+# Setup steps
 
 ### Clone the repo
 ```bash
@@ -81,7 +87,6 @@ pip3 install -e .
 pip3 install -r git_requirements.txt
 ```
 
-
 ### Download the necessary models
 Simple step this one - note it may take a while if you have poor bandwidth (not recommended)
 
@@ -135,6 +140,7 @@ pm2 start --name run_validator_auto_update "python run_validator_auto_update.py"
 
 This uses the config defined in the `config.yaml`.
 
+# Selling your bandwidth
 ### Creating the database
 
 ```bash

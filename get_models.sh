@@ -3,6 +3,7 @@ if [ -f dreamshaper_xl.safetensors ]; then
     echo "Dreamshaper model exists, no need to download"
 else
     wget -O dreamshaper_xl.safetensors https://civitai.com/api/download/models/333449?type=Model&format=SafeTensor&size=full&fp=fp16
+    exit 0
 fi
 
 

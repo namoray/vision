@@ -19,9 +19,9 @@ apt install nodejs npm -y
 npm i -g pm2
 apt-get install -y jq
 
-### Install vim so you can edit the config easily
+### Install nano so you can edit the config easily
 apt-get update
-apt-get install vim
+apt-get install nano
 
 ```bash
 ### Install the local python environment
