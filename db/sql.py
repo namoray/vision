@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 BALANCE = "balance"
 KEY = "key"
-NAME= "str"
+NAME= "name"
 
 RATE_LIMIT_PER_MINUTE = "rate_limit_per_minute"
 API_KEYS_TABLE = "api_keys"

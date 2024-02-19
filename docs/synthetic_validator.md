@@ -4,6 +4,12 @@
 ### Hardware
 Setups tested for mining so far:
 
+**NOTE** Some GPUS (especially on runpod) are unable to load the pipelines into memory.
+
+If you see an issue where the checking servers / safety servers are unable to start, chances are your gpu is dodgy.
+
+See below for tested GPU's:
+
 | Name  | CUDA Version | Ubuntu Version | Python Version | Works |
 |-------|--------------|----------------|----------------|-------|
 | A100 | 11.8  | 22.04 | 3.10.12 |  ✅ / ❌ (hit and miss) |

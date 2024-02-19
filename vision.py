@@ -5,7 +5,6 @@ import typer
 from rich.console import Console
 from rich.table import Table
 from db import sql
-from typing import Optional
 from  core.create_config import get_config
 
 cli = typer.Typer(name="Vision CLI")
@@ -48,7 +47,7 @@ def create_key(balance: float = 100, rate_limit_per_minute: int = 10, name: str 
 
 @cli.command()
 def update_key(
-    key: str, balance: Optional[float] = None, rate_limit_per_minute: Optional[int] = None, name: Optional[str] = None
+    key: str, balance: float, rate_limit_per_minute: int, name: str
 ):
     """
     Update an existing API Key.
