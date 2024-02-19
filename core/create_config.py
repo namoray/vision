@@ -24,7 +24,7 @@ def bool_processing_func(input: str) -> bool:
         return False
 
 GLOBAL_PARAMETERS = {
-    core_cst.HOTKEY_PARAM: {"default": "default", "message": "Hotkey "},
+    core_cst.HOTKEY_PARAM: {"default": "default", "message": "Hotkey name: "},
 }
 
 DEVICE_PARAMETERS = {
