@@ -366,10 +366,10 @@ class CoreValidator:
 
         # If both None, then something is wrong with the query, needs to be addressed
         if result1.formatted_response is None and result2.formatted_response is None:
-            dict_to_log = core_utils.dict_with_short_values(synapse)
-            bt.logging.error(
-                f"😱 Just got two none results. Please let the dev know!\n Synapse: {dict_to_log}; is synthetic? {synthetic_query};"
-            )
+            # dict_to_log = core_utils.dict_with_short_values(synapse)
+            # bt.logging.error(
+            #     f"😱 Just got two none results. Please let the dev know!\n Synapse: {dict_to_log}; is synthetic? {synthetic_query};"
+            # )
             return
 
         axon_scores: Dict[int, float] = {}
@@ -381,8 +381,6 @@ class CoreValidator:
 
         similarity_comparison_function = self._get_similarity_comparison_function(synapse.__class__.__name__)
         images_are_similar = similarity_comparison_function(result1.formatted_response, result2.formatted_response)
-        print(f'Function name is: {similarity_comparison_function.__name__}')
-        bt.logging.info(f"Images are similar: {images_are_similar}")
 
         if images_are_similar and random.random() > cst.CHANCE_TO_CHECK_OUTPUT_WHEN_IMAGES_FROM_MINERS_WERE_SIMILAR:
             # If the miners have very similar responses, then a lot of the time we can skip checking the output with our own server
