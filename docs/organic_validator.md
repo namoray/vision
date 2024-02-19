@@ -139,6 +139,8 @@ This uses the config defined in the `config.yaml`.
 ```bash
 curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64
 chmod +x /usr/local/bin/dbmate
+
+dbmate --url "sqlite:validator_database.db" up
 ```
 
 #### Managing access
@@ -155,10 +157,12 @@ Shows all the commands and should give self explanatory instructions.
 You can also do
 
 ```bash
-vision some-comamnd --help
+vision some-command --help
 ```
 
 To get more info about that command!
+
+# Examples
 
 For example:
 
@@ -167,6 +171,8 @@ vision create-key 10 60 test
 ```
 Creates a test key with a balance of 10 (which corresponds to 10 images), a rate limit of 60 requests per minute = 1/s, and a name 'test'.
 
+Now you can do:
 ```bash
 vision list-keys
 ```
+To see the API key. Give / sell this access to whoever you want to have access to your API server to query the network organically - these will be scored too!
