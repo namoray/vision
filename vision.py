@@ -1,7 +1,7 @@
 import uuid
 
 import typer
-
+from typing import Optional
 from rich.console import Console
 from rich.table import Table
 from db import sql
@@ -11,10 +11,13 @@ cli = typer.Typer(name="Vision CLI")
 
 @cli.command()
 def create_config():
+    """
+    Generates the config file.
+    """
     get_config()
 
 @cli.command()
-def create_key(balance: float = 100, rate_limit_per_minute: int = 10, name: str = ""):
+def create_key(balance: Optional[float] = None, rate_limit_per_minute: Optional[int] = None, name: Optional[str] = None):
     """
     Create a new API key.
 
@@ -25,6 +28,16 @@ def create_key(balance: float = 100, rate_limit_per_minute: int = 10, name: str 
     rate_limit_per_minute: The rate limit in requests per minute for the API key.
     name: The name for the API key.
     """
+
+    if balance is None:
+        balance = float(input("Please enter initial balance for the key (1 credit = 1 image): "))
+
+    if rate_limit_per_minute is None:
+        rate_limit_per_minute = int(input("Please enter rate limit per minute: "))
+
+    if name is None:
+        name = input("Please enter a name for the API key: ")
+
     api_key = str(uuid.uuid4())
     with sql.get_db_connection() as conn:
         sql.add_api_key(conn, api_key, balance, rate_limit_per_minute, name)

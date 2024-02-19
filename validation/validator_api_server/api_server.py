@@ -194,7 +194,13 @@ async def clip_embeddings(
 
 
 def _get_api_key(request: Request):
-    return request.headers.get("X-API-KEY")
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return None
+    if auth_header.startswith("Bearer "):
+        return auth_header.split(" ")[1]
+    else:
+        return auth_header
 
 ENDPOINT_TO_CREDITS_USED = {
     "clip-embeddings": 0.2,

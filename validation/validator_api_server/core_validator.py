@@ -167,7 +167,7 @@ class CoreValidator:
 
             synapse_class_ = getattr(protocols, operation)
             synapse = synapse_class_(**synthetic_data)
-            outgoing_model = base_models.TextToImageOutgoing  # getattr(base_models, operation + core_cst.OUTGOING)
+            outgoing_model = getattr(base_models, operation + core_cst.OUTGOING)
 
             time_before_query = time.time()
             await self.execute_query(synapse, outgoing_model, synthetic_query=True)
@@ -260,7 +260,7 @@ class CoreValidator:
         return
 
     def _get_similarity_comparison_function(self, outgoing_model: str) -> Callable:
-        return similarity_comparisons.OUTGOING_MODEL_TO_COMPARISON_FUNCTION[outgoing_model]
+        return similarity_comparisons.SYNAPSE_TO_COMPARISON_FUNCTION[outgoing_model]
 
     async def query_individual_axon(
         self, synapse: bt.Synapse, axon_uid: int, deserialize: bool = False, log_requests_and_responses: bool = True
@@ -378,8 +378,11 @@ class CoreValidator:
                 if failed_axon is not None:
                     axon_scores[failed_axon] = 0
 
-        similarity_comparison_function = self._get_similarity_comparison_function(outgoing_model)
+
+        similarity_comparison_function = self._get_similarity_comparison_function(synapse.__class__.__name__)
         images_are_similar = similarity_comparison_function(result1.formatted_response, result2.formatted_response)
+        print(f'Function name is: {similarity_comparison_function.__name__}')
+        bt.logging.info(f"Images are similar: {images_are_similar}")
 
         if images_are_similar and random.random() > cst.CHANCE_TO_CHECK_OUTPUT_WHEN_IMAGES_FROM_MINERS_WERE_SIMILAR:
             # If the miners have very similar responses, then a lot of the time we can skip checking the output with our own server

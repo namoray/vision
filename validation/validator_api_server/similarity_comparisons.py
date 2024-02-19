@@ -4,8 +4,7 @@ from core import utils as core_utils
 import xgboost as xgb
 from typing import Tuple
 import imagehash
-
-
+import numpy as np
 images_are_same_classifier = xgb.XGBClassifier()
 images_are_same_classifier.load_model('image_similarity_xgb_model.json')
 
@@ -26,6 +25,24 @@ def images_are_same_generic(formatted_response1: base_models.ImageResponseBase ,
 
 def images_are_same_upscale(formatted_response1: base_models.ImageResponseBase , formatted_response2: base_models.ImageResponseBase) -> float:
     return _images_are_different_probability(formatted_response1, formatted_response2) < 0.25
+
+def clip_embeddings_are_same(formatted_response1: base_models.ClipEmbeddingsBase , formatted_response2: base_models.ClipEmbeddingsBase) -> float:
+
+    if formatted_response1 is None or formatted_response2 is None:
+        return float(formatted_response1 != formatted_response2)
+    elif formatted_response1.image_embeddings is None or formatted_response2.image_embeddings is None:
+        return float(formatted_response1.image_embeddings != formatted_response2.image_embeddings)
+    else:
+        image_embedding1 = np.array(formatted_response1.image_embeddings, dtype=float)
+        image_embedding2 = np.array(formatted_response2.image_embeddings, dtype=float)
+
+        dot_product = np.dot(image_embedding1, image_embedding2.T)
+        norm1 = np.linalg.norm(image_embedding1)
+        norm2 = np.linalg.norm(image_embedding2)
+
+        normalized_dot_product = dot_product / (norm1 * norm2)
+
+        return float(normalized_dot_product[0][0] > 0.995)
 
 def _image_hash_feature_extraction(image1_b64: str, image2_b64: str) -> Tuple[float, float]:
 
@@ -55,10 +72,11 @@ def _image_hash_feature_extraction(image1_b64: str, image2_b64: str) -> Tuple[fl
 
 # ADD ONE FOR CLIP EMBEDDINGS
 
-OUTGOING_MODEL_TO_COMPARISON_FUNCTION = {
-    base_models.ImageToImageOutgoing: images_are_same_generic,
-    base_models.TextToImageOutgoing: images_are_same_generic,
-    base_models.InpaintOutgoing: images_are_same_generic,
-    base_models.ScribbleOutgoing: images_are_same_generic,
-    base_models.UpscaleOutgoing: images_are_same_upscale,
+SYNAPSE_TO_COMPARISON_FUNCTION = {
+    "TextToImage": images_are_same_generic,
+    "ImageToImage": images_are_same_generic,
+    "Inpaint": images_are_same_generic,
+    "Scribble": images_are_same_generic,
+    "Upscale": images_are_same_upscale,
+    "ClipEmbeddings": clip_embeddings_are_same,
 }
