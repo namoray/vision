@@ -122,6 +122,9 @@ vision create-config
 #### Starting the server
 
 ### With autoupdates
+
+> **WARNING:** Autoupdates will work best if you use the `one gpu for all` setting in the config - otherwise if there is a new model we won't know what to do!
+
 ```bash
 pm2 start --name run_validator_auto_update "python run_validator_auto_update.py"
 ```

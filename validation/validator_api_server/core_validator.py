@@ -32,7 +32,7 @@ import json
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
 _UPPER_FOLLOWING_REGEXP = re.compile("([a-z0-9])([A-Z])")
 
-
+VERSION_KEY = 1
 def _pascal_to_kebab(input_string: str) -> str:
     hyphen_separated = _PASCAL_SEP_REGEXP.sub(r"\1-\2", input_string)
     return _UPPER_FOLLOWING_REGEXP.sub(r"\1-\2", hyphen_separated).lower()
@@ -92,7 +92,7 @@ class CoreValidator:
         self.score_task.add_done_callback(validation_utils.log_task_exception)
 
     async def periodically_resync_and_set_weights(self) -> None:
-        time_between_resyncing = core_cst.BLOCK_TIME_IN_S * core_cst.BLOCKS_PER_EPOCH // 2
+        time_between_resyncing =  20 #core_cst.BLOCK_TIME_IN_S * core_cst.BLOCKS_PER_EPOCH // 2
         while True:
             await self.resync_metagraph()
 
@@ -661,9 +661,11 @@ class CoreValidator:
             wallet=self.wallet,
             netuid=cst.NETUID,
             uids=uids_in_order,
+            version_key=VERSION_KEY,
             weights=uids_values_in_order,
             wait_for_finalization=True,
             wait_for_inclusion=True,
+
         )
 
         bt.logging.info("✅ Done setting weights!")
