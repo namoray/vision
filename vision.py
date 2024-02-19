@@ -15,7 +15,7 @@ def create_config():
     get_config()
 
 @cli.command()
-def create_key(balance: float, rate_limit_per_minute: int, name: str):
+def create_key(balance: float = 100, rate_limit_per_minute: int = 10, name: str = ""):
     """
     Create a new API key.
 
@@ -57,9 +57,9 @@ def update_key(
 
     Arguments:
     key: The API key to update.
-    balance: The new balance of the API key. Optional, only used if provided.
-    rate_limit_per_minute: The new rate limit in requests per minute for the API key. Optional, only used if provided.
-    name: The new name for the API key. Optional, only used if provided.
+    balance (optional): The new balance of the API key.
+    rate_limit_per_minute (optional): The new rate limit in requests per minute for the API key.
+    name (optional): The new name for the API key.
     """
     with sql.get_db_connection() as conn:
         if balance is not None:
