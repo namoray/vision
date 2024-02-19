@@ -7,9 +7,9 @@ import bittensor as bt
 
 ALLOWED_PARAMS_FOR_ENGINE = {
     utility_models.EngineEnum.SDXL_TURBO.value: {
-        "steps": {"checker": lambda x: isinstance(x, int) and x in range(3, 13),
-                  "error_message": "should be an integer between 3 and 12 (inclusive)",
-                  "generator": lambda: random.choice([i for i in range(3, 13)])},
+        "steps": {"checker": lambda x: isinstance(x, int) and x in range(6, 15),
+                  "error_message": "should be an integer between 6 and 14 (inclusive)",
+                  "generator": lambda: random.choice([i for i in range(6, 15)])},
         "height": {"checker": lambda h: 512 <= h <= 1344 and h % 64 == 0,
                    "error_message": "should be in between 512 and 1344 (inclusive) and multiple of 64",
                    "generator": lambda: random.choice([i for i in range(512, 1344 + 64, 64)])},
@@ -89,7 +89,6 @@ class TextToImageRequest(BaseModel):
     engine: utility_models.EngineEnum = Field(
         default=utility_models.EngineEnum.SDXL_TURBO.value, description="The engine to use for image generation"
     )
-
 
     text_prompts: List[dc.TextPrompt] = Field([], description="Prompts for the image generation", title="text_prompts")
     height: int = Field(cst.DEFAULT_HEIGHT, description="Height of the generated image")
