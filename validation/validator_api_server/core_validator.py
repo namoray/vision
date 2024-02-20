@@ -94,15 +94,15 @@ class CoreValidator:
         self.score_task.add_done_callback(validation_utils.log_task_exception)
 
     async def periodically_resync_and_set_weights(self) -> None:
-        time_between_resyncing = 1 * 60
+        time_between_resyncing =  0.5 * 60
         while True:
             await self.resync_metagraph()
+            await self.set_weights()
             await asyncio.sleep(time_between_resyncing)
             
-            await self.resync_metagraph()
-            await asyncio.sleep(time_between_resyncing)
+            # await self.resync_metagraph()
+            # await asyncio.sleep(time_between_resyncing)
 
-            await self.set_weights()
 
     async def _query_checking_server_for_expected_result(
         self, endpoint: str, synapse: bt.Synapse, outgoing_model: BaseModel
@@ -696,6 +696,7 @@ class CoreValidator:
                 wait_for_finalization=True,
                 wait_for_inclusion=True,
             )
+            return success, message
 
 
         attempts = 0
