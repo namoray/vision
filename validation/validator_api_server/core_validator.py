@@ -97,7 +97,7 @@ class CoreValidator:
         time_between_resyncing =  0.5 * 60
         while True:
             await self.resync_metagraph()
-            await self.set_weights()
+            await asyncio.to_thread(self.set_weights())
             await asyncio.sleep(time_between_resyncing)
             
             # await self.resync_metagraph()
@@ -223,7 +223,7 @@ class CoreValidator:
 
         self.previous_uid_infos.append(copy.deepcopy([uid_info for _, uid_info in self.uid_to_uid_info.items()]))
 
-        self.metagraph.sync(subtensor=self.subtensor, lite=True)
+        await asyncio.to_thread(self.metagraph.sync, subtensor=self.subtensor, lite=True)
 
         bt.logging.info("Done syncing, now just extracting the valuable info")
         incentives_tensor, axon_indexes_tensor = self.metagraph.incentive.sort(descending=True)
@@ -621,7 +621,7 @@ class CoreValidator:
             bt.logging.debug(f"FAiled to deserialize for some reason: {e}")
             return None
 
-    async def set_weights(self):
+    def set_weights(self):
         bt.logging.info("Setting weights!")
 
         uid_scores: Dict[int, List[float]] = {}
@@ -687,7 +687,7 @@ class CoreValidator:
         #     bt.logging.info(f"UID: {uid.item()} -> Weight: {weight.item()}")
 
         async def subtensor_set_weights(netuid, processed_weight_uids, processed_weights):
-            success, message = self.subtensor.set_weights(
+            success, message =   self.subtensor.set_weights(
                 wallet=self.wallet,
                 netuid=netuid,
                 uids=processed_weight_uids,
@@ -702,10 +702,9 @@ class CoreValidator:
         attempts = 0
         max_attempts = 10
         while attempts < max_attempts:
-            set_weights_task = asyncio.create_task(subtensor_set_weights(netuid, processed_weight_uids, processed_weights))
 
             # To get results
-            success, message = await set_weights_task
+            success, message = subtensor_set_weights(netuid, processed_weight_uids, processed_weights)
             print(f'Success: {success}, Message: {message}')
 
             if success:
@@ -719,4 +718,4 @@ class CoreValidator:
                     break
                 else:
                     bt.logging.info(f"❌ Failed to set weights! Error: {message}. Trying again...")
-                    await asyncio.sleep(30)
+                    time.sleep(30)
