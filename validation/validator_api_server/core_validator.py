@@ -710,7 +710,7 @@ class CoreValidator:
                     break
                 else:
                     bt.logging.info("❌ Failed to set weights! Trying again...")
-                    await time.sleep(60)
+                    await asyncio.sleep(60)
 
 
         
