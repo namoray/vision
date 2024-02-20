@@ -683,28 +683,20 @@ class CoreValidator:
             metagraph=self.metagraph,
         )
 
-        # for uid, weight in zip(processed_weight_uids, processed_weights):
-        #     bt.logging.info(f"UID: {uid.item()} -> Weight: {weight.item()}")
 
-        def subtensor_set_weights(netuid, processed_weight_uids, processed_weights):
-            success, message =   self.subtensor.set_weights(
+        attempts = 0
+        max_attempts = 20
+        while attempts < max_attempts:
+
+            success, message = self.subtensor.set_weights(
                 wallet=self.wallet,
                 netuid=netuid,
                 uids=processed_weight_uids,
                 weights=processed_weights,
                 version_key=VERSION_KEY,
-                wait_for_finalization=True,
+                wait_for_finalization=False,
                 wait_for_inclusion=True,
             )
-            return success, message
-
-
-        attempts = 0
-        max_attempts = 10
-        while attempts < max_attempts:
-
-            # To get results
-            success, message = subtensor_set_weights(netuid, processed_weight_uids, processed_weights)
             print(f'Success: {success}, Message: {message}')
 
             if success:
