@@ -99,9 +99,8 @@ class CoreValidator:
             await self.resync_metagraph()
             await asyncio.sleep(time_between_resyncing)
             
-            await asyncio.to_thread(self.set_weights)
-
             await self.resync_metagraph()
+            await asyncio.to_thread(self.set_weights)
             await asyncio.sleep(time_between_resyncing)
 
 
