@@ -690,7 +690,7 @@ class CoreValidator:
         # So we have no choice but to set weights
         for i in range(NUM_TIMES_TO_SET_WEIGHTS):
             bt.logging.info(f"Setting weights for the {i}th time")
-            success, message = self.subtensor.set_weights(
+            success = self.subtensor.set_weights(
                 wallet=self.wallet,
                 netuid=netuid,
                 uids=processed_weight_uids,
@@ -702,5 +702,4 @@ class CoreValidator:
 
             if success:
                 bt.logging.info("✅ Done setting weights!")
-            bt.logging.info(f"Setting weights message: {message}")
             time.sleep(30)
