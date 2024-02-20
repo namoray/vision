@@ -686,9 +686,7 @@ class CoreValidator:
         # for uid, weight in zip(processed_weight_uids, processed_weights):
         #     bt.logging.info(f"UID: {uid.item()} -> Weight: {weight.item()}")
 
-        attempts = 0
-        max_attempts = 10
-        while attempts < max_attempts:
+        async def subtensor_set_weights(netuid, processed_weight_uids, processed_weights):
             success, message = self.subtensor.set_weights(
                 wallet=self.wallet,
                 netuid=netuid,
@@ -698,6 +696,17 @@ class CoreValidator:
                 wait_for_finalization=True,
                 wait_for_inclusion=True,
             )
+
+
+        attempts = 0
+        max_attempts = 10
+        while attempts < max_attempts:
+            set_weights_task = asyncio.create_task(subtensor_set_weights(netuid, processed_weight_uids, processed_weights))
+
+            # To get results
+            success, message = await set_weights_task
+            print(f'Success: {success}, Message: {message}')
+
             if success:
                 bt.logging.info("✅ Done setting weights!")
                 attempts = max_attempts
