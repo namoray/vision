@@ -637,7 +637,7 @@ class CoreValidator:
                         average_score = uid_info.average_score
                     
 
-                    score = (multiplier * max(average_score, 0.85))
+                    score = (multiplier * max(average_score, 0.80))
 
                     uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
 
