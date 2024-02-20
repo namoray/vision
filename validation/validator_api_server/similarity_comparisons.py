@@ -19,12 +19,10 @@ def _images_are_different_probability(formatted_response1: base_models.ImageResp
 
     probability_different_image = images_are_same_classifier.predict_proba([model_features])[0][0]
 
-    with open('probabilities.txt', 'a') as f:
-        f.write(str(probability_different_image) + '\n')
+
 
     return probability_different_image
 
-    return probability_different_image
 
 def images_are_same_generic(formatted_response1: base_models.ImageResponseBase , formatted_response2: base_models.ImageResponseBase) -> float:
     return _images_are_different_probability(formatted_response1, formatted_response2) < 0.99

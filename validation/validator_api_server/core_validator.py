@@ -34,6 +34,7 @@ _UPPER_FOLLOWING_REGEXP = re.compile("([a-z0-9])([A-Z])")
 
 VERSION_KEY = 2000
 
+
 def _pascal_to_kebab(input_string: str) -> str:
     hyphen_separated = _PASCAL_SEP_REGEXP.sub(r"\1-\2", input_string)
     return _UPPER_FOLLOWING_REGEXP.sub(r"\1-\2", hyphen_separated).lower()
@@ -98,12 +99,7 @@ class CoreValidator:
             await self.resync_metagraph()
 
             await asyncio.sleep(time_between_resyncing)
-
-            await self.resync_metagraph()
             await self.set_weights()
-
-            await asyncio.sleep(time_between_resyncing)
-
 
     async def _query_checking_server_for_expected_result(
         self, endpoint: str, synapse: bt.Synapse, outgoing_model: BaseModel
@@ -175,6 +171,7 @@ class CoreValidator:
 
             time_to_execute_query = time.time() - time_before_query
             await asyncio.sleep(max(20 - time_to_execute_query, 0))
+
     async def fetch_available_operations_for_each_axon(self) -> None:
         uid_to_query_task = {}
 
@@ -235,8 +232,9 @@ class CoreValidator:
 
             for i in self.axon_indexes:
                 uid = self.uids[i]
-                self.uid_to_uid_info[uid] = utility_models.UIDinfo(uid=uid, axon=self.axons[i], incentive=self.incentives[i])
-
+                self.uid_to_uid_info[uid] = utility_models.UIDinfo(
+                    uid=uid, axon=self.axons[i], incentive=self.incentives[i]
+                )
 
             incentives_with_uids = list(zip(self.incentives, self.uids))
             non_zero_incentives_with_uids = [item for item in incentives_with_uids if item[0] > 0]
@@ -377,8 +375,7 @@ class CoreValidator:
         for result in results:
             for failed_axon in result.failed_axon_uids:
                 if failed_axon is not None:
-                    axon_scores[failed_axon] = 0
-
+                    axon_scores[failed_axon] = cst.SCORE_FOR_LOW_QUALITY_RESPONSE - 0.2
 
         similarity_comparison_function = self._get_similarity_comparison_function(synapse.__class__.__name__)
         images_are_similar = similarity_comparison_function(result1.formatted_response, result2.formatted_response)
@@ -406,7 +403,9 @@ class CoreValidator:
         count = max(int(quickest_response_time), 1)
         for axon_uid, score in axon_scores.items():
             if axon_uid is None:
-                bt.logging.error(f"axon_uid is None, score: {score}, results: {core_utils.dict_with_short_values(result1)}, {core_utils.dict_with_short_values(result2)}")
+                bt.logging.error(
+                    f"axon_uid is None, score: {score}, results: {core_utils.dict_with_short_values(result1)}, {core_utils.dict_with_short_values(result2)}"
+                )
             uid_info = self.uid_to_uid_info[axon_uid]
             uid_info.add_score(score, synthetic=synthetic_query, count=count)
 
@@ -457,14 +456,14 @@ class CoreValidator:
 
             if (not result1_is_similar_to_truth) or (not result2_is_similar_to_truth):
                 if not result1_is_similar_to_truth:
-                    axon_scores[result1.axon_uid] = 0
+                    axon_scores[result1.axon_uid] = cst.SCORE_FOR_LOW_QUALITY_RESPONSE
                     if not result2_is_similar_to_truth:
-                        axon_scores[result2.axon_uid] = 0
+                        axon_scores[result2.axon_uid] = cst.SCORE_FOR_LOW_QUALITY_RESPONSE
                     else:
                         axon_scores[result2.axon_uid] = 1
                 else:
                     axon_scores[result1.axon_uid] = 1
-                    axon_scores[result2.axon_uid] = 0
+                    axon_scores[result2.axon_uid] = cst.SCORE_FOR_LOW_QUALITY_RESPONSE
 
             else:
                 if result1.response_time < result2.response_time:
@@ -657,16 +656,20 @@ class CoreValidator:
 
         bt.logging.info(f"Settings weights with normalized scores: {normalized_scores}")
 
-        await asyncio.to_thread(
-            self.subtensor.set_weights,
+        success, message = self.subtensor.set_weights(
             wallet=self.wallet,
             netuid=cst.NETUID,
             uids=uids_in_order,
-            version_key=VERSION_KEY,
             weights=uids_values_in_order,
-            wait_for_finalization=True,
-            wait_for_inclusion=True,
-
+            version_key=VERSION_KEY,
+            wait_for_finalization=False,
+            wait_for_inclusion=False,
         )
 
-        bt.logging.info("✅ Done setting weights!")
+        if success is True:
+            bt.logging.info("✅ Done setting weights!")
+        else:
+            bt.logging.error(f"Set weights failed {message}.")
+
+
+        
