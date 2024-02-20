@@ -18,13 +18,17 @@ def _images_are_different_probability(formatted_response1: base_models.ImageResp
     model_features = _image_hash_feature_extraction(formatted_response1.image_b64s[0], formatted_response2.image_b64s[0])
 
     probability_different_image = images_are_same_classifier.predict_proba([model_features])[0][0]
+
+
+
     return probability_different_image
 
+
 def images_are_same_generic(formatted_response1: base_models.ImageResponseBase , formatted_response2: base_models.ImageResponseBase) -> float:
-    return _images_are_different_probability(formatted_response1, formatted_response2) < 0.8
+    return _images_are_different_probability(formatted_response1, formatted_response2) < 0.99
 
 def images_are_same_upscale(formatted_response1: base_models.ImageResponseBase , formatted_response2: base_models.ImageResponseBase) -> float:
-    return _images_are_different_probability(formatted_response1, formatted_response2) < 0.25
+    return _images_are_different_probability(formatted_response1, formatted_response2) < 0.9
 
 def clip_embeddings_are_same(formatted_response1: base_models.ClipEmbeddingsBase , formatted_response2: base_models.ClipEmbeddingsBase) -> float:
 
