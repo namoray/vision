@@ -27,6 +27,7 @@ from validation.validator_api_server import constants as cst
 from validation.validator_api_server import validation_utils
 from validation.validator_api_server import similarity_comparisons
 import json
+import traceback
 
 
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
@@ -41,6 +42,7 @@ def _pascal_to_kebab(input_string: str) -> str:
 
 
 MAX_PERIODS_TO_LOOK_FOR_SCORE = 30
+
 
 class CoreValidator:
     def __init__(self) -> None:
@@ -92,15 +94,16 @@ class CoreValidator:
         self.score_task.add_done_callback(validation_utils.log_task_exception)
 
     async def periodically_resync_and_set_weights(self) -> None:
-        time_between_resyncing =  10 *60
+        time_between_resyncing =  10 * 60
         while True:
             await self.resync_metagraph()
             await asyncio.sleep(time_between_resyncing)
+            
+            await asyncio.to_thread(self.set_weights)
 
             await self.resync_metagraph()
             await asyncio.sleep(time_between_resyncing)
 
-            await self.set_weights()
 
     async def _query_checking_server_for_expected_result(
         self, endpoint: str, synapse: bt.Synapse, outgoing_model: BaseModel
@@ -127,7 +130,9 @@ class CoreValidator:
             if response.status_code == 200:
                 return response.json()
         except httpx.HTTPError as e:
-            bt.logging.debug(f"Error when querying endpoint {url}: {e}")
+            error_details = str(e)
+            traceback_info = traceback.format_exc()
+            bt.logging.debug(f"Error when querying endpoint {url}: {error_details}\n Traceback information: {traceback_info}")
             return None
 
     async def synthetically_score(self) -> None:
@@ -219,7 +224,7 @@ class CoreValidator:
 
         self.previous_uid_infos.append(copy.deepcopy([uid_info for _, uid_info in self.uid_to_uid_info.items()]))
 
-        self.metagraph.sync(subtensor=self.subtensor, lite=True)
+        await asyncio.to_thread(self.metagraph.sync, subtensor=self.subtensor, lite=True)
 
         bt.logging.info("Done syncing, now just extracting the valuable info")
         incentives_tensor, axon_indexes_tensor = self.metagraph.incentive.sort(descending=True)
@@ -485,10 +490,10 @@ class CoreValidator:
 
         if all([result.response_time is None for result in [result1, result2]]):
             return {}
-        
+
         if result1.response_time is None:
             axon_scores[result1.axon_uid] = slower_response_penalty
-        
+
         elif result2.response_time is None:
             axon_scores[result2.axon_uid] = slower_response_penalty
 
@@ -617,8 +622,7 @@ class CoreValidator:
             bt.logging.debug(f"FAiled to deserialize for some reason: {e}")
             return None
 
-    async def set_weights(self):
-
+    def set_weights(self):
         bt.logging.info("Setting weights!")
 
         uid_scores: Dict[int, List[float]] = {}
@@ -635,27 +639,22 @@ class CoreValidator:
                         average_score = 0.85
                     else:
                         average_score = uid_info.average_score
-                    
 
-                    score = (multiplier * max(average_score, 0.80))
+                    score = multiplier * max(average_score, 0.80)
 
                     uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
-
 
         uid_weights: Dict[int, float] = {}
         discount_factor = 0.1
         for uid, scores in uid_scores.items():
             scores_reversed = list(reversed(scores))
             n = len(scores_reversed)
-            weights = [1/(1+discount_factor*i) for i in range(n)]
+            weights = [1 / (1 + discount_factor * i) for i in range(n)]
             sum_weights = sum(weights)
-            weights = [w/sum_weights for w in weights]  # The sum of these normalized weights is 1
+            weights = [w / sum_weights for w in weights]
             discounted_score = sum(score * weight for score, weight in zip(scores_reversed, weights))
 
             uid_weights[uid] = discounted_score
-
-        
-        bt.logging.debug(f"Uid weights: {uid_weights}")
 
 
 
@@ -663,22 +662,9 @@ class CoreValidator:
             bt.logging.info("No scores found, nothing to set")
             return
 
-        # Just for logging purposes:
-        # Normalize avg_scores to a range of 0 to 1
-        uid_weights_sorted = dict(sorted(uid_weights.items()))
-
-        uids_in_order = list(uid_weights_sorted.keys())
-        uids_values_in_order = list(uid_weights_sorted.values())
-
-        total_scores = torch.tensor(uids_values_in_order)
-        min_score = torch.min(total_scores)
-        max_score = torch.max(total_scores)
-        if max_score - min_score != 0:
-            normalized_scores = (total_scores - min_score) / (max_score - min_score)
-        else:
-            normalized_scores = torch.zeros_like(total_scores)
-
-        bt.logging.info(f"Settings weights with normalized scores: {normalized_scores}")
+        weights_tensor = torch.zeros_like(self.metagraph.S, dtype=torch.float32)
+        for uid, weight in uid_weights.items():
+            weights_tensor[uid] = weight
 
         try:
             netuid = self.config.netuid
@@ -687,30 +673,42 @@ class CoreValidator:
         except AttributeError:
             netuid = 19
 
-        attempts = 0 
-        while attempts < 2:
+        (
+            processed_weight_uids,
+            processed_weights,
+        ) = bt.utils.weight_utils.process_weights_for_netuid(
+            uids=self.metagraph.uids.to("cpu"),
+            weights=weights_tensor.to("cpu"),
+            netuid=netuid,
+            subtensor=self.subtensor,
+            metagraph=self.metagraph,
+        )
 
-            success = self.subtensor.set_weights(
+
+        attempts = 0
+        max_attempts = 20
+        while attempts < max_attempts:
+
+            success, message = self.subtensor.set_weights(
                 wallet=self.wallet,
                 netuid=netuid,
-                uids=uids_in_order,
-                weights=uids_values_in_order,
+                uids=processed_weight_uids,
+                weights=processed_weights,
                 version_key=VERSION_KEY,
                 wait_for_finalization=False,
-                wait_for_inclusion=False,
+                wait_for_inclusion=True,
             )
+            print(f'Success: {success}, Message: {message}')
+
             if success:
                 bt.logging.info("✅ Done setting weights!")
-                attempts = 2
+                attempts = max_attempts
                 break
             else:
                 attempts += 1
-                if attempts >= 2:
+                if attempts >= max_attempts:
                     bt.logging.info("Failed to set weights, will try again on the next cycle...")
                     break
                 else:
-                    bt.logging.info("❌ Failed to set weights! Trying again...")
-                    await asyncio.sleep(60)
-
-
-        
+                    bt.logging.info(f"❌ Failed to set weights! Error: {message}. Trying again...")
+                    time.sleep(30)

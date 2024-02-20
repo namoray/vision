@@ -82,7 +82,7 @@ def connect_to_checking_servers(config) -> Tuple[str, str]:
                 bt.logging.info(f"Health check successful - connected to {name} at {url}.")
                 break
             else:
-                bt.logging.info(f"{name} not reachable. Sleeping for {retry_interval} second(s) before retrying.")
+                bt.logging.info(f"{name} not reachable just yet- it's probably still starting. Sleeping for {retry_interval} second(s) before retrying.")
                 time.sleep(retry_interval)
                 retry_interval += 0.5
                 if retry_interval > 10:

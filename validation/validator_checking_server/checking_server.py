@@ -34,7 +34,7 @@ if __name__ == "__main__":
     for i, load_function in enumerate(singleton.resource_name_to_load_function.values()):
         bt.logging.info(f"Loading model {i}, might take a minute or so")
         load_function()
-        singleton.unload_all_models()
+        singleton.move_all_models_to_cpu()
 
     singleton.load_validator_resources()
     singleton.load_resource(cst.MODEL_CACHE)
