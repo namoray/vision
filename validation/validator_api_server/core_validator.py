@@ -687,20 +687,30 @@ class CoreValidator:
         except AttributeError:
             netuid = 19
 
-        success = self.subtensor.set_weights(
-            wallet=self.wallet,
-            netuid=netuid,
-            uids=uids_in_order,
-            weights=uids_values_in_order,
-            version_key=VERSION_KEY,
-            wait_for_finalization=False,
-            wait_for_inclusion=False,
-        )
+        attempts = 0 
+        while attempts < 2:
 
-        if success is True:
-            bt.logging.info("✅ Done setting weights!")
-        else:
-            bt.logging.info("❌ Failed to set weights! Will try again soon")
+            success = self.subtensor.set_weights(
+                wallet=self.wallet,
+                netuid=netuid,
+                uids=uids_in_order,
+                weights=uids_values_in_order,
+                version_key=VERSION_KEY,
+                wait_for_finalization=False,
+                wait_for_inclusion=False,
+            )
+            if success:
+                bt.logging.info("✅ Done setting weights!")
+                attempts = 2
+                break
+            else:
+                attempts += 1
+                if attempts >= 2:
+                    bt.logging.info("Failed to set weights, will try again on the next cycle...")
+                    break
+                else:
+                    bt.logging.info("❌ Failed to set weights! Trying again...")
+                    await time.sleep(60)
 
 
         
