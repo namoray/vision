@@ -97,7 +97,7 @@ class CoreValidator:
         time_between_resyncing =  0.5 * 60
         while True:
             await self.resync_metagraph()
-            await asyncio.to_thread(self.set_weights())
+            await asyncio.to_thread(self.set_weights)
             await asyncio.sleep(time_between_resyncing)
             
             # await self.resync_metagraph()
@@ -686,7 +686,7 @@ class CoreValidator:
         # for uid, weight in zip(processed_weight_uids, processed_weights):
         #     bt.logging.info(f"UID: {uid.item()} -> Weight: {weight.item()}")
 
-        async def subtensor_set_weights(netuid, processed_weight_uids, processed_weights):
+        def subtensor_set_weights(netuid, processed_weight_uids, processed_weights):
             success, message =   self.subtensor.set_weights(
                 wallet=self.wallet,
                 netuid=netuid,
