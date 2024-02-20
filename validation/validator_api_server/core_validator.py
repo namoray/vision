@@ -684,31 +684,23 @@ class CoreValidator:
             metagraph=self.metagraph,
         )
 
-
-        attempts = 0
-        max_attempts = 20
-        while attempts < max_attempts:
-
-            success, message = self.subtensor.set_weights(
+        NUM_TIMES_TO_SET_WEIGHTS = 3
+        # The reason we do this is because wait_for_inclusion & wait_for_finalization
+        # Cause the whole API server to crash.
+        # So we have no choice but to set weights
+        bt.logging.info(f"Setting weights {NUM_TIMES_TO_SET_WEIGHTS} times without inclusion or finalization")
+        for i in range(NUM_TIMES_TO_SET_WEIGHTS):
+            bt.logging.info(f"Setting weights, iteration number: {i+1}")
+            success = self.subtensor.set_weights(
                 wallet=self.wallet,
                 netuid=netuid,
                 uids=processed_weight_uids,
                 weights=processed_weights,
                 version_key=VERSION_KEY,
                 wait_for_finalization=False,
-                wait_for_inclusion=True,
+                wait_for_inclusion=False,
             )
-            print(f'Success: {success}, Message: {message}')
 
             if success:
                 bt.logging.info("✅ Done setting weights!")
-                attempts = max_attempts
-                break
-            else:
-                attempts += 1
-                if attempts >= max_attempts:
-                    bt.logging.info("Failed to set weights, will try again on the next cycle...")
-                    break
-                else:
-                    bt.logging.info(f"❌ Failed to set weights! Error: {message}. Trying again...")
-                    time.sleep(30)
+            time.sleep(30)
