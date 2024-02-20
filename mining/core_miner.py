@@ -74,10 +74,11 @@ class CoreMiner:
         global metagraph
         metagraph = self.subtensor.metagraph(netuid=self.config.netuid)
 
-        bt.logging.debug(f"Starting axon on port {self.config.axon.port} with ip: {self.config.axon.ip}")
         if self.config.axon.external_ip is not None:
+            bt.logging.debug(f"Starting axon on port {self.config.axon.port} and external ip {self.config.axon.external_ip}")
             self.axon = bt.axon(wallet=self.wallet, port=self.config.axon.port, external_ip=self.config.axon.external_ip)
         else:
+            bt.logging.debug(f"Starting axon on port {self.config.axon.port}")
             self.axon = bt.axon(wallet=self.wallet, port=self.config.axon.port)
 
 
