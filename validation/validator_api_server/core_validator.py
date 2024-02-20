@@ -94,7 +94,7 @@ class CoreValidator:
         self.score_task.add_done_callback(validation_utils.log_task_exception)
 
     async def periodically_resync_and_set_weights(self) -> None:
-        time_between_resyncing =  1 * 60
+        time_between_resyncing =  10 * 60
         while True:
             await self.resync_metagraph()
             await asyncio.sleep(time_between_resyncing)
@@ -688,8 +688,9 @@ class CoreValidator:
         # The reason we do this is because wait_for_inclusion & wait_for_finalization
         # Cause the whole API server to crash.
         # So we have no choice but to set weights
+        bt.logging.info(f"Setting weights {NUM_TIMES_TO_SET_WEIGHTS} times without inclusion or finalization")
         for i in range(NUM_TIMES_TO_SET_WEIGHTS):
-            bt.logging.info(f"Setting weights for the {i}th time")
+            bt.logging.info(f"Setting weights, iteration number: {i+1}")
             success = self.subtensor.set_weights(
                 wallet=self.wallet,
                 netuid=netuid,
