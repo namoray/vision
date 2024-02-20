@@ -106,14 +106,34 @@ It will also create a start_miners.sh script to automatically run the miners acc
 **If you change the config.yaml, you will also need to edit the start_miners.sh script to reflect this!**
 
 ### Start miners
+
+**Autoupdates**
+
+Autoupdates will reinstall dependencies and rerun ./start_miners.sh when a new tag is introduced.
+
+Announcements will still be made ahead of time. If you choose to run autoupdates as a miner, make sure your ./start_miners.sh
+script is up to date & working, and I would advise monitoring around update releases regardless.
+
+If there is a model change with an update, you will need manual intervention (this will be made clear before each update though)
+
+You're of course free to change or use whatever autoupdater you like!
+
+```bash
+pm2 start --name run_miner_auto_update "python run_miner_auto_update.py"
+```
+
+**No autoupdates**
+
 You can either use the command
 ```bash
 ./start_miners.sh
 ```
+
+
 Or you can use the usual pm2 commands
 ```bash
 pm2 start --name NAME_FOR_MINER_HERE mining/run_miner.py --interpreter python3 -- --axon.port YOUR_AXON_PORT --axon.external_ip EXTERNAL_IP_FOR_AXON --wallet.name WALLET_NAME --wallet.hotkey WALLET_HOTKEY --subtensor.network SUBTENSOR_NETWORK --netuid 19 --logging.debug
 ```
 
 **NOTE**
-If you want to run multiple miners on the same machine, I would advise just running one of the pm2 commands first from 
+If you want to run multiple miners on the same machine, I would advise just running one of the pm2 commands first from ./start_miners.sh - else you will download models multiple times!

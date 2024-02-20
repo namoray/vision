@@ -641,7 +641,7 @@ class CoreValidator:
 
                     uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
 
-        bt.logging.debug(f"Uid scores: {uid_scores}")
+
         uid_weights: Dict[int, float] = {}
         discount_factor = 0.1
         for uid, scores in uid_scores.items():
