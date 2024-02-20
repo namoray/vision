@@ -22,7 +22,7 @@ NETWORK = "finney"
 
 
 OPERATION_TIMEOUTS: Dict[str, float] = {
-    "AvailableOperations": 12,
+    "AvailableOperations": 30,
     "ClipEmbeddings": 6,
     "TextToImage": 20,
     "ImageToImage": 20,
