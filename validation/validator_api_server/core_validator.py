@@ -32,7 +32,7 @@ import json
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
 _UPPER_FOLLOWING_REGEXP = re.compile("([a-z0-9])([A-Z])")
 
-VERSION_KEY = 2000
+VERSION_KEY = 20_001
 
 
 def _pascal_to_kebab(input_string: str) -> str:
@@ -40,9 +40,7 @@ def _pascal_to_kebab(input_string: str) -> str:
     return _UPPER_FOLLOWING_REGEXP.sub(r"\1-\2", hyphen_separated).lower()
 
 
-BLOCKS_PER_RESYNC_METAGRAPH = 5
-MAX_RESYNC_PERIODS_TO_SCORE = 1 + core_cst.BLOCKS_PER_EPOCH // BLOCKS_PER_RESYNC_METAGRAPH
-
+MAX_PERIODS_TO_LOOK_FOR_SCORE = 30
 
 class CoreValidator:
     def __init__(self) -> None:
@@ -65,7 +63,7 @@ class CoreValidator:
         self.axons: list[bt.axon] = []
 
         self.uid_to_uid_info: Dict[int, utility_models.UIDinfo] = {}
-        self.previous_uid_infos: deque[List[utility_models.UIDinfo]] = deque([], maxlen=MAX_RESYNC_PERIODS_TO_SCORE)
+        self.previous_uid_infos: deque[List[utility_models.UIDinfo]] = deque([], maxlen=MAX_PERIODS_TO_LOOK_FOR_SCORE)
 
         self.low_incentive_uids: Set[int] = set()
 
@@ -94,11 +92,14 @@ class CoreValidator:
         self.score_task.add_done_callback(validation_utils.log_task_exception)
 
     async def periodically_resync_and_set_weights(self) -> None:
-        time_between_resyncing = core_cst.BLOCK_TIME_IN_S * core_cst.BLOCKS_PER_EPOCH // 2
+        time_between_resyncing =  10 *60
         while True:
             await self.resync_metagraph()
-
             await asyncio.sleep(time_between_resyncing)
+
+            await self.resync_metagraph()
+            await asyncio.sleep(time_between_resyncing)
+
             await self.set_weights()
 
     async def _query_checking_server_for_expected_result(
@@ -484,8 +485,14 @@ class CoreValidator:
 
         if all([result.response_time is None for result in [result1, result2]]):
             return {}
+        
+        if result1.response_time is None:
+            axon_scores[result1.axon_uid] = slower_response_penalty
+        
+        elif result2.response_time is None:
+            axon_scores[result2.axon_uid] = slower_response_penalty
 
-        if result1.response_time < result2.response_time:
+        elif result1.response_time < result2.response_time:
             axon_scores[result1.axon_uid] = faster_response_bonus
             axon_scores[result2.axon_uid] = slower_response_penalty
         else:
@@ -611,10 +618,10 @@ class CoreValidator:
             return None
 
     async def set_weights(self):
+
         bt.logging.info("Setting weights!")
 
-        uid_scores = {}
-        num_epochs = len(self.previous_uid_infos)
+        uid_scores: Dict[int, List[float]] = {}
         with self.threading_lock:
             for epoch in self.previous_uid_infos:
                 for uid_info in epoch:
@@ -624,27 +631,44 @@ class CoreValidator:
                     # If for some reason we didn't send enough requests through to score someone, give them
                     # Slightly below average. NOTE if they don't support any operations (or many), this will get
                     # Reduced dramatically too
-
                     if uid_info.organic_request_count + uid_info.synthetic_request_count == 0:
-                        average_score = 0.95
+                        average_score = 0.85
                     else:
                         average_score = uid_info.average_score
+                    
 
-                    score = (multiplier * average_score) / num_epochs
+                    score = (multiplier * max(average_score, 0.85))
 
-                    uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, 0) + score
-            self.previous_uid_infos = deque([], maxlen=MAX_RESYNC_PERIODS_TO_SCORE)
+                    uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
 
-        if uid_scores == {}:
+        bt.logging.debug(f"Uid scores: {uid_scores}")
+        uid_weights: Dict[int, float] = {}
+        discount_factor = 0.1
+        for uid, scores in uid_scores.items():
+            scores_reversed = list(reversed(scores))
+            n = len(scores_reversed)
+            weights = [1/(1+discount_factor*i) for i in range(n)]
+            sum_weights = sum(weights)
+            weights = [w/sum_weights for w in weights]  # The sum of these normalized weights is 1
+            discounted_score = sum(score * weight for score, weight in zip(scores_reversed, weights))
+
+            uid_weights[uid] = discounted_score
+
+        
+        bt.logging.debug(f"Uid weights: {uid_weights}")
+
+
+
+        if uid_weights == {}:
             bt.logging.info("No scores found, nothing to set")
             return
 
         # Just for logging purposes:
         # Normalize avg_scores to a range of 0 to 1
-        uid_scores_sorted = dict(sorted(uid_scores.items()))
+        uid_weights_sorted = dict(sorted(uid_weights.items()))
 
-        uids_in_order = list(uid_scores_sorted.keys())
-        uids_values_in_order = list(uid_scores_sorted.values())
+        uids_in_order = list(uid_weights_sorted.keys())
+        uids_values_in_order = list(uid_weights_sorted.values())
 
         total_scores = torch.tensor(uids_values_in_order)
         min_score = torch.min(total_scores)
@@ -656,9 +680,16 @@ class CoreValidator:
 
         bt.logging.info(f"Settings weights with normalized scores: {normalized_scores}")
 
-        success, message = self.subtensor.set_weights(
+        try:
+            netuid = self.config.netuid
+            if netuid is None:
+                netuid = 19
+        except AttributeError:
+            netuid = 19
+
+        success = self.subtensor.set_weights(
             wallet=self.wallet,
-            netuid=cst.NETUID,
+            netuid=netuid,
             uids=uids_in_order,
             weights=uids_values_in_order,
             version_key=VERSION_KEY,
@@ -669,7 +700,7 @@ class CoreValidator:
         if success is True:
             bt.logging.info("✅ Done setting weights!")
         else:
-            bt.logging.error(f"Set weights failed {message}.")
+            bt.logging.info("❌ Failed to set weights! Will try again soon")
 
 
         
