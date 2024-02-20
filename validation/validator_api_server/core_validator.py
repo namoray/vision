@@ -27,6 +27,7 @@ from validation.validator_api_server import constants as cst
 from validation.validator_api_server import validation_utils
 from validation.validator_api_server import similarity_comparisons
 import json
+import traceback
 
 
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
@@ -97,7 +98,7 @@ class CoreValidator:
         while True:
             await self.resync_metagraph()
             await asyncio.sleep(time_between_resyncing)
-
+            
             await self.resync_metagraph()
             await asyncio.sleep(time_between_resyncing)
 
@@ -128,7 +129,9 @@ class CoreValidator:
             if response.status_code == 200:
                 return response.json()
         except httpx.HTTPError as e:
-            bt.logging.debug(f"Error when querying endpoint {url}: {e}")
+            error_details = str(e)
+            traceback_info = traceback.format_exc()
+            bt.logging.debug(f"Error when querying endpoint {url}: {error_details}\n Traceback information: {traceback_info}")
             return None
 
     async def synthetically_score(self) -> None:
@@ -680,29 +683,30 @@ class CoreValidator:
             metagraph=self.metagraph,
         )
 
-        for uid, weight in zip(processed_weight_uids, processed_weights):
-            bt.logging.info(f"UID: {uid.item()} -> Weight: {weight.item()}")
+        # for uid, weight in zip(processed_weight_uids, processed_weights):
+        #     bt.logging.info(f"UID: {uid.item()} -> Weight: {weight.item()}")
 
         attempts = 0
-        while attempts < 2:
-            success = self.subtensor.set_weights(
+        max_attempts = 10
+        while attempts < max_attempts:
+            success, message = self.subtensor.set_weights(
                 wallet=self.wallet,
                 netuid=netuid,
                 uids=processed_weight_uids,
                 weights=processed_weights,
                 version_key=VERSION_KEY,
-                wait_for_finalization=False,
-                wait_for_inclusion=False,
+                wait_for_finalization=True,
+                wait_for_inclusion=True,
             )
             if success:
                 bt.logging.info("✅ Done setting weights!")
-                attempts = 2
+                attempts = max_attempts
                 break
             else:
                 attempts += 1
-                if attempts >= 2:
+                if attempts >= max_attempts:
                     bt.logging.info("Failed to set weights, will try again on the next cycle...")
                     break
                 else:
-                    bt.logging.info("❌ Failed to set weights! Trying again...")
-                    await asyncio.sleep(60)
+                    bt.logging.info(f"❌ Failed to set weights! Error: {message}. Trying again...")
+                    await asyncio.sleep(30)
