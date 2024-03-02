@@ -162,7 +162,7 @@ class CoreValidator:
 
         This function does not return any value.
         """
-        TIME_TO_SLEEP_BETWEEN_SYNTHETIC_QUERIES = 2
+        TIME_TO_SLEEP_BETWEEN_SYNTHETIC_QUERIES = 4
         while True:
             operation = random.choice(cst.OPERATIONS_TO_SCORE_SYNTHETICALLY)
             synthetic_data = await self._query_checking_server_for_synthetic_data(operation)
@@ -282,7 +282,8 @@ class CoreValidator:
             bt.logging.warning(
                 f"Operation {operation_name} not in operation_to_timeout, this is probably a mistake / bug 🐞"
             )
-        time_before_query = time.time()
+        
+        start_time = time.time()
 
         response = await self.dendrite.forward(
             axons=self.uid_to_uid_info[axon_uid].axon,
@@ -291,9 +292,9 @@ class CoreValidator:
             response_timeout=cst.OPERATION_TIMEOUTS.get(operation_name, 15),
             deserialize=deserialize,
             log_requests_and_responses=log_requests_and_responses,
+            streaming=False
         )
-        time_for_response = time.time() - time_before_query
-        return response, time_for_response
+        return response, time.time() - start_time
 
     async def execute_query(
         self, synapse: bt.Synapse, outgoing_model: BaseModel, synthetic_query: bool = False
@@ -422,11 +423,12 @@ class CoreValidator:
 
         for uid, score in axon_scores.items():
             if uid == result1.axon_uid:
-                response_time = str(round(result1.response_time, 2))
+                response_time = 'N/A' if result1.response_time is None else str(round(result1.response_time, 2))
             elif uid == result2.axon_uid:
-                response_time = str(round(result2.response_time, 2))
+                response_time = 'N/A' if result2.response_time is None else str(round(result2.response_time, 2))
             else:
                 response_time = "N/A"
+
             
             table.add_row(str(uid), response_time, str(round(score, 2)))
 

@@ -14,11 +14,12 @@ from RealESRGAN import RealESRGAN
 import yaml
 from pydantic import BaseModel
 
+import bittensor as bt
 
-from RealESRGAN.utils import pad_reflect, split_image_into_overlapping_patches, stich_together, \
-                   unpad_image
+from RealESRGAN.utils import pad_reflect, split_image_into_overlapping_patches, stich_together, unpad_image
 
 import gc
+
 
 class RealESRGANClass(RealESRGAN):
     def to(self, device: str) -> None:
@@ -30,34 +31,33 @@ class RealESRGANClass(RealESRGAN):
             torch.cuda.empty_cache()
 
     @torch.cuda.amp.autocast()
-    def predict(self, lr_image, batch_size=4, patches_size=192,
-                padding=24, pad_size=15):
+    def predict(self, lr_image, batch_size=4, patches_size=192, padding=24, pad_size=15):
         scale = self.scale
         device = self.device
         lr_image = np.array(lr_image)
         lr_image = pad_reflect(lr_image, pad_size)
 
-        patches, p_shape = split_image_into_overlapping_patches(
-            lr_image, patch_size=patches_size, padding_size=padding
-        )
-        img = torch.FloatTensor(patches/255).permute((0,3,1,2)).to(device).detach()
+        patches, p_shape = split_image_into_overlapping_patches(lr_image, patch_size=patches_size, padding_size=padding)
+        img = torch.FloatTensor(patches / 255).permute((0, 3, 1, 2)).to(device).detach()
 
         with torch.no_grad():
             res = self.model(img[0:batch_size])
             for i in range(batch_size, img.shape[0], batch_size):
-                res = torch.cat((res, self.model(img[i:i+batch_size])), 0)
+                res = torch.cat((res, self.model(img[i : i + batch_size])), 0)
 
-        sr_image = res.permute((0,2,3,1)).clamp_(0, 1).cpu()
+        sr_image = res.permute((0, 2, 3, 1)).clamp_(0, 1).cpu()
         np_sr_image = sr_image.numpy()
 
         padded_size_scaled = tuple(np.multiply(p_shape[0:2], scale)) + (3,)
         scaled_image_shape = tuple(np.multiply(lr_image.shape[0:2], scale)) + (3,)
         np_sr_image = stich_together(
-            np_sr_image, padded_image_shape=padded_size_scaled,
-            target_shape=scaled_image_shape, padding_size=padding * scale
+            np_sr_image,
+            padded_image_shape=padded_size_scaled,
+            target_shape=scaled_image_shape,
+            padding_size=padding * scale,
         )
-        sr_img = (np_sr_image*255).astype(np.uint8)
-        sr_img = unpad_image(sr_img, pad_size*scale)
+        sr_img = (np_sr_image * 255).astype(np.uint8)
+        sr_img = unpad_image(sr_img, pad_size * scale)
         sr_img = Image.fromarray(sr_img)
 
         del lr_image, img, res, np_sr_image, sr_image
@@ -65,15 +65,17 @@ class RealESRGANClass(RealESRGAN):
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
-
         return sr_img
 
+
 def pascal_to_snake(pascal_str: str):
-    snake_str = ''.join(['_' + i.lower() if i.isupper() else i for i in pascal_str]).lstrip('_')
+    snake_str = "".join(["_" + i.lower() if i.isupper() else i for i in pascal_str]).lstrip("_")
     return snake_str
 
 
-def get_similarity_score_from_image_b64s(expected_b64s: Optional[List[str]], response_b64s: Optional[List[str]]) -> float:
+def get_similarity_score_from_image_b64s(
+    expected_b64s: Optional[List[str]], response_b64s: Optional[List[str]]
+) -> float:
     """
     Calculates the similarity of two images given their base64 representation.
 
@@ -112,12 +114,11 @@ def get_similarity_score_from_image_b64s(expected_b64s: Optional[List[str]], res
         if cosine_sim <= 0:
             similarites.append(0)
             continue
-        sim = cosine_sim * ( min(norm1, norm2) / max(norm1, norm2))
-        sim = sim ** 2
+        sim = cosine_sim * (min(norm1, norm2) / max(norm1, norm2))
+        sim = sim**2
         similarites.append(round(sim, 3))
 
     return sum(similarites) / len(similarites) if len(similarites) > 0 else 0
-
 
 
 def set_stuff_for_deterministic_output():
@@ -127,7 +128,6 @@ def set_stuff_for_deterministic_output():
     torch.use_deterministic_algorithms(True)
 
 
-
 def get_b64_from_pipeline_image(processed_image: torch.Tensor) -> str:
     torch.cuda.empty_cache()
     np_image = np.array(processed_image)[:, :, ::-1]
@@ -135,11 +135,13 @@ def get_b64_from_pipeline_image(processed_image: torch.Tensor) -> str:
     b64_image = base64.b64encode(np_image).decode("utf-8")
     return b64_image
 
-def pil_to_base64(image: Image, format: str = 'JPEG') -> str:
+
+def pil_to_base64(image: Image, format: str = "JPEG") -> str:
     buffered = io.BytesIO()
     image.save(buffered, format=format)
     img_str = base64.b64encode(buffered.getvalue()).decode()
     return img_str
+
 
 def base64_to_pil(image_b64: str) -> Image.Image:
     try:
@@ -148,7 +150,7 @@ def base64_to_pil(image_b64: str) -> Image.Image:
         return image
     except binascii.Error:
         return None
-    
+
 
 def cosine_distance(image_embeds, text_embeds):
     normalized_image_embeds = nn.functional.normalize(image_embeds)
@@ -198,6 +200,7 @@ def forward_inspect(self, clip_input, images):
 
     return matches, has_nsfw_concepts
 
+
 def get_validator_hotkey_name_from_config(yaml_config: Dict[str, str]) -> str:
     yaml_config = yaml.safe_load(open(cst.CONFIG_FILEPATH))
     for hotkey, config in yaml_config.items():
@@ -210,7 +213,7 @@ def get_validator_hotkey_name_from_config(yaml_config: Dict[str, str]) -> str:
 set_stuff_for_deterministic_output()
 
 
-def model_to_printable_dict(model: BaseModel, max_length: int = 50) -> dict:
+def model_to_printable_dict(model: Optional[BaseModel], max_length: int = 50) -> dict:
     """
     Convert a model to a dictionary, truncating long string values and string representation of lists.
     Helper function to print synapses & stuff with image b64's in them
@@ -222,21 +225,26 @@ def model_to_printable_dict(model: BaseModel, max_length: int = 50) -> dict:
     dict: The model as a dictionary with truncated values.
     """
 
+    if model is None:
+        return None
+
     def truncate_value(value):
         if isinstance(value, str) and len(value) > max_length:
-            return value[:max_length] + '...'
+            return value[:max_length] + "..."
         elif isinstance(value, list):
             str_value = str(value)
             if len(str_value) >= max_length:
-                return str(value)[:max_length] + '...'
+                return str(value)[:max_length] + "..."
             else:
                 return str_value
         elif isinstance(value, dict):
             return {k: truncate_value(v) for k, v in value.items()}
         else:
             return value
-    
-    model_dict = model.dict()
-    model_dict = {k: truncate_value(v) for k, v in model_dict.items()}
+    try:
+        model_dict = model.dict()
+        printable_dict = {k: truncate_value(v) for k, v in model_dict.items()}
+        return printable_dict
+    except TypeError:
+        return {}
 
-    return model_dict
