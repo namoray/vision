@@ -30,6 +30,8 @@ async def get_random_image_b64(cache: diskcache.Cache) -> str:
 
 def store_image_b64(image_b64: str, image_uuid: str, cache: diskcache.Cache) -> None:
     cache.set(image_uuid, image_b64)
+
+    
 async def get_random_picsum_image(x_dim: int, y_dim: int) -> str:
     """
     Generate a random image with the specified dimensions, by calling unsplash api.

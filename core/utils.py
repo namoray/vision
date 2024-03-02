@@ -15,9 +15,6 @@ import yaml
 
 
 
-
-
-
 from RealESRGAN.utils import pad_reflect, split_image_into_overlapping_patches, stich_together, \
                    unpad_image
 
@@ -151,6 +148,8 @@ def base64_to_pil(image_b64: str) -> Image.Image:
         return image
     except binascii.Error:
         return None
+    
+
 def cosine_distance(image_embeds, text_embeds):
     normalized_image_embeds = nn.functional.normalize(image_embeds)
     normalized_text_embeds = nn.functional.normalize(text_embeds)
@@ -211,7 +210,7 @@ def get_validator_hotkey_name_from_config(yaml_config: Dict[str, str]) -> str:
 set_stuff_for_deterministic_output()
 
 
-def dict_with_short_values(self, max_length: int = 30) -> dict:
+def model_to_printable_dict(self, max_length: int = 50) -> dict:
     """
     Convert a model to a dictionary, truncating long string values and string representation of lists.
     Helper function to print synapses & stuff with image b64's in them

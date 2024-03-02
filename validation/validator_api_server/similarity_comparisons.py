@@ -19,8 +19,6 @@ def _images_are_different_probability(formatted_response1: base_models.ImageResp
 
     probability_different_image = images_are_same_classifier.predict_proba([model_features])[0][0]
 
-
-
     return probability_different_image
 
 
