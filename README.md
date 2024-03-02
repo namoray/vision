@@ -5,7 +5,7 @@ Giving 👀 to Bittensor with Decentralized subnet inference, at scale.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[Bittensor](https://bittensor.com/whitepaper)  •  [Discord](https://discord.gg/dR865yTPaZ) • [Corcel](https://app.corcel.io/)
+[Bittensor](https://bittensor.com/whitepaper)  •  [Discord](https://discord.gg/dR865yTPaZ) • [Corcel](https://app.corcel.io/studio)
 </div>
 
 
