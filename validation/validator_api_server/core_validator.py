@@ -162,6 +162,7 @@ class CoreValidator:
 
         This function does not return any value.
         """
+        TIME_TO_SLEEP_BETWEEN_SYNTHETIC_QUERIES = 2
         while True:
             operation = random.choice(cst.OPERATIONS_TO_SCORE_SYNTHETICALLY)
             synthetic_data = await self._query_checking_server_for_synthetic_data(operation)
@@ -170,7 +171,7 @@ class CoreValidator:
                 bt.logging.error(
                     "Synthetic data is none which is weird, will try again in 20. Maybe the server hasn't finished initialising yet"
                 )
-                await asyncio.sleep(20)
+                await asyncio.sleep(TIME_TO_SLEEP_BETWEEN_SYNTHETIC_QUERIES)
                 continue
 
             synapse_class_ = getattr(protocols, operation)
@@ -178,10 +179,11 @@ class CoreValidator:
             outgoing_model = getattr(base_models, operation + core_cst.OUTGOING)
 
             time_before_query = time.time()
-            await self.execute_query(synapse, outgoing_model, synthetic_query=True)
+            # TODO: CHANGE THIS BACK TO AWAIT
+            asyncio.create_task(self.execute_query(synapse, outgoing_model, synthetic_query=True))
 
             time_to_execute_query = time.time() - time_before_query
-            await asyncio.sleep(max(20 - time_to_execute_query, 0))
+            await asyncio.sleep(max(TIME_TO_SLEEP_BETWEEN_SYNTHETIC_QUERIES - time_to_execute_query, 0))
 
     async def fetch_available_operations_for_each_axon(self) -> None:
         uid_to_query_task = {}
@@ -282,7 +284,6 @@ class CoreValidator:
             )
         time_before_query = time.time()
 
-        bt.logging.info(f"Querying axon {axon_uid} for {operation_name}")
         response = await self.dendrite.forward(
             axons=self.uid_to_uid_info[axon_uid].axon,
             synapse=synapse,

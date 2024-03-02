@@ -31,6 +31,13 @@ async def upscale_logic(body: base_models.UpscaleIncoming) -> base_models.Upscal
 
     upscaled_image = upscale_model.predict(image, batch_size=4)
 
+    image_hashes = operation_utils.image_hash_feature_extraction(upscaled_image)
+    clip_embedding = operation_utils.get_clip_embedding_from_processed_image(upscaled_image)
+
+    output.image_hashes = [image_hashes]
+    output.clip_embeddings = [clip_embedding]
+
+
     if operation_utils.image_is_nsfw(upscaled_image):
         bt.logging.info("NSFW image detected 👿, returning a corresponding error and no image")
         output.error_message = "Upscaled image is NSFW"

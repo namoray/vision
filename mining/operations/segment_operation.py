@@ -21,9 +21,9 @@ class SegmentOperation(abstract_operation.Operation):
         synapse.image_b64 = None
 
         # synapse.image_uuid = output.image_uuid if output.image_uuid is not None else synapse.image_uuid
-        synapse.masks = output.masks
-        synapse.image_shape = output.image_shape
-        synapse.error_message = output.error_message
+        output_dict = output.dict()
+        for field in output_dict:
+            setattr(synapse, field, output_dict[field])
 
         return synapse
 

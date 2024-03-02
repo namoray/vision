@@ -1,21 +1,42 @@
 
-from models import base_models
-from core import utils as core_utils
+from models import base_models, utility_models
 import xgboost as xgb
-from typing import Tuple
+from typing import List
 import imagehash
 import numpy as np
+
+
 images_are_same_classifier = xgb.XGBClassifier()
 images_are_same_classifier.load_model('image_similarity_xgb_model.json')
 
+def _hash_distance(hash_1: str, hash_2: str) -> int:
+
+    restored_hash1 = imagehash.hex_to_hash(hash_1)
+    restored_hash2 = imagehash.hex_to_hash(hash_2)
+
+    return restored_hash1 - restored_hash2
+
+
+def _get_hash_distances(hashes_1: utility_models.ImageHashes, hashes_2: utility_models.ImageHashes) -> List[int, int, int, int]:
+
+    ahash_distance = _hash_distance(hashes_1.average_hash, hashes_2.average_hash)
+    phash_distance = _hash_distance(hashes_1.perceptual_hash, hashes_2.perceptual_hash)
+    dhash_distance = _hash_distance(hashes_1.difference_hash, hashes_2.difference_hash)
+    chash_distance = _hash_distance(hashes_1.color_hash, hashes_2.color_hash)
+
+    return [phash_distance, ahash_distance, dhash_distance, chash_distance]
+
 def _images_are_different_probability(formatted_response1: base_models.ImageResponseBase , formatted_response2: base_models.ImageResponseBase) -> float:
 
+    # If one is None, then return 0 if they are both None, else 1
     if formatted_response1 is None or formatted_response2 is None:
         return float(formatted_response1 != formatted_response2)
+
+    # Else if the images returned are empty or None, then return 0 of they are both the same, else 1
     elif formatted_response1.image_b64s is None or formatted_response2.image_b64s is None or len(formatted_response1.image_b64s) == 0 or len(formatted_response2.image_b64s) == 0:
         return float(formatted_response1.image_b64s != formatted_response2.image_b64s)
 
-    model_features = _image_hash_feature_extraction(formatted_response1.image_b64s[0], formatted_response2.image_b64s[0])
+    model_features = _get_hash_distances(formatted_response1.image_hashes[0], formatted_response2.image_hashes[0])
 
     probability_different_image = images_are_same_classifier.predict_proba([model_features])[0][0]
 
@@ -46,28 +67,7 @@ def clip_embeddings_are_same(formatted_response1: base_models.ClipEmbeddingsBase
 
         return float(normalized_dot_product[0][0] > 0.995)
 
-def _image_hash_feature_extraction(image1_b64: str, image2_b64: str) -> Tuple[float, float]:
 
-    image1 = core_utils.base64_to_pil(image1_b64)
-    image2 = core_utils.base64_to_pil(image2_b64)
-
-    phash1 = imagehash.phash(image1)
-    phash2 = imagehash.phash(image2)
-    phash_distance = phash1 - phash2
-
-    ahash1 = imagehash.average_hash(image1)
-    ahash2 = imagehash.average_hash(image2)
-    ahash_distance = ahash1 - ahash2
-
-    dhash1 = imagehash.dhash(image1)
-    dhash2 = imagehash.dhash(image2)
-    dhash_distance = dhash1 - dhash2
-
-    chash1 = imagehash.colorhash(image1)
-    chash2 = imagehash.colorhash(image2)
-    chash_distance = chash1 - chash2
-
-    return [phash_distance, ahash_distance, dhash_distance, chash_distance]
 
 
 

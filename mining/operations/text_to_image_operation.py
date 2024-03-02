@@ -16,9 +16,9 @@ class TextToImageOperation(abstract_operation.Operation):
     @staticmethod
     async def forward(synapse: protocols.TextToImage) -> protocols.TextToImage:
         output = await text_to_image_logic.text_to_image_logic(base_models.TextToImageIncoming(**synapse.dict()))
-
-        synapse.image_b64s = output.image_b64s
-        synapse.error_message = output.error_message
+        output_dict = output.dict()
+        for field in output_dict:
+            setattr(synapse, field, output_dict[field])
 
         return synapse
 
