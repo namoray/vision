@@ -56,7 +56,7 @@ def health_check(base_url):
         response = httpx.get(base_url + "health")
         return response.status_code == 200
     except httpx.RequestError:
-        bt.logging.warning(f"Health check failed - can't connect to {base_url}.")
+        bt.logging.info(f"Health check failed for now - can't connect to {base_url}.")
         return False
 
 
@@ -75,7 +75,7 @@ def connect_to_checking_servers(config) -> Tuple[str, str]:
         if url is None:
             raise Exception(f"{hotkey_name}.{name.upper()} not set in config.yaml")
 
-        retry_interval = 6
+        retry_interval = 2
         while True:
             connected = health_check(url)
             if connected:
@@ -84,9 +84,9 @@ def connect_to_checking_servers(config) -> Tuple[str, str]:
             else:
                 bt.logging.info(f"{name} not reachable just yet- it's probably still starting. Sleeping for {retry_interval} second(s) before retrying.")
                 time.sleep(retry_interval)
-                retry_interval += 0.5
-                if retry_interval > 10:
-                    retry_interval = 10
+                retry_interval += 5
+                if retry_interval > 15:
+                    retry_interval = 15
 
     return servers["checking_server_url"], servers["safety_checker_server_url"]
 

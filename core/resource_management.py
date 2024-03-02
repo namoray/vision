@@ -24,6 +24,7 @@ from diffusers import (
     StableDiffusionPipeline,
     StableDiffusionXLPipeline,
 )
+import time
 
 from core import constants as cst
 from core import kandinsky_utils, utils
@@ -177,7 +178,7 @@ class SingletonResourceManager:
 
     def load_sdxl_turbo_resources(self):
         sdxl_turbo_device = self._config.get(cst.MODEL_SDXL_TURBO, cst.DEVICE_DEFAULT)
-        sdxl_turbo_base_pipe = StableDiffusionXLPipeline.from_single_file(cst.DREAMSHAPER_XL_LOCAL_FILE, torch_dtype=torch.bfloat16).to(sdxl_turbo_device)
+        sdxl_turbo_base_pipe = StableDiffusionXLPipeline.from_single_file(cst.DREAMSHAPER_XL_LOCAL_FILE, torch_dtype=torch.bfloat16, use_safetensors=True).to(sdxl_turbo_device)
         config = sdxl_turbo_base_pipe.scheduler.config
         scheduler = DDPMScheduler.from_config(config)
         sdxl_turbo_base_pipe.scheduler = scheduler
@@ -192,13 +193,14 @@ class SingletonResourceManager:
         prior = KandinskyV22PriorPipeline.from_pretrained(
             cst.KANDINSKY_2_2_PRIOR_MODEL_ID,
             torch_dtype=torch.bfloat16,
-            cache_dir=cst.MODELS_CACHE,
+            cache_dir=cst.MODELS_CACHE
         ).to(kandinsky_device)
 
         text2img = KandinskyV22Pipeline.from_pretrained(
             cst.KANDINSKY_2_2_DECODER_MODEL_ID,
             torch_dtype=torch.bfloat16,
             cache_dir=cst.MODELS_CACHE,
+            use_safetensors=True
         ).to(kandinsky_device)
 
 
@@ -206,6 +208,7 @@ class SingletonResourceManager:
             cst.KANDINSKY_2_2_DECODER_INPAINT_MODEL_ID,
             torch_dtype=torch.bfloat16,
             cache_dir=cst.MODELS_CACHE,
+            use_safetensors=True
         ).to(kandinsky_device)
 
         kandinsky_pipe = kandinsky_utils.KandinskyPipe_2_2(
@@ -322,6 +325,7 @@ class SingletonResourceManager:
                 self.unload_resource(resource_name)
 
     def move_all_models_to_cpu(self):
+        resource_times = {}
         for resource_name in list(self._loaded_resources.keys()):
             if resource_name not in [
                 cst.MODEL_CACHE,
@@ -329,7 +333,13 @@ class SingletonResourceManager:
                 cst.PROMPT_SAFETY_CHECKERS,
                 cst.IMAGE_SAFETY_CHECKERS,
             ]:
+                start_time = time.time()
                 self.move_resource_to_cpu(resource_name)
+                end_time = time.time()
+                resource_times[resource_name] = end_time - start_time
+                
+        log_message = "\n".join(f"Moving resource {name} to CPU took {time:.2f} seconds" for name, time in resource_times.items())
+        bt.logging.info(log_message)
 
     def get_available_operations(self):
         return self._available_operations

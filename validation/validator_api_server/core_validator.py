@@ -114,6 +114,7 @@ class CoreValidator:
         self, endpoint: str, synapse: bt.Synapse, outgoing_model: BaseModel
     ) -> Optional[utility_models.QueryResult]:
         url = self.BASE_CHECKING_SERVER_URL + core_cst.CHECKING_ENDPOINT_PREFIX + "/" + endpoint
+
         try:
             async with httpx.AsyncClient(timeout=45) as client:
                 response = await client.post(url, data=json.dumps(synapse.dict()))
@@ -162,7 +163,7 @@ class CoreValidator:
 
         This function does not return any value.
         """
-        TIME_TO_SLEEP_BETWEEN_SYNTHETIC_QUERIES = 3
+        TIME_TO_SLEEP_BETWEEN_SYNTHETIC_QUERIES = 20
         while True:
             operation = random.choice(cst.OPERATIONS_TO_SCORE_SYNTHETICALLY)
             synthetic_data = await self._query_checking_server_for_synthetic_data(operation)

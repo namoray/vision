@@ -32,7 +32,7 @@ def _images_are_different_probability(
     if formatted_response1 is None or formatted_response2 is None:
         return float(formatted_response1 != formatted_response2)
 
-    # Else if the images returned are empty or None, then return 0 of they are both the same, else 1
+    # Else if the stuff return is empty or None, then return 0 if nobody return an image, else 1
     elif (
         formatted_response1.image_b64s is None
         or formatted_response2.image_b64s is None
@@ -47,7 +47,7 @@ def _images_are_different_probability(
         or len(formatted_response1.image_hashes) == 0
         or len(formatted_response2.image_hashes) == 0
     ):
-        return float(formatted_response1.image_b64s != formatted_response2.image_b64s)
+        return len(formatted_response1.image_b64s) == 0 and len(formatted_response2.image_b64s) == 0
 
     model_features = _get_hash_distances(
         formatted_response1.image_hashes[0], formatted_response2.image_hashes[0]
