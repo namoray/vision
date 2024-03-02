@@ -42,15 +42,15 @@ def _images_are_different_probability(
         or formatted_response2.clip_embeddings is None
         or len(formatted_response1.clip_embeddings) == 0
         or len(formatted_response2.clip_embeddings) == 0
-        or formatted_response1.image_hash_features is None
-        or formatted_response2.image_hash_features is None
-        or len(formatted_response1.image_hash_features) == 0
-        or len(formatted_response2.image_hash_features) == 0
+        or formatted_response1.image_hashes is None
+        or formatted_response2.image_hashes is None
+        or len(formatted_response1.image_hashes) == 0
+        or len(formatted_response2.image_hashes) == 0
     ):
         return float(formatted_response1.image_b64s != formatted_response2.image_b64s)
 
     model_features = _get_hash_distances(
-        formatted_response1.image_hash_features[0], formatted_response2.image_hash_features[0]
+        formatted_response1.image_hashes[0], formatted_response2.image_hashes[0]
     )
 
     probability_different_image = images_are_same_classifier.predict_proba([model_features])[0][0]

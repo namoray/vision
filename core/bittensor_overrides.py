@@ -250,22 +250,20 @@ class dendrite(bittensor.dendrite):
         synapse = self.preprocess_synapse_for_request(target_axon, synapse, response_timeout)
 
         timeout_settings = aiohttp.ClientTimeout(sock_connect=connect_timeout, sock_read=response_timeout)
-        bittensor.logging.info(f"timeoutsettings: {timeout_settings}. connect: {connect_timeout}, response: {response_timeout}")
 
-    
+
         try:
             # Log outgoing request
             if log_requests_and_responses:
                 self._log_outgoing_request(synapse)
 
-            # Make the HTTP POST request
-            async with (await self.session).post(
+            response = await asyncio.wait_for((await self.session).post(
                 url,
                 headers=synapse.to_headers(),
                 json=synapse.dict(),
                 timeout=timeout_settings,
-            ) as response:
-                await asyncio.wait_for(self._handle_response(response, synapse, start_time), timeout=response_timeout)
+            ), timeout=response_timeout)
+            await self._handle_response(response, synapse, start_time)
 
             # Set process time and log the response
             synapse.dendrite.process_time = str(time.time() - start_time)

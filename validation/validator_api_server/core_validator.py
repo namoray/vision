@@ -162,7 +162,7 @@ class CoreValidator:
 
         This function does not return any value.
         """
-        TIME_TO_SLEEP_BETWEEN_SYNTHETIC_QUERIES = 4
+        TIME_TO_SLEEP_BETWEEN_SYNTHETIC_QUERIES = 3
         while True:
             operation = random.choice(cst.OPERATIONS_TO_SCORE_SYNTHETICALLY)
             synthetic_data = await self._query_checking_server_for_synthetic_data(operation)
