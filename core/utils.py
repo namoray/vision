@@ -12,7 +12,7 @@ import binascii
 from core import constants as cst
 from RealESRGAN import RealESRGAN
 import yaml
-
+from pydantic import BaseModel
 
 
 from RealESRGAN.utils import pad_reflect, split_image_into_overlapping_patches, stich_together, \
@@ -210,7 +210,7 @@ def get_validator_hotkey_name_from_config(yaml_config: Dict[str, str]) -> str:
 set_stuff_for_deterministic_output()
 
 
-def model_to_printable_dict(self, max_length: int = 50) -> dict:
+def model_to_printable_dict(model: BaseModel, max_length: int = 50) -> dict:
     """
     Convert a model to a dictionary, truncating long string values and string representation of lists.
     Helper function to print synapses & stuff with image b64's in them
@@ -222,13 +222,21 @@ def model_to_printable_dict(self, max_length: int = 50) -> dict:
     dict: The model as a dictionary with truncated values.
     """
 
-    model_dict = self.dict()
-
-    for key, value in model_dict.items():
+    def truncate_value(value):
         if isinstance(value, str) and len(value) > max_length:
-            model_dict[key] = value[:max_length] + '...'
+            return value[:max_length] + '...'
         elif isinstance(value, list):
-            value_as_str = str(value)[:max_length]
-            model_dict[key] = value_as_str + '...'
+            str_value = str(value)
+            if len(str_value) >= max_length:
+                return str(value)[:max_length] + '...'
+            else:
+                return str_value
+        elif isinstance(value, dict):
+            return {k: truncate_value(v) for k, v in value.items()}
+        else:
+            return value
+    
+    model_dict = model.dict()
+    model_dict = {k: truncate_value(v) for k, v in model_dict.items()}
 
     return model_dict

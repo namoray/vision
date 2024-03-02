@@ -413,7 +413,7 @@ class CoreValidator:
                 result1, result2, synapse, outgoing_model, similarity_comparison_function
             )
         
-        axon_scores = axon_scores + compared_axon_scores
+        axon_scores = {**axon_scores, **compared_axon_scores}
         
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column("UID", style="dim", width=20)
@@ -422,13 +422,14 @@ class CoreValidator:
 
         for uid, score in axon_scores.items():
             if uid == result1.axon_uid:
-                response_time = str(result1.response_time)
+                response_time = str(round(result1.response_time, 2))
             elif uid == result2.axon_uid:
-                response_time = str(result2.response_time)
+                response_time = str(round(result2.response_time, 2))
             else:
                 response_time = "N/A"
+            
+            table.add_row(str(uid), response_time, str(round(score, 2)))
 
-            table.add_row(uid, response_time, str(round(score, 2)))
         console.print(table)
 
         quickest_response_time = min(
@@ -518,6 +519,15 @@ class CoreValidator:
     def _get_axon_scores_without_server_check(
         self, result1: utility_models.QueryResult, result2: utility_models.QueryResult
     ) -> Dict[int, float]:
+        
+        if result1.response_time is None or result2.response_time is None:
+
+            bt.logging.error(
+                "Some Response time is none in without server check! Why!?\n"
+                f"result 1: {core_utils.model_to_printable_dict(result1)}"
+                f"\nresult 2: {core_utils.model_to_printable_dict(result2)}"
+            )
+            return {}
         
         assert not all([result.formatted_response is None for result in [result1, result2]])
 

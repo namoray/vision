@@ -21,7 +21,7 @@ async def text_to_image(request: base_models.TextToImageIncoming) -> base_models
     expected_output = await text_to_image_logic.text_to_image_logic(request)
     resource_management.SingletonResourceManager().move_all_models_to_cpu()
 
-    if expected_output.image_b64s is not None:
+    if expected_output.image_b64s is not None and len(expected_output.image_b64s) > 0:
         image = expected_output.image_b64s[0]
         image_uuid = operation_utils.get_image_uuid(image)
         cache = resource_management.SingletonResourceManager().get_resource(core_cst.MODEL_CACHE)
