@@ -499,7 +499,7 @@ class CoreValidator:
 
         bt.logging.info(f"Result 1 is similar to truth: {result1_is_similar_to_truth}, result 2 is similar to truth: {result2_is_similar_to_truth}")
 
-        if result1_is_similar_to_truth and result2_is_similar_to_truth:
+        if result1_is_similar_to_truth == 1 and result2_is_similar_to_truth == 1:
             if result1.response_time < result2.response_time:
                 axon_scores[result1.axon_uid] = 1 + cst.BONUS_FOR_WINNING_MINER
                 axon_scores[result2.axon_uid] = 1 - cst.BONUS_FOR_WINNING_MINER
@@ -513,16 +513,16 @@ class CoreValidator:
             # Otherwise give a score of 1.1 to the winner, and something capped at 0.9 for the loser depending on similarity
             # score
 
-            if not result1_is_similar_to_truth:
-                axon_scores[result1.axon_uid] = cst.SCORE_FOR_LOW_QUALITY_RESPONSE
+            if not result1_is_similar_to_truth == 1:
+                axon_scores[result1.axon_uid] = ( 1 - cst.BONUS_FOR_WINNING_MINER) * result1_is_similar_to_truth
 
-                if not result2_is_similar_to_truth:
-                    axon_scores[result2.axon_uid] = cst.SCORE_FOR_LOW_QUALITY_RESPONSE
+                if not result2_is_similar_to_truth == 1:
+                    axon_scores[result2.axon_uid] = ( 1 - cst.BONUS_FOR_WINNING_MINER) * result2_is_similar_to_truth
                 else:
-                    axon_scores[result2.axon_uid] = 1
+                    axon_scores[result2.axon_uid] = 1 + cst.BONUS_FOR_WINNING_MINER
             else:
-                axon_scores[result1.axon_uid] = 1
-                axon_scores[result2.axon_uid] = cst.SCORE_FOR_LOW_QUALITY_RESPONSE
+                axon_scores[result1.axon_uid] = 1 + cst.BONUS_FOR_WINNING_MINER
+                axon_scores[result2.axon_uid] = ( 1 - cst.BONUS_FOR_WINNING_MINER) * result2_is_similar_to_truth
 
         return axon_scores
 

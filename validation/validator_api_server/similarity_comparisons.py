@@ -1,6 +1,6 @@
 from models import base_models, utility_models
 import xgboost as xgb
-from typing import List
+from typing import List, Tuple
 import imagehash
 import numpy as np
 import bittensor as bt
@@ -25,9 +25,9 @@ def _get_hash_distances(hashes_1: utility_models.ImageHashes, hashes_2: utility_
     return [phash_distance, ahash_distance, dhash_distance, chash_distance]
 
 
-def _images_are_same_probability(
+def _image_similarities(
     formatted_response1: base_models.ImageResponseBase, formatted_response2: base_models.ImageResponseBase
-) -> float:
+) -> Tuple[float, float]:
     # If one is None, then return 0 if they are both None, else 1
     if formatted_response1 is None or formatted_response2 is None:
         return float(formatted_response1 == formatted_response2)
@@ -54,23 +54,42 @@ def _images_are_same_probability(
         formatted_response1.image_hashes[0], formatted_response2.image_hashes[0]
     )
 
-    probability_same_image = images_are_same_classifier.predict_proba([model_features])[0][1]
+    probability_same_image_xg = images_are_same_classifier.predict_proba([model_features])[0][1]
 
-    bt.logging.info(f"Probability same image {probability_same_image}")
-    return probability_same_image
+    clip_similarity = get_clip_embedding_similarity(
+        formatted_response1.clip_embeddings[0], formatted_response2.clip_embeddings[0]
+    )
+
+    # If they're the same by xg (it has a low threshold), then return 1, else use the clip similarity squared
+    return probability_same_image_xg, clip_similarity
 
 
 def images_are_same_generic(
     formatted_response1: base_models.ImageResponseBase, formatted_response2: base_models.ImageResponseBase
 ) -> float:
-    return _images_are_same_probability(formatted_response1, formatted_response2)
+    probability_same_image_xg, clip_similarity  =  _image_similarities(formatted_response1, formatted_response2)
+    return 1 if probability_same_image_xg > 0.01 else clip_similarity ** 2
 
 
 def images_are_same_upscale(
     formatted_response1: base_models.ImageResponseBase, formatted_response2: base_models.ImageResponseBase
 ) -> float:
-    return _images_are_same_probability(formatted_response1, formatted_response2)
+    probability_same_image_xg, clip_similarity  =  _image_similarities(formatted_response1, formatted_response2)
+    return 1 if probability_same_image_xg > 0.08 else clip_similarity ** 4
 
+def get_clip_embedding_similarity(
+    clip_embedding1: List[float], clip_embedding2: List[float]
+):
+    image_embedding1 = np.array(clip_embedding1, dtype=float)
+    image_embedding2 = np.array(clip_embedding2, dtype=float)
+
+    dot_product = np.dot(image_embedding1, image_embedding2.T)
+    norm1 = np.linalg.norm(image_embedding1)
+    norm2 = np.linalg.norm(image_embedding2)
+
+    normalized_dot_product = dot_product / (norm1 * norm2)
+
+    return float(normalized_dot_product[0][0])
 
 def clip_embeddings_are_same(
     formatted_response1: base_models.ClipEmbeddingsBase, formatted_response2: base_models.ClipEmbeddingsBase
@@ -80,16 +99,11 @@ def clip_embeddings_are_same(
     elif formatted_response1.image_embeddings is None or formatted_response2.image_embeddings is None:
         return float(formatted_response1.image_embeddings == formatted_response2.image_embeddings)
     else:
-        image_embedding1 = np.array(formatted_response1.image_embeddings, dtype=float)
-        image_embedding2 = np.array(formatted_response2.image_embeddings, dtype=float)
+        similarity = get_clip_embedding_similarity(
+            formatted_response1.image_embeddings, formatted_response2.image_embeddings
+        )
 
-        dot_product = np.dot(image_embedding1, image_embedding2.T)
-        norm1 = np.linalg.norm(image_embedding1)
-        norm2 = np.linalg.norm(image_embedding2)
-
-        normalized_dot_product = dot_product / (norm1 * norm2)
-
-        return float(normalized_dot_product[0][0] > 0.995)
+        return float(similarity > 0.995)
 
 
 # ADD ONE FOR CLIP EMBEDDINGS
