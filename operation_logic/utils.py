@@ -282,7 +282,7 @@ def image_hash_feature_extraction(image: Image.Image) -> utility_models.ImageHas
         color_hash=chash,
     )
 
-def get_clip_embedding_from_processed_image(image: Image.Image) -> List[float]:
+def get_clip_embedding_from_processed_image(image: Image.Image) -> List[List[float]]:
 
     threading_lock = resource_management.threading_lock
 

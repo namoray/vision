@@ -34,7 +34,7 @@ OPERATION_TIMEOUTS: Dict[str, float] = {
 
 # This is to stop people claiming operations that don't exist
 ALLOWED_USEFUL_OPERATIONS = [
-    # "TextToImage",
+    "TextToImage",
     "ImageToImage",
     # "Upscale",
     # "Inpaint",

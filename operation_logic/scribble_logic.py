@@ -52,7 +52,7 @@ async def scribble_logic(body: base_models.ScribbleIncoming) -> base_models.Scri
     clip_embedding = operation_utils.get_clip_embedding_from_processed_image(processed_image)
 
     output.image_hashes = [image_hashes]
-    output.clip_embeddings = [clip_embedding]
+    output.clip_embeddings = clip_embedding
 
 
     if operation_utils.image_is_nsfw(processed_image):

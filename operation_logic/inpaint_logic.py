@@ -80,7 +80,7 @@ async def inpaint_logic(body: base_models.InpaintIncoming) -> base_models.Inpain
     clip_embedding = operation_utils.get_clip_embedding_from_processed_image(processed_image)
 
     output.image_hashes = [image_hashes]
-    output.clip_embeddings = [clip_embedding]
+    output.clip_embeddings = clip_embedding
 
     if operation_utils.image_is_nsfw(processed_image):
         bt.logging.info("NSFW image detected 👿, returning a corresponding error and no image")

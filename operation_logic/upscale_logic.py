@@ -35,7 +35,7 @@ async def upscale_logic(body: base_models.UpscaleIncoming) -> base_models.Upscal
     clip_embedding = operation_utils.get_clip_embedding_from_processed_image(upscaled_image)
 
     output.image_hashes = [image_hashes]
-    output.clip_embeddings = [clip_embedding]
+    output.clip_embeddings = clip_embedding
 
 
     if operation_utils.image_is_nsfw(upscaled_image):

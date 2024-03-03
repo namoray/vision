@@ -3,7 +3,7 @@ import xgboost as xgb
 from typing import List
 import imagehash
 import numpy as np
-
+import bittensor as bt
 
 images_are_same_classifier = xgb.XGBClassifier()
 images_are_same_classifier.load_model("image_similarity_xgb_model.json")
@@ -25,12 +25,12 @@ def _get_hash_distances(hashes_1: utility_models.ImageHashes, hashes_2: utility_
     return [phash_distance, ahash_distance, dhash_distance, chash_distance]
 
 
-def _images_are_different_probability(
+def _images_are_same_probability(
     formatted_response1: base_models.ImageResponseBase, formatted_response2: base_models.ImageResponseBase
 ) -> float:
     # If one is None, then return 0 if they are both None, else 1
     if formatted_response1 is None or formatted_response2 is None:
-        return float(formatted_response1 != formatted_response2)
+        return float(formatted_response1 == formatted_response2)
 
     # Else if the stuff return is empty or None, then return 0 if nobody return an image, else 1
     elif (
@@ -47,27 +47,29 @@ def _images_are_different_probability(
         or len(formatted_response1.image_hashes) == 0
         or len(formatted_response2.image_hashes) == 0
     ):
-        return len(formatted_response1.image_b64s) == 0 and len(formatted_response2.image_b64s) == 0
+        bt.logging.info("Found empty image_b64s and what not!")
+        return float(len(formatted_response1.image_b64s) == 0 and len(formatted_response2.image_b64s) == 0)
 
     model_features = _get_hash_distances(
         formatted_response1.image_hashes[0], formatted_response2.image_hashes[0]
     )
 
-    probability_different_image = images_are_same_classifier.predict_proba([model_features])[0][0]
+    probability_same_image = images_are_same_classifier.predict_proba([model_features])[0][1]
 
-    return probability_different_image
+    bt.logging.info(f"Probability same image {probability_same_image}")
+    return probability_same_image
 
 
 def images_are_same_generic(
     formatted_response1: base_models.ImageResponseBase, formatted_response2: base_models.ImageResponseBase
 ) -> float:
-    return _images_are_different_probability(formatted_response1, formatted_response2) < 0.99
+    return _images_are_same_probability(formatted_response1, formatted_response2)
 
 
 def images_are_same_upscale(
     formatted_response1: base_models.ImageResponseBase, formatted_response2: base_models.ImageResponseBase
 ) -> float:
-    return _images_are_different_probability(formatted_response1, formatted_response2) < 0.9
+    return _images_are_same_probability(formatted_response1, formatted_response2)
 
 
 def clip_embeddings_are_same(

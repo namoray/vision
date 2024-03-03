@@ -459,6 +459,7 @@ class CoreValidator:
         endpoint = _pascal_to_kebab(synapse.__class__.__name__)
         expected_result = await self._query_checking_server_for_expected_result(endpoint, synapse, outgoing_model)
 
+        bt.logging.info("Got expected result")
         # We know that at least one result is not None, so we're not expecting None here.
         # This means if expected result is None, there's a problem with the checking server
         if expected_result is None:
@@ -468,8 +469,10 @@ class CoreValidator:
             return {}
 
         # If one of the results are None, then give that axon a failed response score and just score the other with the server 
+        bt.logging.info("Tis not none, pressing on")
 
         if result1.formatted_response is None:
+            bt.logging.info("Result 1 is none")
             axon_scores[result2.axon_uid] = int(
                 similarity_comparison_function(result2.formatted_response, expected_result.formatted_response)
             )
@@ -477,6 +480,7 @@ class CoreValidator:
             return axon_scores
     
         elif result2.formatted_response is None:
+            bt.logging.info("Result 2 is none")
             axon_scores[result1.axon_uid] = int(
                 similarity_comparison_function(result1.formatted_response, expected_result.formatted_response)
             )
@@ -484,13 +488,16 @@ class CoreValidator:
             return axon_scores
         
         # Otherwise, get the respective similarities with the server and then compare response times
-  
+
+
         result1_is_similar_to_truth = similarity_comparison_function(
             result1.formatted_response, expected_result.formatted_response
         )
         result2_is_similar_to_truth = similarity_comparison_function(
             result2.formatted_response, expected_result.formatted_response
         )
+
+        bt.logging.info(f"Result 1 is similar to truth: {result1_is_similar_to_truth}, result 2 is similar to truth: {result2_is_similar_to_truth}")
 
         if result1_is_similar_to_truth and result2_is_similar_to_truth:
             if result1.response_time < result2.response_time:
