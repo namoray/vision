@@ -445,7 +445,7 @@ class CoreValidator:
                     f"axon_uid is None, score: {score}, results: {core_utils.model_to_printable_dict(result1)}, {core_utils.model_to_printable_dict(result2)}"
                 )
             uid_info = self.uid_to_uid_info[axon_uid]
-            uid_info.add_score(score, synthetic=synthetic_query, count=count)
+            uid_info.add_score(max(score, cst.FAILED_RESPONSE_SCORE), synthetic=synthetic_query, count=count)
 
     async def _get_axon_scores_with_server_check(
         self,
