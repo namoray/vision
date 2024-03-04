@@ -75,6 +75,10 @@ def connect_to_checking_servers(config) -> Tuple[str, str]:
         "safety_checker_server_url": config.get(hotkey_name).get("SAFETY_CHECKER_SERVER_ADDRESS", None),
     }
 
+    # If not an organic validator, no need for this 
+    if config[hotkey_name][core_cst.API_SERVER_PORT_PARAM] is None:
+        del servers["safety_checker_server_url"]
+
     # Check each server
     for name, url in servers.items():
         if url is None:

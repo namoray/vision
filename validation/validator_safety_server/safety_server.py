@@ -7,7 +7,7 @@ from typing import Dict, Any
 import yaml
 import uvicorn
 
-
+import bittensor as bt
 app = FastAPI(debug=False)
 
 yaml_config: Dict[str, Any] = yaml.safe_load(open(cst.CONFIG_FILEPATH))
@@ -31,4 +31,7 @@ host, port_with_slash = server_address.split(':')
 port = port_with_slash[:-1]
 
 if __name__ == "__main__":
-    uvicorn.run(app, host=host, port=int(port), loop="asyncio", log_level="debug")
+    if yaml_config[validator_hotkey_name][cst.API_SERVER_PORT_PARAM] is not None:
+        uvicorn.run(app, host=host, port=int(port), loop="asyncio", log_level="debug"   )
+    else:
+        bt.logging.info("No need for safety server as we're not running an organic validator :)")
