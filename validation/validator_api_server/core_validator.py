@@ -430,6 +430,7 @@ class CoreValidator:
                 bt.logging.error(
                     f"axon_uid is None, score: {score}, results: {core_utils.model_to_printable_dict(result1)}, {core_utils.model_to_printable_dict(result2)}"
                 )
+                continue
             uid_info = self.uid_to_uid_info[axon_uid]
             uid_info.add_score(score, synthetic=synthetic_query, count=count)
 
