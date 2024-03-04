@@ -77,7 +77,6 @@ def images_are_same_generic(
     formatted_response1: base_models.ImageResponseBase, formatted_response2: base_models.ImageResponseBase
 ) -> float:
     probability_same_image_xg, clip_similarity  =  _image_similarities(formatted_response1, formatted_response2)
-    bt.logging.info(f"Similarity score: {probability_same_image_xg}, clip similarity: {clip_similarity}")
     return 1 if probability_same_image_xg > 0.01 else clip_similarity
 
 
@@ -85,7 +84,7 @@ def images_are_same_upscale(
     formatted_response1: base_models.ImageResponseBase, formatted_response2: base_models.ImageResponseBase
 ) -> float:
     probability_same_image_xg, clip_similarity  =  _image_similarities(formatted_response1, formatted_response2)
-    return 1 if probability_same_image_xg > 0.08 else clip_similarity ** 4
+    return 1 if probability_same_image_xg > 0.08 else clip_similarity ** 2
 
 def get_clip_embedding_similarity(
     clip_embedding1: List[float], clip_embedding2: List[float]

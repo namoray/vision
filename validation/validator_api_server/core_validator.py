@@ -162,16 +162,17 @@ class CoreValidator:
 
         This function does not return any value.
         """
-        TIME_TO_SLEEP_BETWEEN_SYNTHETIC_QUERIES = 20
+
         while True:
             operation = random.choice(cst.OPERATIONS_TO_SCORE_SYNTHETICALLY)
             synthetic_data = await self._query_checking_server_for_synthetic_data(operation)
 
             if synthetic_data is None:
                 bt.logging.error(
-                    "Synthetic data is none which is weird, will try again in 20. Maybe the server hasn't finished initialising yet"
+                    f"Synthetic data is none which is weird, will try again in {cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING}."
+                    "Maybe the server hasn't finished initialising yet"
                 )
-                await asyncio.sleep(TIME_TO_SLEEP_BETWEEN_SYNTHETIC_QUERIES)
+                await asyncio.sleep(cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING)
                 continue
 
             synapse_class_ = getattr(protocols, operation)
@@ -179,11 +180,11 @@ class CoreValidator:
             outgoing_model = getattr(base_models, operation + core_cst.OUTGOING)
 
             time_before_query = time.time()
-            # TODO: CHANGE THIS BACK TO AWAIT
-            asyncio.create_task(self.execute_query(synapse, outgoing_model, synthetic_query=True))
+
+            await asyncio.create_task(self.execute_query(synapse, outgoing_model, synthetic_query=True))
 
             time_to_execute_query = time.time() - time_before_query
-            await asyncio.sleep(max(TIME_TO_SLEEP_BETWEEN_SYNTHETIC_QUERIES - time_to_execute_query, 0))
+            await asyncio.sleep(max(cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING - time_to_execute_query, 0))
 
     async def fetch_available_operations_for_each_axon(self) -> None:
         uid_to_query_task = {}
@@ -468,8 +469,6 @@ class CoreValidator:
             result2.formatted_response, expected_result.formatted_response
         )
 
-        bt.logging.info(f"Result 1 is similar to truth: {result1_is_similar_to_truth}, result 2 is similar to truth: {result2_is_similar_to_truth}")
-
         if result1_is_similar_to_truth == 1 and result2_is_similar_to_truth == 1:
             if result1.response_time < result2.response_time:
                 axon_scores[result1.axon_uid] = faster_response_bonus
@@ -481,7 +480,7 @@ class CoreValidator:
         else:
             # TODO: change - if both are not similar to the truth, then get a new similarity score * response time
             # And use the ranking above
-            # Otherwise give a score of 1.1 to the winner, and something capped at 0.9 for the loser depending on similarity
+            # Otherwise give a score of faster_response_bonus to the winner, and something capped at slower_response_penalty for the loser depending on similarity
             # score
 
             if not result1_is_similar_to_truth == 1:
