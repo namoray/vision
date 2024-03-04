@@ -14,6 +14,7 @@ class UIDinfo(BaseModel) :
 
 
     uid: int
+    hotkey: str
     available_operations: List[str] = []
     axon: bt.chain_data.AxonInfo
     is_low_incentive: bool = False

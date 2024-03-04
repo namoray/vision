@@ -57,6 +57,8 @@ def _image_similarities(
         bt.logging.info("Found empty image_b64s and what not!")
         both_have_no_images = int(len(formatted_response1.image_b64s) == 0 and len(formatted_response2.image_b64s) == 0)
         return both_have_no_images, both_have_no_images
+    
+
 
     model_features = _get_hash_distances(
         formatted_response1.image_hashes[0], formatted_response2.image_hashes[0]

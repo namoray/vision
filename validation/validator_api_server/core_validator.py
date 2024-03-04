@@ -12,8 +12,7 @@ from typing import Optional
 from typing import Set
 from typing import Tuple
 from typing import Callable
-from rich.console import Console
-from rich.table import Table
+
 import bittensor as bt
 import httpx
 import torch
@@ -37,7 +36,7 @@ _UPPER_FOLLOWING_REGEXP = re.compile("([a-z0-9])([A-Z])")
 
 VERSION_KEY = 20_001
 
-console = Console()
+
 
 def _pascal_to_kebab(input_string: str) -> str:
     hyphen_separated = _PASCAL_SEP_REGEXP.sub(r"\1-\2", input_string)
@@ -242,12 +241,13 @@ class CoreValidator:
             self.uids: List[int] = self.metagraph.uids.tolist()
             self.axon_indexes = axon_indexes_tensor.tolist()
             self.incentives = incentives_tensor.tolist()
+            hotkeys: List[str] = self.metagraph.hotkeys
             self.axons = self.metagraph.axons
 
             for i in self.axon_indexes:
                 uid = self.uids[i]
                 self.uid_to_uid_info[uid] = utility_models.UIDinfo(
-                    uid=uid, axon=self.axons[i], incentive=self.incentives[i]
+                    uid=uid, axon=self.axons[i], incentive=self.incentives[i], hotkey=hotkeys[i]
                 )
 
             incentives_with_uids = list(zip(self.incentives, self.uids))
@@ -403,6 +403,7 @@ class CoreValidator:
 
         similarity_comparison_function = self._get_similarity_comparison_function(synapse.__class__.__name__)
         responses_are_similar = similarity_comparison_function(result1.formatted_response, result2.formatted_response)
+        checked_with_server = False
 
         # If they are similar, only use the external server to check the responses some of the time
         if responses_are_similar and random.random() > cst.CHANCE_TO_CHECK_OUTPUT_WHEN_IMAGES_FROM_MINERS_WERE_SIMILAR:
@@ -414,26 +415,11 @@ class CoreValidator:
             compared_axon_scores = await self._get_axon_scores_with_server_check(
                 result1, result2, synapse, outgoing_model, similarity_comparison_function
             )
+            checked_with_server = True
         
         axon_scores = {**axon_scores, **compared_axon_scores}
         
-        table = Table(show_header=True, header_style="bold magenta")
-        table.add_column("UID", style="dim", width=20)
-        table.add_column("Response Time", style="dim", width=20)
-        table.add_column("Score", style="dim", width=20)
-
-        for uid, score in axon_scores.items():
-            if uid == result1.axon_uid:
-                response_time = 'N/A' if result1.response_time is None else str(round(result1.response_time, 2))
-            elif uid == result2.axon_uid:
-                response_time = 'N/A' if result2.response_time is None else str(round(result2.response_time, 2))
-            else:
-                response_time = "N/A"
-
-            
-            table.add_row(str(uid), response_time, str(round(score, 2)))
-
-        console.print(table)
+        validation_utils.store_and_print_scores(axon_scores, result1, result2, synapse, checked_with_server, self.uid_to_uid_info)
 
         quickest_response_time = min(
             (t for t in [result1.response_time, result2.response_time] if t is not None), default=1
@@ -445,7 +431,7 @@ class CoreValidator:
                     f"axon_uid is None, score: {score}, results: {core_utils.model_to_printable_dict(result1)}, {core_utils.model_to_printable_dict(result2)}"
                 )
             uid_info = self.uid_to_uid_info[axon_uid]
-            uid_info.add_score(max(score, cst.FAILED_RESPONSE_SCORE), synthetic=synthetic_query, count=count)
+            uid_info.add_score(score, synthetic=synthetic_query, count=count)
 
     async def _get_axon_scores_with_server_check(
         self,
@@ -467,25 +453,6 @@ class CoreValidator:
             printable_outgoing_model = core_utils.model_to_printable_dict(outgoing_model)
             bt.logging.error(f"Could not get expected output from server, which is weird! Please raise this with the subnet devs. Synapse: {printable_synapse}, outgoing_model: {printable_outgoing_model}")
             return {}
-
-        # If one of the results are None, then give that axon a failed response score and just score the other with the server 
-        bt.logging.info("Tis not none, pressing on")
-
-        if result1.formatted_response is None:
-            bt.logging.info("Result 1 is none")
-            axon_scores[result2.axon_uid] = int(
-                similarity_comparison_function(result2.formatted_response, expected_result.formatted_response)
-            )
-            axon_scores[result1.axon_uid] = cst.FAILED_RESPONSE_SCORE
-            return axon_scores
-    
-        elif result2.formatted_response is None:
-            bt.logging.info("Result 2 is none")
-            axon_scores[result1.axon_uid] = int(
-                similarity_comparison_function(result1.formatted_response, expected_result.formatted_response)
-            )
-            axon_scores[result2.axon_uid] = cst.FAILED_RESPONSE_SCORE
-            return axon_scores
         
         # Otherwise, get the respective similarities with the server and then compare response times
 
@@ -504,8 +471,8 @@ class CoreValidator:
                 axon_scores[result1.axon_uid] = 1 + cst.BONUS_FOR_WINNING_MINER
                 axon_scores[result2.axon_uid] = 1 - cst.BONUS_FOR_WINNING_MINER
             else:
-                axon_scores[result1.axon_uid] = 1 + cst.BONUS_FOR_WINNING_MINER
-                axon_scores[result2.axon_uid] = 1 - cst.BONUS_FOR_WINNING_MINER
+                axon_scores[result1.axon_uid] = 1 - cst.BONUS_FOR_WINNING_MINER
+                axon_scores[result2.axon_uid] = 1 + cst.BONUS_FOR_WINNING_MINER
         
         else:
             # TODO: change - if both are not similar to the truth, then get a new similarity score * response time
@@ -514,15 +481,15 @@ class CoreValidator:
             # score
 
             if not result1_is_similar_to_truth == 1:
-                axon_scores[result1.axon_uid] = ( 1 - cst.BONUS_FOR_WINNING_MINER) * result1_is_similar_to_truth
+                axon_scores[result1.axon_uid] = max(( 1 - cst.BONUS_FOR_WINNING_MINER) * result1_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
 
                 if not result2_is_similar_to_truth == 1:
-                    axon_scores[result2.axon_uid] = ( 1 - cst.BONUS_FOR_WINNING_MINER) * result2_is_similar_to_truth
+                    axon_scores[result2.axon_uid] = max(( 1 - cst.BONUS_FOR_WINNING_MINER) * result2_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
                 else:
                     axon_scores[result2.axon_uid] = 1 + cst.BONUS_FOR_WINNING_MINER
             else:
                 axon_scores[result1.axon_uid] = 1 + cst.BONUS_FOR_WINNING_MINER
-                axon_scores[result2.axon_uid] = ( 1 - cst.BONUS_FOR_WINNING_MINER) * result2_is_similar_to_truth
+                axon_scores[result2.axon_uid] = max(( 1 - cst.BONUS_FOR_WINNING_MINER) * result2_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
 
         return axon_scores
 

@@ -35,11 +35,11 @@ OPERATION_TIMEOUTS: Dict[str, float] = {
 # This is to stop people claiming operations that don't exist
 ALLOWED_USEFUL_OPERATIONS = [
     "TextToImage",
-    # "ImageToImage",
-    # "Upscale",
-    # "Inpaint",
-    # "Scribble",
-    # "ClipEmbeddings",
+    "ImageToImage",
+    "Upscale",
+    "Inpaint",
+    "Scribble",
+    "ClipEmbeddings",
     # "Segment",
 ]
 
@@ -60,6 +60,6 @@ NUMBER_OF_SECONDARY_AXONS_TO_COMPARE_WHEN_SCORING = 1  # head - head comparison
 BONUS_FOR_WINNING_MINER = 0.1
 FAILED_RESPONSE_SCORE = 0.2
 
-CHANCE_TO_CHECK_OUTPUT_WHEN_IMAGES_FROM_MINERS_WERE_SIMILAR = 1
+CHANCE_TO_CHECK_OUTPUT_WHEN_IMAGES_FROM_MINERS_WERE_SIMILAR = 0.25
 
 
