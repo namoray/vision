@@ -446,6 +446,9 @@ class CoreValidator:
         endpoint = _pascal_to_kebab(synapse.__class__.__name__)
         expected_result = await self._query_checking_server_for_expected_result(endpoint, synapse, outgoing_model)
 
+        faster_response_bonus = 1 + cst.BONUS_FOR_WINNING_MINER
+        slower_response_penalty = 1 - cst.BONUS_FOR_WINNING_MINER
+
         bt.logging.info("Got expected result")
         # We know that at least one result is not None, so we're not expecting None here.
         # This means if expected result is None, there's a problem with the checking server
@@ -469,11 +472,11 @@ class CoreValidator:
 
         if result1_is_similar_to_truth == 1 and result2_is_similar_to_truth == 1:
             if result1.response_time < result2.response_time:
-                axon_scores[result1.axon_uid] = 1 + cst.BONUS_FOR_WINNING_MINER
-                axon_scores[result2.axon_uid] = 1 - cst.BONUS_FOR_WINNING_MINER
+                axon_scores[result1.axon_uid] = faster_response_bonus
+                axon_scores[result2.axon_uid] = slower_response_penalty
             else:
-                axon_scores[result1.axon_uid] = 1 - cst.BONUS_FOR_WINNING_MINER
-                axon_scores[result2.axon_uid] = 1 + cst.BONUS_FOR_WINNING_MINER
+                axon_scores[result1.axon_uid] = slower_response_penalty
+                axon_scores[result2.axon_uid] = faster_response_bonus
         
         else:
             # TODO: change - if both are not similar to the truth, then get a new similarity score * response time
@@ -482,15 +485,16 @@ class CoreValidator:
             # score
 
             if not result1_is_similar_to_truth == 1:
-                axon_scores[result1.axon_uid] = max(( 1 - cst.BONUS_FOR_WINNING_MINER) * result1_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
-
+                
                 if not result2_is_similar_to_truth == 1:
-                    axon_scores[result2.axon_uid] = max(( 1 - cst.BONUS_FOR_WINNING_MINER) * result2_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
+                    axon_scores[result1.axon_uid] = max(result1_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
+                    axon_scores[result2.axon_uid] = max(result2_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
                 else:
-                    axon_scores[result2.axon_uid] = 1 + cst.BONUS_FOR_WINNING_MINER
+                    axon_scores[result1.axon_uid] = max(slower_response_penalty * result1_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
+                    axon_scores[result2.axon_uid] = faster_response_bonus
             else:
-                axon_scores[result1.axon_uid] = 1 + cst.BONUS_FOR_WINNING_MINER
-                axon_scores[result2.axon_uid] = max(( 1 - cst.BONUS_FOR_WINNING_MINER) * result2_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
+                axon_scores[result1.axon_uid] = faster_response_bonus
+                axon_scores[result2.axon_uid] = max(slower_response_penalty * result2_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
 
         return axon_scores
 
