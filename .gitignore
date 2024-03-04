@@ -16,6 +16,7 @@ sam_vit_l_0b3195.pth
 dbmate
 validator_database
 
+tmp/*
 *.pth
 *.pth.lock
 start_miners.sh

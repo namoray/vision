@@ -472,12 +472,15 @@ class CoreValidator:
                     axon_scores[result2.axon_uid] = cst.SCORE_FOR_LOW_QUALITY_RESPONSE
 
             else:
+                faster_response_bonus = 1 + cst.BONUS_FOR_WINNING_MINER
+                slower_response_penalty = 1 - cst.BONUS_FOR_WINNING_MINER
+
                 if result1.response_time < result2.response_time:
-                    axon_scores[result1.axon_uid] = 1 + cst.BONUS_FOR_WINNING_MINER
-                    axon_scores[result2.axon_uid] = 1 - cst.BONUS_FOR_WINNING_MINER
+                    axon_scores[result1.axon_uid] = faster_response_bonus
+                    axon_scores[result2.axon_uid] = slower_response_penalty
                 else:
-                    axon_scores[result1.axon_uid] = 1 + cst.BONUS_FOR_WINNING_MINER
-                    axon_scores[result2.axon_uid] = 1 - cst.BONUS_FOR_WINNING_MINER
+                    axon_scores[result1.axon_uid] = slower_response_penalty
+                    axon_scores[result2.axon_uid] = faster_response_bonus
 
         return axon_scores
 
