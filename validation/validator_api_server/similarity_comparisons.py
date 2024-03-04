@@ -70,8 +70,7 @@ def _image_similarities(
         formatted_response1.clip_embeddings[0], formatted_response2.clip_embeddings[0]
     )
 
-    # If they're the same by xg (it has a low threshold), then return 1, else use the clip similarity squared
-    return probability_same_image_xg, clip_similarity
+    return probability_same_image_xg, clip_similarity if clip_similarity > 0.9 else 0
 
 
 def images_are_same_generic(
@@ -79,7 +78,7 @@ def images_are_same_generic(
 ) -> float:
     probability_same_image_xg, clip_similarity  =  _image_similarities(formatted_response1, formatted_response2)
     bt.logging.info(f"Similarity score: {probability_same_image_xg}, clip similarity: {clip_similarity}")
-    return 1 if probability_same_image_xg > 0.01 else clip_similarity ** 2
+    return 1 if probability_same_image_xg > 0.01 else clip_similarity
 
 
 def images_are_same_upscale(
@@ -91,13 +90,16 @@ def images_are_same_upscale(
 def get_clip_embedding_similarity(
     clip_embedding1: List[float], clip_embedding2: List[float]
 ):
-    image_embedding1 = np.array(clip_embedding1, dtype=float)
-    image_embedding2 = np.array(clip_embedding2, dtype=float)
+    image_embedding1 = np.array(clip_embedding1, dtype=float).flatten()
+    image_embedding2 = np.array(clip_embedding2, dtype=float).flatten()
 
-    dot_product = np.dot(image_embedding1, image_embedding2.T)
     norm1 = np.linalg.norm(image_embedding1)
     norm2 = np.linalg.norm(image_embedding2)
 
+    if norm1 == 0 or norm2 == 0:
+        return float(norm1 == norm2)
+
+    dot_product = np.dot(image_embedding1, image_embedding2)
     normalized_dot_product = dot_product / (norm1 * norm2)
 
     return float(normalized_dot_product)

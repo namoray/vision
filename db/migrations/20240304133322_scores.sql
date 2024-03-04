@@ -2,9 +2,9 @@
 
 CREATE TABLE scores
 (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY,
     axon_uid INT NOT NULL,
-    hotkey TEXT,
+    hotkey TEXT NOT NULL,
     response_time FLOAT,
     score FLOAT,
     synapse TEXT,

@@ -138,16 +138,14 @@ def store_and_print_scores(
 
     timestamp = round(time.time(), 2)
 
-
     table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("UID", style="dim", width=20)
-    table.add_column("Response Time", style="dim", width=20)
-    table.add_column("Score", style="dim", width=20)
-    table.add_column("Synapse", justify="left", style="dim", no_wrap=True)
-    table.add_column("Valid response", justify="left", style="dim", no_wrap=True)
-    table.add_column("Quickest Response", justify="left", style="dim", no_wrap=True)
-    table.add_column("Checked with server", justify="left", style="dim", no_wrap=True)
-    table.add_column("Timestamp", justify="left", style="dim", no_wrap=True)
+    table.add_column("uid", style="dim")
+    table.add_column("Response Time", style="dim")
+    table.add_column("Score", style="dim")
+    table.add_column("Synapse", justify="left", style="dim")
+    table.add_column("Valid response", justify="left", style="dim")
+    table.add_column("Quickest Response", justify="left", style="dim")
+    table.add_column("Checked with server", justify="left", style="dim")
 
     for uid, score in axon_scores.items():
         if uid == result1.axon_uid:
@@ -175,7 +173,7 @@ def store_and_print_scores(
                 timestamp,
             )
             cursor.execute(
-                "INSERT INTO scores (axon_uid, hotkey, response_time, score, synapse, valid_response, quickest_response, checked_with_server, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO scores (axon_uid, hotkey, response_time, score, synapse, valid_response, quickest_response, checked_with_server, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 row_data,
             )
         table.add_row(
@@ -186,7 +184,6 @@ def store_and_print_scores(
             str(valid_response),
             str(quickest_response),
             str(checked_with_server),
-            str(timestamp),
         )
 
     console.print(table)
