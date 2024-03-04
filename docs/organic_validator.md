@@ -153,7 +153,7 @@ This uses the config defined in the `config.yaml`.
 # Selling your bandwidth
 
 ### Creating the database
-
+Used to store api keys & scoring logs
 ```bash
 curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64
 chmod +x /usr/local/bin/dbmate

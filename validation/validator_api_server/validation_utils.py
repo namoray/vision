@@ -75,12 +75,13 @@ def connect_to_checking_servers(config) -> Tuple[str, str]:
         "safety_checker_server_url": config.get(hotkey_name).get("SAFETY_CHECKER_SERVER_ADDRESS", None),
     }
 
-    # If not an organic validator, no need for this 
-    if config[hotkey_name][core_cst.API_SERVER_PORT_PARAM] is None:
-        del servers["safety_checker_server_url"]
+
 
     # Check each server
     for name, url in servers.items():
+
+        if config[hotkey_name][core_cst.API_SERVER_PORT_PARAM] is None and name == "safety_checker_server_url":
+            continue
         if url is None:
             raise Exception(f"{hotkey_name}.{name.upper()} not set in config.yaml")
 
@@ -98,6 +99,8 @@ def connect_to_checking_servers(config) -> Tuple[str, str]:
                 retry_interval += 5
                 if retry_interval > 15:
                     retry_interval = 15
+
+
 
     return servers["checking_server_url"], servers["safety_checker_server_url"]
 

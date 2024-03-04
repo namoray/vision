@@ -127,6 +127,16 @@ make sure to leave the `API_SERVER_PORT` value empty if you're running in synthe
 vision create-config
 ```
 
+### Creating the database
+Used to store scoring logs
+
+```bash
+curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64
+chmod +x /usr/local/bin/dbmate
+
+dbmate --url "sqlite:validator_database.db" up
+```
+
 #### Starting the server
 
 ### With autoupdates
