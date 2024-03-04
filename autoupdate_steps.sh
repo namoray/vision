@@ -24,4 +24,15 @@ else
 fi
 
 
+{
+  # Try making the database
+  curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64
+  chmod +x /usr/local/bin/dbmate
+  dbmate --url "sqlite:validator_database.db" up
+} || {
+  # Except some problemo
+  echo "Error occurred while executing the commands."
+}
+
+
 ./validation/run_all_servers.sh

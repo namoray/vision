@@ -478,10 +478,6 @@ class CoreValidator:
                 axon_scores[result2.axon_uid] = faster_response_bonus
         
         else:
-            # TODO: change - if both are not similar to the truth, then get a new similarity score * response time
-            # And use the ranking above
-            # Otherwise give a score of faster_response_bonus to the winner, and something capped at slower_response_penalty for the loser depending on similarity
-            # score
 
             if not result1_is_similar_to_truth == 1:
                 
@@ -644,6 +640,7 @@ class CoreValidator:
     def set_weights(self):
         bt.logging.info("Setting weights!")
 
+        # TODO: CHANGE THIS
         uid_scores: Dict[int, List[float]] = {}
         with self.threading_lock:
             for epoch in self.previous_uid_infos:
