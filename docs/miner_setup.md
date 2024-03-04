@@ -81,7 +81,7 @@ pip3 install -r git_requirements.txt
 ```
 
 ### Download the necessary models
-Simple step this one - note it may take a while if you have poor bandwidth (not recommended)
+Simple step this one - note it may take a while if you have poor bandwidth
 
 ```bash
 ./get_models.sh
