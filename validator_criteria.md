@@ -64,7 +64,7 @@ This results in an unlimited amount of different synthetic prompts, miners canno
 
 ### Scoring
 We have a very unique rewards mechanism on subnet 19, which is very robust. We have trained our own custom rewards model which can accurately detect whether images where generated with the exact same parameters but on different hardware. When we want to score a miner, we get a set of parameters P. We then send out the request to N miners (currently N=2, but is subject to variably increase). After the response, we run our reward model on the outputs, and compare to see if they are the same, and score based on that. Here's a diagram which should make it clearer (or tries to :P):
-![Diagram of scoring mechanism](image-3.png)
+![Diagram of scoring mechanism](scoring-diagram.png)
 
 The fallback for similarity is currently CLIP, but we cap the rewards at 1 - s, so there can never be an advantage by doing a CLIP embedding search.
 
