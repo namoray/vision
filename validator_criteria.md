@@ -2,19 +2,19 @@
 
 # 1. Uniqueness of the subnet, contribution to the overall Bittensor environment and ML community, long-term vision
 
-Subnet 19 is the first, and only, subnet built to completely facilitate organic interactions. Validators can easily spin up their own API servers, and sell their access to the network to the free market, as they please - all while making sure the miners are scored on these queries. We're opening up Bittensor to the world, with enterprise scales in mind. 
+Subnet 19 is the first, and only, subnet built to completely facilitate organic interactions. Validators can easily spin up their own API servers, and sell their access to the network to the free market, as they please - all while making sure the miners are scored on these queries. We're opening up Bittensor to the world, with enterprise scaling in mind. 
 
-This isn't just a concept though, it's currently used in production for multiple applications (listed in the next section). With this architecture, the free market will dictate which models are used and the price validators can sell their bandwidth for.
+This isn't just a concept, it's currently used in production for multiple applications (listed in the next section). With this architecture, the free market will dictate which models are used and the price validators can sell their bandwidth for.
 
-We're not going to stop with just our subnet, we're going to build this out so new subnets in the Bittensor can easily use the framework and really open their subnets up. We've done lots of research on this topic too to back it up:
+We're not going to stop with just our subnet, we're going to build this out so new subnets in the Bittensor network can easily use the framework and open their subnets up. We've done lots of research on this topic to back it up:
 - https://corcel.io/whitepapers/prioritisation-mechanism
 - https://corcel.io/whitepapers/decentralised-subnet-inference-at-scale
 
-On the subnet specifics, we're allowing the inference of a variety of vision based models models, with a range of parameters. These facilitate operations like text-to-image, image-to-image, upscaling, inpainting, controlnet (scribble), as well as generation of embeddings of images, which allows things like comparison of images (enabling image searches, similarity scoring, etc).
+On the subnet specifics, we're allowing the inference of a variety of vision based models models with a range of parameters. These facilitate operations like text-to-image, image-to-image, upscaling, inpainting, controlnet (scribble), as well as generation of image embeddings, which allows things like comparison of images; enabling image searches, simialrity scoring etc.
 
 
 ### Applications
-We are probably the subnet with the most applications deployed on us right now - it's because we're built for it! 
+We are the subnet with the largest number of independant applications deployed right now - it's because we're built for it! 
 
 Here are a few examples: 
 
@@ -37,14 +37,14 @@ I'm sure there are more - if you want your application adding to this list, plea
 
 ## Future of 19 + DSIS 🚀
 
-Longer term we will continue to support more and more models, since our infrastructure is built around supporting arbitrary operations. We will facilitate large scale API usage of the latest and greatest vision models, not just image generation. We also will continue to refine our own open source image reward model, which can accurately detect whether images were generated with the exact same parameters but on different hardware - which allows for a very robust rewards mechanism.
+Longer term we will continue to support more and more models, since our infrastructure is built around supporting arbitrary operations. We will facilitate large scale API usage of the latest and greatest vision models, not just image generation. We will also continue to refine our own open source image reward model, which can accurately detect whether images were generated with the exact same parameters but on different hardware - which allows for a very robust rewards mechanism.
 
 
 **Key future features include:**
 
 -  **Subnet 19 for End Users**: Auto-scaling, fault tolerance, and reliability aspects will be catered to end users through Subnet 19.
 -  **Simplified Validator Services**: Providing comprehensive services to validators with one-click validator launches and simple GUI's for managing access & payments
--  **Dynamic Resource Balance**: Allowing the running of an arbitrary number of models, at an enterprise scale
+-  **Dynamic Resource Balancing**: Allowing the running of an arbitrary number of models, at an enterprise scale
 
 
 # 2. Reward Mechanism
@@ -53,17 +53,17 @@ There are two ways miners get scored - synthetic queries and organic queries.
 ### Synthetic query generation:
 
 - Text prompts: We use markov chains to randomly generate arbitrary prompts based on a large dataset.
-- Images (some endpoints): We use picsum to get an image iff there have been no images generated previously through synthetic prompts; otherwise we use one of them (which cannot be predicted). For endpoints like scribble or inpainting, we use that image to generate a scribble outline / a mask.
+- Images (some endpoints): We use picsum to get an image if there have been no images generating previously through synthetic prompts, else we use one of them (which cannot be predicted). For endpoints like scribble or inpainting, we use that image to generate a scribble outline / a mask.
 - Height/Width/Guidance Scale/Seed: Picked at random from predefined allowed values
 
 This results in an unlimited amount of different synthetic prompts, miners cannot cache or predict any responses. 
 
 ### Organic query generation:
-- These come directly from real users using the subnet via decentralised inference. However, in order for miners to not be able to send everyone a prompt they already have a response to, we do NOT allow users to pick the seed in the case of an image generation. In the case of an embedding generation, we change just one or two pixels of the image a tiny bit, which will result in a different embedding being generated. This means miners CANNOT predict what answer they will need to provide for an organic prompt - which means they cannot get an advantage over any other miner. This is a super important consideration for the organic use of a subnet - and we are the only ones tackling this issue.
+- These come directly from real users using the subnet via the decentralised inference. However, in order for miners to not be able to send everyone a prompt they already have a response to, we do NOT allow users to pick the seed in the case of an image generation. In the case of an embedding generation, we change just one or two pixels of the image a tiny bit, which will result in a different embedding being generated. This means miners CANNOT predict what answer they will need to provide for an organic prompt - which means they cannot get an advantage over any other miner. This is a super important consideration for the organic use of a subnet - and we are the only ones tackling this issue.
 
 
 ### Scoring
-We have a very unique rewards mechanism on subnet 19, which is very robust. We have trained our own custom rewards model which can accurately detect whether images were generated with the exact same parameters but on different hardware. When we want to score a miner, we get a set of parameters P. We then send out the request to N miners (currently N=2, but is subject to variably increase). After the response, we run our reward model on the outputs, compare to see if they are the same, and score based on that. Here's a diagram that should make it clearer (or tries to :P):
+We have a very unique rewards mechanism on subnet 19, which is very robust. We have trained our own custom rewards model which can accurately detect whether images were generated with the exact same parameters but on different hardware. When we want to score a miner, we get a set of parameters P. We then send out the request to N miners (currently N=2, but is subject to variably increase). After the response, we run our reward model on the outputs, and compare to see if they are the same, and score based on that. Here's a diagram that should make it clearer (or tries to :P):
 ![Diagram of scoring mechanism](scoring-diagram.png)
 
 The fallback for similarity is currently CLIP, but we cap the rewards at 1 - s, so there can never be an advantage by doing a CLIP embedding search.
