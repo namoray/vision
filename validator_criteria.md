@@ -1,6 +1,6 @@
 # Validator scoring criteria responses:
 
-## Uniqueness of the subnet, contribution to the overall Bittensor environment and ML community, long-term vision (40%)
+## Uniqueness of the subnet, contribution to the overall Bittensor environment and ML community, long-term vision
 
 Subnet 19 is the first, and only, subnet built to completely facilitate organic interactions. Validators can easily spin up their own API servers, and sell their access to the network to the free market, as they please - all while making sure the miners are scored on these queries. We're opening up bittensor to the world, with enterprise scales in mind. 
 
