@@ -1,6 +1,6 @@
 # Validator scoring criteria responses:
 
-## Uniqueness of the subnet, contribution to the overall Bittensor environment and ML community, long-term vision
+# 1. Uniqueness of the subnet, contribution to the overall Bittensor environment and ML community, long-term vision
 
 Subnet 19 is the first, and only, subnet built to completely facilitate organic interactions. Validators can easily spin up their own API servers, and sell their access to the network to the free market, as they please - all while making sure the miners are scored on these queries. We're opening up bittensor to the world, with enterprise scales in mind. 
 
@@ -11,7 +11,6 @@ We're not going to stop with just our subnet, we're going to build this out so n
 - https://corcel.io/whitepapers/decentralised-subnet-inference-at-scale
 
 On the subnet specifics, we're allowing the inference of a variety of vision based models models, with a range of parameters. These facilitate operations like text-to-image, image-to-image, upscaling, inpainting, controlnet (scribble), as well as generation of embeddings of images, which allows things like comparison of images (enabling image searches, simialrity scoring, etc).
-
 
 
 ### Applications
@@ -47,7 +46,7 @@ Longer term we will continue to support more and more models, since our infrastu
 -  **Simplified Validator Services**: Providing comprehensive services to validators with one-click validator launches and simple GUI's for managing access & payments
 -  **Dynamic Resource Balance**: Allowing the running of an arbitrary number of models, at an enterprise scale
 
-## Reward Mechanism:
+# 2. Reward Mechanism
 There are two ways miners get scored - synthetic queries and organic queries.  
 
 ### Synthetic query generation:
@@ -81,6 +80,6 @@ Each scoring period is 10 minutes long (currently) defined [here](https://github
 This is a key point to explore I believe, as currently the distribution is slighlty flatter than desired since we are needing to average over such a long period, to make sure validators stay in consensus, given some are not able to set weights for hundreds if not thousands of blocks at times. It will be a balancing act between these averages, and the variability in score for 'winning' miners.
 
 
-## Community engagement
+# 3. Community engagement
 Whilst I think we have very good response times to issues, usually measured in minutes and hours, and maintain a very active community presence, I think this is a question that can only be answered by the community - so I will leave it to them. The channel for 19 is **[here](https://discord.com/channels/799672011265015819/1186691482749505627)**
 
