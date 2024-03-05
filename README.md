@@ -1,11 +1,11 @@
 <div align="center">
 
 # **👀 Vision [τ, τ]**
-Giving 👀 to Bittensor with Decentralized subnet inference, at scale.
+Giving 👀 to Bittensor with Decentralized subnet inference at scale.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[Bittensor](https://bittensor.com/whitepaper)  •  [Discord](https://discord.gg/dR865yTPaZ) • [Corcel](https://app.corcel.io/)
+[Bittensor](https://bittensor.com/whitepaper)  •  [Discord](https://discord.gg/dR865yTPaZ) • [Corcel](https://app.corcel.io/studio)
 </div>
 
 
@@ -59,15 +59,7 @@ Setups tested for mining so far:
 
 Note: That's not to say you can't use other GPU's!
 
-## Future of 19 + DSIS 🚀
+# Validator scoring criteria responses:
+See [here](validator_criteria.md) for our response to key metrics used for assigning validator emissions
 
-The DSIS framework is committed to supporting a variety of models and workflows, optimizing inference. It primarily focuses on maintaining the highest throughput possible for production cases and APIs, while building a dynamic marketplace. The first phase focuses on a reward system proportional to the number of models run.
 
-We already provide API access for high-scale inference, but we will do even more.
-
-**Key future features include:**
-
--  **Subnet 19 for End Users**: Auto-scaling, fault tolerance, and reliability aspects will be catered to end users through Subnet 19.
--  **Simplified Validator Services**: Providing comprehensive services to validators with one-click validator launches and simple GUI's for managing access & payments
--  **Dynamic Resource Balance**: Allowing the running of an arbitrary number of models, at an enterprise scale
--  **Intersubnet Collaborations**: Maximizing value extraction from other subnets and enabling the use of bittensor in a plug-and-play fashion.
