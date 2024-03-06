@@ -251,19 +251,22 @@ class dendrite(bittensor.dendrite):
 
         timeout_settings = aiohttp.ClientTimeout(sock_connect=connect_timeout, sock_read=response_timeout)
 
-
         try:
             # Log outgoing request
             if log_requests_and_responses:
                 self._log_outgoing_request(synapse)
 
-            response = await asyncio.wait_for((await self.session).post(
+            # Make the HTTP POST request
+            async with (await self.session).post(
                 url,
                 headers=synapse.to_headers(),
                 json=synapse.dict(),
                 timeout=timeout_settings,
-            ), timeout=response_timeout)
-            await self._handle_response(response, synapse, start_time)
+            ) as response:
+                # Extract the JSON response from the server
+                json_response = await response.json()
+                # Process the server response and fill synapse
+                self.process_server_response(response, json_response, synapse)
 
             # Set process time and log the response
             synapse.dendrite.process_time = str(time.time() - start_time)
@@ -280,7 +283,7 @@ class dendrite(bittensor.dendrite):
 
             # Return the updated synapse object after deserializing if requested
             if deserialize:
-                return synapse.deserialize() # noqa: B012
+                return synapse.deserialize()  # noqa: B012
             else:
                 return synapse
 
@@ -305,10 +308,3 @@ class dendrite(bittensor.dendrite):
         else:
             synapse.dendrite.status_code = "422"
             synapse.dendrite.status_message = f"Failed to parse response object with error: {str(exception)}"
-
-    async def _handle_response(self, response, synapse, start_time):
-
-        json_response = await response.json()
-        self.process_server_response(response, json_response, synapse)
-        bittensor.logging.info(f"Total time taken: {time.time() - start_time:.2f} seconds")
-
