@@ -98,7 +98,7 @@ class CoreValidator:
         self.score_task.add_done_callback(validation_utils.log_task_exception)
 
     async def periodically_resync_and_set_weights(self) -> None:
-        time_between_resyncing =  10 * 60
+        time_between_resyncing =  0.25 * 60
         while True:
             await self.resync_metagraph()
             await asyncio.sleep(time_between_resyncing)
@@ -642,37 +642,32 @@ class CoreValidator:
 
         # TODO: CHANGE THIS
         uid_scores: Dict[int, List[float]] = {}
-        with self.threading_lock:
-            for epoch in self.previous_uid_infos:
-                for uid_info in epoch:
-                    available_operations = uid_info.available_operations
-                    multiplier = cst.AVAILABLE_OPERATIONS_MULTIPLIER[len(available_operations)]
+        scoring_periods_uid_was_in: Dict[int, int] = {}
 
-                    # If for some reason we didn't send enough requests through to score someone, give them
-                    # Slightly below average. NOTE if they don't support any operations (or many), this will get
-                    # Reduced dramatically too
-                    if uid_info.organic_request_count + uid_info.synthetic_request_count == 0:
-                        average_score = 0.85
-                    else:
-                        average_score = uid_info.average_score
+        for epoch in self.previous_uid_infos:
+            for uid_info in epoch:
+                scoring_periods_uid_was_in[uid_info.uid] = scoring_periods_uid_was_in.get(uid_info.uid, 0) + 1
+                if uid_info.organic_request_count + uid_info.synthetic_request_count == 0:
+                    continue
 
-                    score = multiplier * max(average_score, 0.80)
+                average_score = uid_info.average_score
+                available_operations = uid_info.available_operations
 
-                    uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
+                multiplier = cst.AVAILABLE_OPERATIONS_MULTIPLIER[len(available_operations)]
+                score = multiplier * average_score
+
+                uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
 
         uid_weights: Dict[int, float] = {}
-        discount_factor = 0.1
-        for uid, scores in uid_scores.items():
-            scores_reversed = list(reversed(scores))
-            n = len(scores_reversed)
-            weights = [1 / (1 + discount_factor * i) for i in range(n)]
-            sum_weights = sum(weights)
-            weights = [w / sum_weights for w in weights]
-            discounted_score = sum(score * weight for score, weight in zip(scores_reversed, weights))
+        max_periods = max([i for i in scoring_periods_uid_was_in.values()])
+        if max_periods == 0:
+            bt.logging.info("No uids found to score, nothing to set")
+            return
+        for uid, periods_for_uid in scoring_periods_uid_was_in.items():
+            scores = uid_scores.get(uid, [0.0])
+            average_score = sum(scores) / len(scores)
 
-            uid_weights[uid] = discounted_score
-
-
+            uid_weights[uid] = average_score * (periods_for_uid / max_periods) ** 0.5
 
         if uid_weights == {}:
             bt.logging.info("No scores found, nothing to set")
