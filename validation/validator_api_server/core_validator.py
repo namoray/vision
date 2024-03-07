@@ -34,7 +34,7 @@ import traceback
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
 _UPPER_FOLLOWING_REGEXP = re.compile("([a-z0-9])([A-Z])")
 
-VERSION_KEY = 20_001
+VERSION_KEY = 20_002
 
 
 
@@ -98,7 +98,7 @@ class CoreValidator:
         self.score_task.add_done_callback(validation_utils.log_task_exception)
 
     async def periodically_resync_and_set_weights(self) -> None:
-        time_between_resyncing =  0.25 * 60
+        time_between_resyncing =  10 * 60
         while True:
             await self.resync_metagraph()
             await asyncio.sleep(time_between_resyncing)
