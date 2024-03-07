@@ -17,6 +17,7 @@ tmp/*
 dbmate
 validator_database
 
+tmp/*
 *.pth
 *.pth.lock
 start_miners.sh
