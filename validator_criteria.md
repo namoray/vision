@@ -10,12 +10,12 @@ We're not going to stop with just our subnet, we're going to build this out so n
 - https://corcel.io/whitepapers/prioritisation-mechanism
 - https://corcel.io/whitepapers/decentralised-subnet-inference-at-scale
 
-On the subnet specifics, we're allowing the inference of a variety of vision based models with a range of parameters. These facilitate operations like text-to-image, image-to-image, upscaling, inpainting, controlnet (scribble), as well as generation of image embeddings, which allows comparison of images, enabling image searches, simialrity scoring etc.
+On the subnet specifics, we're allowing the inference of a variety of vision based models with a range of parameters. These facilitate operations like text-to-image, image-to-image, upscaling, inpainting, controlnet (scribble), as well as generation of image embeddings, which allows comparison of images, enabling image searches, similarity scoring, etc.
 
 
 
 ### Applications
-We are the subnet with the largest number of independant applications deployed right now - it's because we're built for it! 
+We are the subnet with the largest number of independent applications deployed right now - it's because we're built for it! 
 
 Here are a few examples: 
 
@@ -34,11 +34,11 @@ Here are a few examples:
 - [Corcel discord bot](https://discord.com/invite/dR865yTPaZ)
 - [Corcel API](https://api.corcel.io/docs)
 
-I'm sure there are more - if you want your application adding to this list, please let me know!
+I'm sure there are more - if you want your application added to this list, please let me know!
 
 ## Future of 19 + DSIS 🚀
 
-Longer term we will continue to support more and more models, since our infrastucture is built around supporting arbitrary operations. We will facilitate large scale API usage of the latest and greatest vision models, not just image generation. We will also continue to refine our own open source image reward model, which can accurately detect whether images were generated with the exact same parameters but on different hardware - which allows for a very robust rewards mechanism.
+Longer term we will continue to support more and more models, since our infrastructure is built around supporting arbitrary operations. We will facilitate large scale API usage of the latest and greatest vision models, not just image generation. We will also continue to refine our own open-source image reward model, which can accurately detect whether images were generated with the exact same parameters but on different hardware - which allows for a very robust rewards mechanism.
 
 
 **Key future features include:**
@@ -74,11 +74,11 @@ The rewards model and fallback for the rewards model are, of course, not perfect
 If we detect an image which is NSFW, we don't want to transfer that over the internet, so the miners do NOT return the image. Instead they return all the features necessary for the reward model, including the clip embeddings. This still lets us run all the models we need to, and crucially, ensures the miners still must run the model. If we didn't do this, miners would be able to send everyone NSFW prompts, and then just return an empty response each time without doing any calculations.
 
 ### Setting weights with scores
-Due to subtensor issues, we've had to slightly adapt the scoring mechanism. Since we cannot gaurantee that we will be able to set weights every epoch, we are taking the approach of a moving average. 
+Due to subtensor issues, we've had to slightly adapt the scoring mechanism. Since we cannot guarantee that we will be able to set weights every epoch, we are taking the approach of a moving average. 
 
 Each scoring period is 10 minutes long (currently) defined [here](https://github.com/namoray/vision/blob/7bf552e9e81c1271c17ecb1e69aec67ce9cd8a5c/validation/validator_api_server/core_validator.py#L101). We average the score for each miner over that period, and keep the last N periods in memory (currently N=30) [see here](https://github.com/namoray/vision/blob/7bf552e9e81c1271c17ecb1e69aec67ce9cd8a5c/validation/validator_api_server/core_validator.py#L46C27-L46C35). We then take an average of all the averages and use that to assign the score for a miner.
 
-This is a key point to explore I believe, as currently the distribution is slighlty flatter than desired since we are needing to average over such a long period, to make sure validators stay in consensus, given some are not able to set weights for hundreds if not thousands of blocks at times. It will be a balancing act between these averages, and the variability in score for 'winning' miners.
+This is a key point to explore I believe, as currently the distribution is slightly flatter than desired since we are needing to average over such a long period, to make sure validators stay in consensus, given some are not able to set weights for hundreds if not thousands of blocks at times. It will be a balancing act between these averages, and the variability in score for 'winning' miners.
 
 
 ## Community engagement
