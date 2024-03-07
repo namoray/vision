@@ -8,7 +8,6 @@ import yaml
 import uvicorn
 
 import bittensor as bt
-import time
 app = FastAPI(debug=False)
 
 yaml_config: Dict[str, Any] = yaml.safe_load(open(cst.CONFIG_FILEPATH))
@@ -38,5 +37,4 @@ if __name__ == "__main__":
         uvicorn.run(app, host=host, port=int(port), loop="asyncio", log_level="debug"   )
     else:
         bt.logging.info("No need for safety server as we're not running an organic validator :)")
-        while True:
-            time.sleep(2400)
+        exit()
