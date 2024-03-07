@@ -4,8 +4,6 @@
 # THIS FILE ITSELF MAY CHANGE FROM UPDATE TO UPDATE, SO WE CAN DYNAMICALLY FIX ANY ISSUES
 
 
-echo "Nothing to do for this update!"
-
 # ./get_models.sh
 
 
@@ -23,4 +21,4 @@ echo "Nothing to do for this update!"
 # fi
 
 
-# ./start_miners.sh
+./start_miners.sh
