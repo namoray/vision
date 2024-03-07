@@ -50,6 +50,8 @@ class ImageGenerationBase(BaseModel):
 
 class ImageResponseBase(BaseOutgoing):
     image_b64s: Optional[List[str]] = Field(None, description="The base64 encoded images to return", title="image_b64s")
+    clip_embeddings: Optional[List[List[float]]] = Field(None, description="The clip embeddings for each of the images")
+    image_hashes: Optional[List[utility_models.ImageHashes]] = Field(None, description="Image hash's for each image")
 
 
 # TEXT TO IMAGE

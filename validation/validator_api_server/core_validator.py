@@ -12,6 +12,7 @@ from typing import Optional
 from typing import Set
 from typing import Tuple
 from typing import Callable
+
 import bittensor as bt
 import httpx
 import torch
@@ -33,7 +34,8 @@ import traceback
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
 _UPPER_FOLLOWING_REGEXP = re.compile("([a-z0-9])([A-Z])")
 
-VERSION_KEY = 20_001
+VERSION_KEY = 20_002
+
 
 
 def _pascal_to_kebab(input_string: str) -> str:
@@ -56,6 +58,8 @@ class CoreValidator:
             self.BASE_CHECKING_SERVER_URL,
             self.BASE_SAFETY_CHECKER_SERVER_URL,
         ) = validation_utils.connect_to_checking_servers(self.config)
+
+        # Make the above class variables instead
 
         bt.logging(debug=True)
 
@@ -109,6 +113,7 @@ class CoreValidator:
         self, endpoint: str, synapse: bt.Synapse, outgoing_model: BaseModel
     ) -> Optional[utility_models.QueryResult]:
         url = self.BASE_CHECKING_SERVER_URL + core_cst.CHECKING_ENDPOINT_PREFIX + "/" + endpoint
+
         try:
             async with httpx.AsyncClient(timeout=45) as client:
                 response = await client.post(url, data=json.dumps(synapse.dict()))
@@ -157,15 +162,17 @@ class CoreValidator:
 
         This function does not return any value.
         """
+
         while True:
             operation = random.choice(cst.OPERATIONS_TO_SCORE_SYNTHETICALLY)
             synthetic_data = await self._query_checking_server_for_synthetic_data(operation)
 
             if synthetic_data is None:
                 bt.logging.error(
-                    "Synthetic data is none which is weird, will try again in 20. Maybe the server hasn't finished initialising yet"
+                    f"Synthetic data is none which is weird, will try again in {cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING}."
+                    "Maybe the server hasn't finished initialising yet"
                 )
-                await asyncio.sleep(20)
+                await asyncio.sleep(cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING)
                 continue
 
             synapse_class_ = getattr(protocols, operation)
@@ -173,10 +180,11 @@ class CoreValidator:
             outgoing_model = getattr(base_models, operation + core_cst.OUTGOING)
 
             time_before_query = time.time()
-            await self.execute_query(synapse, outgoing_model, synthetic_query=True)
+
+            await asyncio.create_task(self.execute_query(synapse, outgoing_model, synthetic_query=True))
 
             time_to_execute_query = time.time() - time_before_query
-            await asyncio.sleep(max(20 - time_to_execute_query, 0))
+            await asyncio.sleep(max(cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING - time_to_execute_query, 0))
 
     async def fetch_available_operations_for_each_axon(self) -> None:
         uid_to_query_task = {}
@@ -234,12 +242,13 @@ class CoreValidator:
             self.uids: List[int] = self.metagraph.uids.tolist()
             self.axon_indexes = axon_indexes_tensor.tolist()
             self.incentives = incentives_tensor.tolist()
+            hotkeys: List[str] = self.metagraph.hotkeys
             self.axons = self.metagraph.axons
 
             for i in self.axon_indexes:
                 uid = self.uids[i]
                 self.uid_to_uid_info[uid] = utility_models.UIDinfo(
-                    uid=uid, axon=self.axons[i], incentive=self.incentives[i]
+                    uid=uid, axon=self.axons[i], incentive=self.incentives[i], hotkey=hotkeys[i]
                 )
 
             incentives_with_uids = list(zip(self.incentives, self.uids))
@@ -275,9 +284,9 @@ class CoreValidator:
             bt.logging.warning(
                 f"Operation {operation_name} not in operation_to_timeout, this is probably a mistake / bug 🐞"
             )
-        time_before_query = time.time()
+        
+        start_time = time.time()
 
-        bt.logging.info(f"Querying axon {axon_uid} for {operation_name}")
         response = await self.dendrite.forward(
             axons=self.uid_to_uid_info[axon_uid].axon,
             synapse=synapse,
@@ -285,9 +294,9 @@ class CoreValidator:
             response_timeout=cst.OPERATION_TIMEOUTS.get(operation_name, 15),
             deserialize=deserialize,
             log_requests_and_responses=log_requests_and_responses,
+            streaming=False
         )
-        time_for_response = time.time() - time_before_query
-        return response, time_for_response
+        return response, time.time() - start_time
 
     async def execute_query(
         self, synapse: bt.Synapse, outgoing_model: BaseModel, synthetic_query: bool = False
@@ -300,7 +309,9 @@ class CoreValidator:
             return utility_models.QueryResult(error_message=f"No axons available for operation {operation_name}")
 
         should_score = synthetic_query or random.random() < cst.SCORE_QUERY_PROBABILITY
-        if should_score and len(available_axons) > cst.NUMBER_OF_SECONDARY_AXONS_TO_COMPARE_WHEN_SCORING:
+        sufficient_secondary_axons = len(available_axons) > cst.NUMBER_OF_SECONDARY_AXONS_TO_COMPARE_WHEN_SCORING
+
+        if should_score and sufficient_secondary_axons:
             bt.logging.info("Scoring a query!")
 
             axons_to_comparitively_score = random.sample(
@@ -310,7 +321,7 @@ class CoreValidator:
             task_id_of_main_response = str(uuid.uuid4())
             task_ids_of_secondary_responses = [str(uuid.uuid4()) for _ in axons_to_comparitively_score]
 
-            task_ids_to_axon_uids = {
+            task_ids_to_comparitive_axon_uids = {
                 task_ids_of_secondary_responses[i]: axons_to_comparitively_score[i]
                 for i in range(len(axons_to_comparitively_score))
             }
@@ -321,7 +332,7 @@ class CoreValidator:
                     synapse,
                     task_id_of_main_response,
                     task_ids_of_secondary_responses,
-                    task_ids_to_axon_uids,
+                    task_ids_to_comparitive_axon_uids,
                     outgoing_model,
                     synthetic_query,
                 )
@@ -330,14 +341,14 @@ class CoreValidator:
             miners_to_query_order = self._get_miners_query_order(
                 available_axons, axons_to_comparitively_score, synthetic_query
             )
-            query_result = await self._query_miners_until_result(miners_to_query_order, synapse, outgoing_model)
-            self.results_store[task_id_of_main_response] = query_result
-            return query_result
+            main_query_result = await self._query_miners_until_result(miners_to_query_order, synapse, outgoing_model)
+            self.results_store[task_id_of_main_response] = main_query_result
+            return main_query_result
 
         else:
             miners_to_query_order = self._get_miners_query_order(available_axons)
-            query_result = await self._query_miners_until_result(miners_to_query_order, synapse, outgoing_model)
-            return query_result
+            main_query_result = await self._query_miners_until_result(miners_to_query_order, synapse, outgoing_model)
+            return main_query_result
 
     async def _query_miners_for_comparitive_scores_and_score_them_all(
         self,
@@ -356,10 +367,13 @@ class CoreValidator:
             )
 
         all_task_ids = [task_id_of_main_response] + task_ids_of_secondary_responses
+
+        # Each result will be of the type QueryResult when it is finished & stored
         while any(self.results_store.get(task_id) is None for task_id in all_task_ids):
             await asyncio.sleep(2)
 
         results: List[utility_models.QueryResult] = []
+        # Clear the results store for the latest results, and store for later
         for task_id in all_task_ids:
             result = self.results_store.pop(task_id)
             results.append(result)
@@ -369,39 +383,44 @@ class CoreValidator:
 
         result1, result2 = results[0], results[1]
 
-        # If both None, then something is wrong with the query, needs to be addressed
+        # If both None, then the query was probably invalid, so there's nothing to score
         if result1.formatted_response is None and result2.formatted_response is None:
-            # dict_to_log = core_utils.dict_with_short_values(synapse)
-            # bt.logging.error(
-            #     f"😱 Just got two none results. Please let the dev know!\n Synapse: {dict_to_log}; is synthetic? {synthetic_query};"
-            # )
+            dict_to_log = core_utils.model_to_printable_dict(synapse)
+            bt.logging.error(
+                f"😱 Just got two none results. Please let the dev know!\n Synapse: {dict_to_log}; is synthetic? {synthetic_query};"
+            )
             return
 
+
+
         axon_scores: Dict[int, float] = {}
+
         for result in results:
             for failed_axon in result.failed_axon_uids:
                 if failed_axon is not None:
-                    axon_scores[failed_axon] = cst.SCORE_FOR_LOW_QUALITY_RESPONSE - 0.2
+                    axon_scores[failed_axon] = cst.FAILED_RESPONSE_SCORE
+        
+        
 
         similarity_comparison_function = self._get_similarity_comparison_function(synapse.__class__.__name__)
-        images_are_similar = similarity_comparison_function(result1.formatted_response, result2.formatted_response)
+        responses_are_similar = similarity_comparison_function(result1.formatted_response, result2.formatted_response)
+        checked_with_server = False
 
-        if images_are_similar and random.random() > cst.CHANCE_TO_CHECK_OUTPUT_WHEN_IMAGES_FROM_MINERS_WERE_SIMILAR:
-            # If the miners have very similar responses, then a lot of the time we can skip checking the output with our own server
+        # If they are similar, only use the external server to check the responses some of the time
+        if responses_are_similar and random.random() > cst.CHANCE_TO_CHECK_OUTPUT_WHEN_IMAGES_FROM_MINERS_WERE_SIMILAR:
             bt.logging.info("Checking scores without server...")
-            axon_scores = self._score_miners_without_server_check(result1, result2)
+            compared_axon_scores = self._get_axon_scores_without_server_check(result1, result2)
 
         else:
-            bt.logging.info("Checking scores WITH server...")
-            axon_scores = await self._score_miners_with_server_check(
+            bt.logging.info("Checking scores with server...")
+            compared_axon_scores = await self._get_axon_scores_with_server_check(
                 result1, result2, synapse, outgoing_model, similarity_comparison_function
             )
-
-        if result1.axon_uid and result2.axon_uid:
-            bt.logging.info(
-                f"\nResult 1 : Response time: {result1.response_time}, score: {axon_scores.get(result1.axon_uid, None)}"
-                f"\nResult 2 : Response time: {result2.response_time}, score: {axon_scores.get(result2.axon_uid, None)}"
-            )
+            checked_with_server = True
+        
+        axon_scores = {**axon_scores, **compared_axon_scores}
+        
+        validation_utils.store_and_print_scores(axon_scores, result1, result2, synapse, checked_with_server, self.uid_to_uid_info)
 
         quickest_response_time = min(
             (t for t in [result1.response_time, result2.response_time] if t is not None), default=1
@@ -410,12 +429,13 @@ class CoreValidator:
         for axon_uid, score in axon_scores.items():
             if axon_uid is None:
                 bt.logging.error(
-                    f"axon_uid is None, score: {score}, results: {core_utils.dict_with_short_values(result1)}, {core_utils.dict_with_short_values(result2)}"
+                    f"axon_uid is None, score: {score}, results: {core_utils.model_to_printable_dict(result1)}, {core_utils.model_to_printable_dict(result2)}"
                 )
+                continue
             uid_info = self.uid_to_uid_info[axon_uid]
             uid_info.add_score(score, synthetic=synthetic_query, count=count)
 
-    async def _score_miners_with_server_check(
+    async def _get_axon_scores_with_server_check(
         self,
         result1: utility_models.QueryResult,
         result2: utility_models.QueryResult,
@@ -425,82 +445,74 @@ class CoreValidator:
     ) -> Dict[int, float]:
         axon_scores = {}
         endpoint = _pascal_to_kebab(synapse.__class__.__name__)
-        expected_output = await self._query_checking_server_for_expected_result(endpoint, synapse, outgoing_model)
+        expected_result = await self._query_checking_server_for_expected_result(endpoint, synapse, outgoing_model)
 
-        if expected_output is None:
+        faster_response_bonus = 1 + cst.BONUS_FOR_WINNING_MINER
+        slower_response_penalty = 1 - cst.BONUS_FOR_WINNING_MINER
+
+        bt.logging.info("Got expected result")
+        # We know that at least one result is not None, so we're not expecting None here.
+        # This means if expected result is None, there's a problem with the checking server
+        if expected_result is None:
+            printable_synapse = core_utils.model_to_printable_dict(synapse)
+            printable_outgoing_model = core_utils.model_to_printable_dict(outgoing_model)
+            bt.logging.error(f"Could not get expected output from server, which is weird! Please raise this with the subnet devs. Synapse: {printable_synapse}, outgoing_model: {printable_outgoing_model}")
             return {}
+        
+        # Otherwise, get the respective similarities with the server and then compare response times
 
-        if result1.response_time is None and result2.response_time is None:
-            return {}
 
-        if result1.response_time is None:
-            axon_scores[result2.axon_uid] = int(
-                similarity_comparison_function(result2.formatted_response, expected_output.formatted_response)
-            )
-            return axon_scores
-        elif result2.response_time is None:
-            axon_scores[result1.axon_uid] = int(
-                similarity_comparison_function(result1.formatted_response, expected_output.formatted_response)
-            )
-            return axon_scores
+        result1_is_similar_to_truth = similarity_comparison_function(
+            result1.formatted_response, expected_result.formatted_response
+        )
+        result2_is_similar_to_truth = similarity_comparison_function(
+            result2.formatted_response, expected_result.formatted_response
+        )
 
-        if expected_output is None:
-            bt.logging.error(
-                "Could not get expected output from server, which is weird! Please raise this with the subnet devs"
-            )
-            axon_scores[result1.axon_uid] = 1
-            axon_scores[result2.axon_uid] = 1
-            return axon_scores
-
-        else:
-            result1_is_similar_to_truth = similarity_comparison_function(
-                result1.formatted_response, expected_output.formatted_response
-            )
-            result2_is_similar_to_truth = similarity_comparison_function(
-                result2.formatted_response, expected_output.formatted_response
-            )
-
-            if (not result1_is_similar_to_truth) or (not result2_is_similar_to_truth):
-                if not result1_is_similar_to_truth:
-                    axon_scores[result1.axon_uid] = cst.SCORE_FOR_LOW_QUALITY_RESPONSE
-                    if not result2_is_similar_to_truth:
-                        axon_scores[result2.axon_uid] = cst.SCORE_FOR_LOW_QUALITY_RESPONSE
-                    else:
-                        axon_scores[result2.axon_uid] = 1
-                else:
-                    axon_scores[result1.axon_uid] = 1
-                    axon_scores[result2.axon_uid] = cst.SCORE_FOR_LOW_QUALITY_RESPONSE
-
+        if result1_is_similar_to_truth == 1 and result2_is_similar_to_truth == 1:
+            if result1.response_time < result2.response_time:
+                axon_scores[result1.axon_uid] = faster_response_bonus
+                axon_scores[result2.axon_uid] = slower_response_penalty
             else:
-                faster_response_bonus = 1 + cst.BONUS_FOR_WINNING_MINER
-                slower_response_penalty = 1 - cst.BONUS_FOR_WINNING_MINER
+                axon_scores[result1.axon_uid] = slower_response_penalty
+                axon_scores[result2.axon_uid] = faster_response_bonus
+        
+        else:
 
-                if result1.response_time < result2.response_time:
-                    axon_scores[result1.axon_uid] = faster_response_bonus
-                    axon_scores[result2.axon_uid] = slower_response_penalty
+            if not result1_is_similar_to_truth == 1:
+                
+                if not result2_is_similar_to_truth == 1:
+                    axon_scores[result1.axon_uid] = max(result1_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
+                    axon_scores[result2.axon_uid] = max(result2_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
                 else:
-                    axon_scores[result1.axon_uid] = slower_response_penalty
+                    axon_scores[result1.axon_uid] = max(slower_response_penalty * result1_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
                     axon_scores[result2.axon_uid] = faster_response_bonus
+            else:
+                axon_scores[result1.axon_uid] = faster_response_bonus
+                axon_scores[result2.axon_uid] = max(slower_response_penalty * result2_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
 
         return axon_scores
 
-    def _score_miners_without_server_check(
+    def _get_axon_scores_without_server_check(
         self, result1: utility_models.QueryResult, result2: utility_models.QueryResult
     ) -> Dict[int, float]:
+        
+        if result1.response_time is None or result2.response_time is None:
+
+            bt.logging.error(
+                "Some Response time is none in without server check! Why!?\n"
+                f"result 1: {core_utils.model_to_printable_dict(result1)}"
+                f"\nresult 2: {core_utils.model_to_printable_dict(result2)}"
+            )
+            return {}
+        
+        assert not all([result.formatted_response is None for result in [result1, result2]])
+
         axon_scores = {}
         faster_response_bonus = 1 + cst.BONUS_FOR_WINNING_MINER
         slower_response_penalty = 1 - cst.BONUS_FOR_WINNING_MINER
 
-        if all([result.response_time is None for result in [result1, result2]]):
-            return {}
-
-        if result1.response_time is None:
-            axon_scores[result1.axon_uid] = slower_response_penalty
-
-        elif result2.response_time is None:
-            axon_scores[result2.axon_uid] = slower_response_penalty
-
-        elif result1.response_time < result2.response_time:
+        if result1.response_time < result2.response_time:
             axon_scores[result1.axon_uid] = faster_response_bonus
             axon_scores[result2.axon_uid] = slower_response_penalty
         else:
@@ -587,11 +599,11 @@ class CoreValidator:
                     f"Too many internal server errors, something is wrong with your request. Message: {resulting_synapse.error_message}"
                 )
                 return utility_models.QueryResult(
-                    error_message=resulting_synapse.error_message, failed_axon_uids=failed_axon_uids
+                    error_message=resulting_synapse.error_message, failed_axon_uids=failed_axon_uids, axon_uid=axon_uid
                 )
 
         return utility_models.QueryResult(
-            error_message="Unable to get a valid response from any axon", failed_axon_uids=failed_axon_uids
+            error_message="Unable to get a valid response from any axon", failed_axon_uids=failed_axon_uids, axon_uid=axon_uid
         )
 
     def _get_formatted_response(
@@ -628,38 +640,34 @@ class CoreValidator:
     def set_weights(self):
         bt.logging.info("Setting weights!")
 
+        # TODO: CHANGE THIS
         uid_scores: Dict[int, List[float]] = {}
-        with self.threading_lock:
-            for epoch in self.previous_uid_infos:
-                for uid_info in epoch:
-                    available_operations = uid_info.available_operations
-                    multiplier = cst.AVAILABLE_OPERATIONS_MULTIPLIER[len(available_operations)]
+        scoring_periods_uid_was_in: Dict[int, int] = {}
 
-                    # If for some reason we didn't send enough requests through to score someone, give them
-                    # Slightly below average. NOTE if they don't support any operations (or many), this will get
-                    # Reduced dramatically too
-                    if uid_info.organic_request_count + uid_info.synthetic_request_count == 0:
-                        average_score = 0.85
-                    else:
-                        average_score = uid_info.average_score
+        for epoch in self.previous_uid_infos:
+            for uid_info in epoch:
+                scoring_periods_uid_was_in[uid_info.uid] = scoring_periods_uid_was_in.get(uid_info.uid, 0) + 1
+                if uid_info.organic_request_count + uid_info.synthetic_request_count == 0:
+                    continue
 
-                    score = multiplier * max(average_score, 0.80)
+                average_score = uid_info.average_score
+                available_operations = uid_info.available_operations
 
-                    uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
+                multiplier = cst.AVAILABLE_OPERATIONS_MULTIPLIER[len(available_operations)]
+                score = multiplier * average_score
+
+                uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
 
         uid_weights: Dict[int, float] = {}
-        discount_factor = 0.1
-        for uid, scores in uid_scores.items():
-            scores_reversed = list(reversed(scores))
-            n = len(scores_reversed)
-            weights = [1 / (1 + discount_factor * i) for i in range(n)]
-            sum_weights = sum(weights)
-            weights = [w / sum_weights for w in weights]
-            discounted_score = sum(score * weight for score, weight in zip(scores_reversed, weights))
+        max_periods = max([i for i in scoring_periods_uid_was_in.values()])
+        if max_periods == 0:
+            bt.logging.info("No uids found to score, nothing to set")
+            return
+        for uid, periods_for_uid in scoring_periods_uid_was_in.items():
+            scores = uid_scores.get(uid, [0.0])
+            average_score = sum(scores) / len(scores)
 
-            uid_weights[uid] = discounted_score
-
-
+            uid_weights[uid] = average_score * (periods_for_uid / max_periods) ** 0.5
 
         if uid_weights == {}:
             bt.logging.info("No scores found, nothing to set")

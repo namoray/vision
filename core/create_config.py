@@ -137,10 +137,11 @@ def get_config():
             subtensor_network = settings.get(core_cst.SUBTENSOR_NETWORK_PARAM)
             subtensor_chain_endpoint = settings.get(core_cst.SUBTENSOR_CHAINENDPOINT_PARAM)
 
+            netuid = 19 if subtensor_network != "test" else 51
             start_command = (
                 f'mining/run_miner.py --interpreter python3 -- --axon.port {axon_port} --axon.external_ip {axon_external_ip}'
                 f" --wallet.name {wallet_name} --wallet.hotkey {hotkey} --subtensor.network {subtensor_network}"
-                f' --netuid 19 --logging.debug'
+                f' --netuid {netuid} --logging.debug'
             )
             if subtensor_chain_endpoint is not None:
                 start_command += f" --subtensor.chain_endpoint {subtensor_chain_endpoint}"

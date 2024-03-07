@@ -5,14 +5,14 @@ import math
 import uuid
 from io import BytesIO
 from typing import List, Tuple
-
 import cv2
 import diskcache
 import numpy as np
 import torch
+import imagehash
 from PIL import Image, ImageOps
 from torch.cuda.amp import autocast
-
+from models import utility_models
 from core import constants as cst
 from core import dataclasses as dc
 from core import resource_management
@@ -74,7 +74,9 @@ def image_is_nsfw(image: Image) -> bool:
     if np.all(image_np == 0):
         return True
 
-    safety_feature_extractor, safety_checker = resource_management.SingletonResourceManager().get_resource(cst.IMAGE_SAFETY_CHECKERS)
+    safety_feature_extractor, safety_checker = resource_management.SingletonResourceManager().get_resource(
+        cst.IMAGE_SAFETY_CHECKERS
+    )
     safety_checker_device = resource_management.SingletonResourceManager()._config[cst.IMAGE_SAFETY_CHECKERS]
     with autocast():
         safety_checker_input = safety_feature_extractor(images=image, return_tensors="pt").to(safety_checker_device)
@@ -264,3 +266,35 @@ def get_positive_and_negative_prompts(text_prompts: List[dc.TextPrompt]) -> Tupl
             negative_prompt += prompt.text
 
     return positive_prompt, negative_prompt
+
+
+def image_hash_feature_extraction(image: Image.Image) -> utility_models.ImageHashes:
+
+    phash = str(imagehash.phash(image))
+    ahash = str(imagehash.average_hash(image))
+    dhash = str(imagehash.dhash(image))
+    chash = str(imagehash.colorhash(image))
+
+    return utility_models.ImageHashes(
+        perceptual_hash=phash,
+        average_hash=ahash,
+        difference_hash=dhash,
+        color_hash=chash,
+    )
+
+def get_clip_embedding_from_processed_image(image: Image.Image) -> List[List[float]]:
+
+    threading_lock = resource_management.threading_lock
+
+    clip_model, clip_processor = resource_management.SingletonResourceManager().get_resource(cst.MODEL_CLIP)
+    clip_device = resource_management.SingletonResourceManager()._config.get(cst.MODEL_CLIP)
+
+    with threading_lock:
+        processed_images = [clip_processor(image)]
+        processed_images_tensor = torch.stack(processed_images).to(clip_device)
+
+        with torch.no_grad():
+            image_embeddings = clip_model.encode_image(processed_images_tensor)
+
+    image_embeddings = image_embeddings.cpu().numpy().tolist()
+    return image_embeddings

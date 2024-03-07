@@ -1,77 +1,121 @@
-
-from models import base_models
-from core import utils as core_utils
+from models import base_models, utility_models
 import xgboost as xgb
-from typing import Tuple
+from typing import List, Tuple
 import imagehash
 import numpy as np
+import bittensor as bt
+
 images_are_same_classifier = xgb.XGBClassifier()
-images_are_same_classifier.load_model('image_similarity_xgb_model.json')
-
-def _images_are_different_probability(formatted_response1: base_models.ImageResponseBase , formatted_response2: base_models.ImageResponseBase) -> float:
-
-    if formatted_response1 is None or formatted_response2 is None:
-        return float(formatted_response1 != formatted_response2)
-    elif formatted_response1.image_b64s is None or formatted_response2.image_b64s is None or len(formatted_response1.image_b64s) == 0 or len(formatted_response2.image_b64s) == 0:
-        return float(formatted_response1.image_b64s != formatted_response2.image_b64s)
-
-    model_features = _image_hash_feature_extraction(formatted_response1.image_b64s[0], formatted_response2.image_b64s[0])
-
-    probability_different_image = images_are_same_classifier.predict_proba([model_features])[0][0]
+images_are_same_classifier.load_model("image_similarity_xgb_model.json")
 
 
+def _hash_distance(hash_1: str, hash_2: str, color_hash: bool = False) -> int:
 
-    return probability_different_image
 
-
-def images_are_same_generic(formatted_response1: base_models.ImageResponseBase , formatted_response2: base_models.ImageResponseBase) -> float:
-    return _images_are_different_probability(formatted_response1, formatted_response2) < 0.99
-
-def images_are_same_upscale(formatted_response1: base_models.ImageResponseBase , formatted_response2: base_models.ImageResponseBase) -> float:
-    return _images_are_different_probability(formatted_response1, formatted_response2) < 0.9
-
-def clip_embeddings_are_same(formatted_response1: base_models.ClipEmbeddingsBase , formatted_response2: base_models.ClipEmbeddingsBase) -> float:
-
-    if formatted_response1 is None or formatted_response2 is None:
-        return float(formatted_response1 != formatted_response2)
-    elif formatted_response1.image_embeddings is None or formatted_response2.image_embeddings is None:
-        return float(formatted_response1.image_embeddings != formatted_response2.image_embeddings)
+    if color_hash:
+        restored_hash1 = imagehash.hex_to_flathash(hash_1, hashsize=3)
+        restored_hash2 = imagehash.hex_to_flathash(hash_2, hashsize=3)
     else:
-        image_embedding1 = np.array(formatted_response1.image_embeddings, dtype=float)
-        image_embedding2 = np.array(formatted_response2.image_embeddings, dtype=float)
+        restored_hash1 = imagehash.hex_to_hash(hash_1)
+        restored_hash2 = imagehash.hex_to_hash(hash_2)
 
-        dot_product = np.dot(image_embedding1, image_embedding2.T)
-        norm1 = np.linalg.norm(image_embedding1)
-        norm2 = np.linalg.norm(image_embedding2)
+    return restored_hash1 - restored_hash2
 
-        normalized_dot_product = dot_product / (norm1 * norm2)
 
-        return float(normalized_dot_product[0][0] > 0.995)
-
-def _image_hash_feature_extraction(image1_b64: str, image2_b64: str) -> Tuple[float, float]:
-
-    image1 = core_utils.base64_to_pil(image1_b64)
-    image2 = core_utils.base64_to_pil(image2_b64)
-
-    phash1 = imagehash.phash(image1)
-    phash2 = imagehash.phash(image2)
-    phash_distance = phash1 - phash2
-
-    ahash1 = imagehash.average_hash(image1)
-    ahash2 = imagehash.average_hash(image2)
-    ahash_distance = ahash1 - ahash2
-
-    dhash1 = imagehash.dhash(image1)
-    dhash2 = imagehash.dhash(image2)
-    dhash_distance = dhash1 - dhash2
-
-    chash1 = imagehash.colorhash(image1)
-    chash2 = imagehash.colorhash(image2)
-    chash_distance = chash1 - chash2
+def _get_hash_distances(hashes_1: utility_models.ImageHashes, hashes_2: utility_models.ImageHashes) -> List[int]:
+    ahash_distance = _hash_distance(hashes_1.average_hash, hashes_2.average_hash)
+    phash_distance = _hash_distance(hashes_1.perceptual_hash, hashes_2.perceptual_hash)
+    dhash_distance = _hash_distance(hashes_1.difference_hash, hashes_2.difference_hash)
+    chash_distance = _hash_distance(hashes_1.color_hash, hashes_2.color_hash, color_hash=True)
 
     return [phash_distance, ahash_distance, dhash_distance, chash_distance]
 
 
+def _image_similarities(
+    formatted_response1: base_models.ImageResponseBase, formatted_response2: base_models.ImageResponseBase
+) -> Tuple[float, float]:
+    # If one is None, then return 0 if they are both None, else 1
+    if formatted_response1 is None or formatted_response2 is None:
+        both_are_none = float(formatted_response1 == formatted_response2)
+        return both_are_none, both_are_none
+
+    # Else if the stuff return is empty or None, then return 0 if nobody return an image, else 1
+    elif (
+        formatted_response1.image_b64s is None
+        or formatted_response2.image_b64s is None
+        or len(formatted_response1.image_b64s) == 0
+        or len(formatted_response2.image_b64s) == 0
+        or formatted_response1.clip_embeddings is None
+        or formatted_response2.clip_embeddings is None
+        or len(formatted_response1.clip_embeddings) == 0
+        or len(formatted_response2.clip_embeddings) == 0
+        or formatted_response1.image_hashes is None
+        or formatted_response2.image_hashes is None
+        or len(formatted_response1.image_hashes) == 0
+        or len(formatted_response2.image_hashes) == 0
+    ):
+        bt.logging.info("Found empty image_b64s and what not!")
+        both_have_no_images = int(len(formatted_response1.image_b64s) == 0 and len(formatted_response2.image_b64s) == 0)
+        return both_have_no_images, both_have_no_images
+    
+
+
+    model_features = _get_hash_distances(
+        formatted_response1.image_hashes[0], formatted_response2.image_hashes[0]
+    )
+
+    probability_same_image_xg = images_are_same_classifier.predict_proba([model_features])[0][1]
+
+    clip_similarity = get_clip_embedding_similarity(
+        formatted_response1.clip_embeddings[0], formatted_response2.clip_embeddings[0]
+    )
+
+    return probability_same_image_xg, clip_similarity if clip_similarity > 0.9 else 0
+
+
+def images_are_same_generic(
+    formatted_response1: base_models.ImageResponseBase, formatted_response2: base_models.ImageResponseBase
+) -> float:
+    probability_same_image_xg, clip_similarity  =  _image_similarities(formatted_response1, formatted_response2)
+    return 1 if probability_same_image_xg > 0.01 else clip_similarity
+
+
+def images_are_same_upscale(
+    formatted_response1: base_models.ImageResponseBase, formatted_response2: base_models.ImageResponseBase
+) -> float:
+    probability_same_image_xg, clip_similarity  =  _image_similarities(formatted_response1, formatted_response2)
+    return 1 if probability_same_image_xg > 0.08 else clip_similarity ** 2
+
+def get_clip_embedding_similarity(
+    clip_embedding1: List[float], clip_embedding2: List[float]
+):
+    image_embedding1 = np.array(clip_embedding1, dtype=float).flatten()
+    image_embedding2 = np.array(clip_embedding2, dtype=float).flatten()
+
+    norm1 = np.linalg.norm(image_embedding1)
+    norm2 = np.linalg.norm(image_embedding2)
+
+    if norm1 == 0 or norm2 == 0:
+        return float(norm1 == norm2)
+
+    dot_product = np.dot(image_embedding1, image_embedding2)
+    normalized_dot_product = dot_product / (norm1 * norm2)
+
+    return float(normalized_dot_product)
+
+def clip_embeddings_are_same(
+    formatted_response1: base_models.ClipEmbeddingsBase, formatted_response2: base_models.ClipEmbeddingsBase
+) -> float:
+    if formatted_response1 is None or formatted_response2 is None:
+        return float(formatted_response1 == formatted_response2)
+    elif formatted_response1.image_embeddings is None or formatted_response2.image_embeddings is None:
+        return float(formatted_response1.image_embeddings == formatted_response2.image_embeddings)
+    else:
+        similarity = get_clip_embedding_similarity(
+            formatted_response1.image_embeddings, formatted_response2.image_embeddings
+        )
+
+        return float(similarity > 0.995)
 
 
 # ADD ONE FOR CLIP EMBEDDINGS

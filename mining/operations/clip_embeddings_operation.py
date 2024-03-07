@@ -20,9 +20,9 @@ class ClipEmbeddingsOperation(abstract_operation.Operation):
 
         synapse.image_b64s = None
 
-        synapse.image_embeddings = output.image_embeddings
-
-        synapse.error_message = output.error_message
+        output_dict = output.dict()
+        for field in output_dict:
+            setattr(synapse, field, output_dict[field])
 
         return synapse
 

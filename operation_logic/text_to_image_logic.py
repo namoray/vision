@@ -48,11 +48,17 @@ async def text_to_image_logic(
         **optional_kwargs,
     ).images[0]
 
+    image_hashes = operation_utils.image_hash_feature_extraction(processed_image)
+    clip_embedding = operation_utils.get_clip_embedding_from_processed_image(processed_image)
+
+    output.image_hashes = [image_hashes]
+    output.clip_embeddings = clip_embedding
+
     if operation_utils.image_is_nsfw(processed_image):
         bt.logging.info("NSFW image detected 👿, returning a corresponding error and no image")
         output.error_message = cst.NSFW_RESPONSE_ERROR
         return output
 
-    bt.logging.info("✅ Took an image and made an image 😎")
+    bt.logging.info("✅ Took a prompt and made an image 😎")
     output.image_b64s = [core_utils.get_b64_from_pipeline_image(processed_image)]
     return output

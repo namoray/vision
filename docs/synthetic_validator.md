@@ -96,7 +96,7 @@ pip3 install -r git_requirements.txt
 
 
 ### Download the necessary models
-Simple step this one - note it may take a while if you have poor bandwidth (not recommended)
+Simple step this one - note it may take a while if you have poor bandwidth
 
 ```bash
 ./get_models.sh
@@ -125,6 +125,16 @@ make sure to leave the `API_SERVER_PORT` value empty if you're running in synthe
 
 ```bash
 vision create-config
+```
+
+### Creating the database
+Used to store scoring logs
+
+```bash
+curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64
+chmod +x /usr/local/bin/dbmate
+
+dbmate --url "sqlite:validator_database.db" up
 ```
 
 #### Starting the server

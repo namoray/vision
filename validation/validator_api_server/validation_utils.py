@@ -3,10 +3,11 @@ import sys
 import time
 import traceback
 from typing import Optional
-from typing import Tuple
+from typing import Tuple, Dict
 from typing import Type
 from typing import Union
-
+from rich.console import Console
+from rich.table import Table
 import bittensor as bt
 import fastapi
 import httpx
@@ -15,9 +16,14 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 import random
 from core import constants as core_cst, utils as core_utils
+from validation.validator_api_server import constants as cst
 from models import utility_models, base_models
 import numpy as np
 from PIL import Image
+import sqlite3
+import os
+
+console = Console()
 
 def log_task_exception(task):
     try:
@@ -56,12 +62,11 @@ def health_check(base_url):
         response = httpx.get(base_url + "health")
         return response.status_code == 200
     except httpx.RequestError:
-        bt.logging.warning(f"Health check failed - can't connect to {base_url}.")
+        bt.logging.info(f"Health check failed for now - can't connect to {base_url}.")
         return False
 
 
 def connect_to_checking_servers(config) -> Tuple[str, str]:
-
     hotkey_name = config.wallet.hotkey
     config = yaml.safe_load(open("config.yaml"))
 
@@ -70,25 +75,35 @@ def connect_to_checking_servers(config) -> Tuple[str, str]:
         "safety_checker_server_url": config.get(hotkey_name).get("SAFETY_CHECKER_SERVER_ADDRESS", None),
     }
 
+
+
     # Check each server
     for name, url in servers.items():
+
+        if config[hotkey_name][core_cst.API_SERVER_PORT_PARAM] is None and name == "safety_checker_server_url":
+            continue
         if url is None:
             raise Exception(f"{hotkey_name}.{name.upper()} not set in config.yaml")
 
-        retry_interval = 6
+        retry_interval = 2
         while True:
             connected = health_check(url)
             if connected:
                 bt.logging.info(f"Health check successful - connected to {name} at {url}.")
                 break
             else:
-                bt.logging.info(f"{name} not reachable just yet- it's probably still starting. Sleeping for {retry_interval} second(s) before retrying.")
+                bt.logging.info(
+                    f"{name} not reachable just yet- it's probably still starting. Sleeping for {retry_interval} second(s) before retrying."
+                )
                 time.sleep(retry_interval)
-                retry_interval += 0.5
-                if retry_interval > 10:
-                    retry_interval = 10
+                retry_interval += 5
+                if retry_interval > 15:
+                    retry_interval = 15
+
+
 
     return servers["checking_server_url"], servers["safety_checker_server_url"]
+
 
 def alter_clip_body(body: base_models.ClipEmbeddingsIncoming) -> base_models.ClipEmbeddingsIncoming:
     if body.image_b64s is None:
@@ -99,8 +114,7 @@ def alter_clip_body(body: base_models.ClipEmbeddingsIncoming) -> base_models.Cli
         pil_image = core_utils.base64_to_pil(image)
         numpy_image = np.array(pil_image)
         for _ in range(3):
-
-            rand_x, rand_y = random.randint(0, pil_image.width-1), random.randint(0, pil_image.height-1)
+            rand_x, rand_y = random.randint(0, pil_image.width - 1), random.randint(0, pil_image.height - 1)
 
             for i in range(3):
                 change = random.choice([-1, 1])
@@ -112,3 +126,75 @@ def alter_clip_body(body: base_models.ClipEmbeddingsIncoming) -> base_models.Cli
 
     body.image_b64s = new_images
     return body
+
+
+def store_and_print_scores(
+    axon_scores: Dict[int, float],
+    result1: utility_models.QueryResult,
+    result2: utility_models.QueryResult,
+    synapse: bt.Synapse,
+    checked_with_server: bool,
+    uid_to_uid_info: Dict[int, utility_models.UIDinfo],
+):
+    if os.path.isfile(core_cst.VALIDATOR_DB):
+        conn = sqlite3.connect(core_cst.VALIDATOR_DB)
+        cursor = conn.cursor()
+    else:
+        conn = None
+        cursor = None
+
+    timestamp = round(time.time(), 2)
+
+    table = Table(show_header=True, header_style="bold magenta")
+    table.add_column("uid", style="dim")
+    table.add_column("Response Time", style="dim")
+    table.add_column("Score", style="dim")
+    table.add_column("Synapse", justify="left", style="dim")
+    table.add_column("Valid response", justify="left", style="dim")
+    table.add_column("Quickest Response", justify="left", style="dim")
+    table.add_column("Checked with server", justify="left", style="dim")
+
+    for uid, score in axon_scores.items():
+        if uid == result1.axon_uid:
+            response_time = "N/A" if result1.response_time is None else str(round(result1.response_time, 2))
+        elif uid == result2.axon_uid:
+            response_time = "N/A" if result2.response_time is None else str(round(result2.response_time, 2))
+        else:
+            response_time = "N/A"
+
+        valid_response = score > cst.FAILED_RESPONSE_SCORE
+        quickest_response = score >= (1 + cst.BONUS_FOR_WINNING_MINER)
+
+        if cursor is not None:
+            hotkey = uid_to_uid_info[uid].hotkey
+
+            row_data = (
+                uid,
+                hotkey,
+                float(response_time) if response_time != "N/A" else None,
+                round(score, 2),
+                synapse.__class__.__name__,
+                valid_response,
+                quickest_response,
+                checked_with_server,
+                timestamp,
+            )
+            cursor.execute(
+                "INSERT INTO scores (axon_uid, hotkey, response_time, score, synapse, valid_response, quickest_response, checked_with_server, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                row_data,
+            )
+        table.add_row(
+            str(uid),
+            response_time,
+            str(round(score, 2)),
+            synapse.__class__.__name__,
+            str(valid_response),
+            str(quickest_response),
+            str(checked_with_server),
+        )
+
+    console.print(table)
+        
+    if conn is not None:
+        conn.commit()
+        conn.close()

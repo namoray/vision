@@ -14,6 +14,7 @@ class UIDinfo(BaseModel) :
 
 
     uid: int
+    hotkey: str
     available_operations: List[str] = []
     axon: bt.chain_data.AxonInfo
     is_low_incentive: bool = False
@@ -94,3 +95,9 @@ class EngineEnum(str, enum.Enum):
     SDXL_TURBO = "stable-diffusion-xl-turbo"
     SDXL_1_5 = "stable-diffusion-1.5"
     KANDINSKY_22 = "kandinsky-2.2"
+
+class ImageHashes(BaseModel):
+    average_hash: str = ""
+    perceptual_hash: str = ""
+    difference_hash: str = ""
+    color_hash: str = ""
