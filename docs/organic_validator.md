@@ -33,6 +33,8 @@ Storage: 200Gb
 
 # Setup steps
 
+Note: if you're using a provider such as runpod or vast, make sure you expose the necessary ports first, e.g.: https://docs.runpod.io/docs/expose-ports#:~:text=If%20your%20pod%20supports%20a,address%20to%20access%20your%20service. Follow the "Symmetrical port mapping" step :)
+
 ### Clone the repo
 ```bash
 git clone https://github.com/namoray/vision
