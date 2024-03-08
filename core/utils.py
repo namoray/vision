@@ -125,7 +125,14 @@ def set_stuff_for_deterministic_output():
     os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"
 
     torch.backends.cudnn.benchmark = False
-    torch.use_deterministic_algorithms(True)
+
+    # Below is disabled as it causes major issues for loading and unloading models
+    # And it doesn't help much with determinsm anyway with seed
+    # The Clip fallback majorly solves this problem
+    # Also, the reward model is also designed to compare images on different hardware
+    # and predict if they were the same or not
+
+    # torch.use_deterministic_algorithms(True)
 
 
 def get_b64_from_pipeline_image(processed_image: torch.Tensor) -> str:
@@ -248,3 +255,6 @@ def model_to_printable_dict(model: Optional[BaseModel], max_length: int = 50) ->
     except TypeError:
         return {}
 
+
+    
+set_stuff_for_deterministic_output()
