@@ -664,7 +664,7 @@ class CoreValidator:
             bt.logging.info("No uids found to score, nothing to set")
             return
         for uid, periods_for_uid in scoring_periods_uid_was_in.items():
-            scores = uid_scores.get(uid, [0.0])
+            scores = uid_scores.get(uid, [0.5])
             average_score = sum(scores) / len(scores)
 
             uid_weights[uid] = average_score * (periods_for_uid / max_periods) ** 0.5
