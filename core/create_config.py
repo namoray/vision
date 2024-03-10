@@ -1,6 +1,6 @@
 import yaml
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from core import constants as core_cst
 from rich.prompt import Prompt
 import rich
@@ -22,6 +22,12 @@ def bool_processing_func(input: str) -> bool:
         return True
     else:
         return False
+
+def int_processing_func(input: str) -> Optional[int]:
+    try:
+        return int(input)
+    except ValueError:
+        return None
 
 GLOBAL_PARAMETERS = {
     core_cst.HOTKEY_PARAM: {"default": "default", "message": "Hotkey name: "},
@@ -53,6 +59,8 @@ VALIDATOR_PARAMETERS = {
 }
 
 MINER_PARAMETERS = {
+    core_cst.SOTA_PROVIDER_PARAM: {"default": None, "message": "Optional SOTA model (Currently midjourney) Provider.\nOptions:\n1: goapi\n2: imagine_slash", "process_function": int_processing_func},
+    core_cst.SOTA_PROVIDER_API_KEY_PARAM: {"default": None, "message": "Optional SOTA Provider API Key: "},
     core_cst.AXON_PORT_PARAM: {"default": 8091, "message": "Axon Port: "},
     core_cst.AXON_EXTERNAL_IP_PARAM: {"default": None, "message": "Axon External IP: "},
 }
