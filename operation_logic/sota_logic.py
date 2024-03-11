@@ -25,8 +25,9 @@ async def sota_logic(
     output = base_models.SotaOutgoing()
     bt.logging.info("here 1")
 
-    SOTA_provider = resource_manager.get_resource(cst.MODEL_SOTA)
+    SOTA_provider = cst.PROVIDER_INT_TO_NAME.get(int(resource_manager.get_resource(cst.MODEL_SOTA)), None)
 
+    bt.logging.info(f"SOTA provider: {SOTA_provider}")
 
     bt.logging.info("here 2")
     if SOTA_provider is None:

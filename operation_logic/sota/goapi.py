@@ -50,7 +50,7 @@ async def _get_image_from_task(task_id: str) -> Dict[str, Any]:
 
 async def get_image(prompt: str) -> Optional[str]:
 
-    bt.logging.info("here 4")
+    bt.logging.info(f"Prompt: {prompt}")
     create_image_response = await _create_image(prompt)
     bt.logging.info("here 5")
     task_id = create_image_response["task_id"]
