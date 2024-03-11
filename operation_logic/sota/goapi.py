@@ -7,7 +7,7 @@ from fastapi import routing
 from typing import Optional, Dict, Any
 import time
 import asyncio
-
+import bittensor as bt
 load_dotenv()
 
 
@@ -49,11 +49,15 @@ async def _get_image_from_task(task_id: str) -> Dict[str, Any]:
 
 
 async def get_image(prompt: str) -> Optional[str]:
+
+    bt.logging.info("here 4")
     create_image_response = await _create_image(prompt)
+    bt.logging.info("here 5")
     task_id = create_image_response["task_id"]
 
     beginning_time = time.time()
     while time.time() - beginning_time < MAX_DURATION_TO_WAIT_FOR_IMAGE:
+        bt.logging.info("here 7")
         task_response = await _get_image_from_task(task_id)
         status = task_response["status"]
         if status == "finished":

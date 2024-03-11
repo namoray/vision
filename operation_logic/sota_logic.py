@@ -23,11 +23,16 @@ async def sota_logic(
     resource_manager = resource_management.SingletonResourceManager()
 
     output = base_models.SotaOutgoing()
+    bt.logging.info("here 1")
 
     SOTA_provider = resource_manager.get_resource(cst.MODEL_SOTA)
+
+
+    bt.logging.info("here 2")
     if SOTA_provider is None:
         bt.logging.error(f"You're serving the synapse but with no provider?! How as that happened")
     elif SOTA_provider == cst.GO_API_PROVIDER:
+        bt.logging.info("here 3")
         image_url = await goapi.get_image(body.prompt)
         output.image_url = image_url
     elif  SOTA_provider == cst.IMAGINE_SLASH_PROVIDER:

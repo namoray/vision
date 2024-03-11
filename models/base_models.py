@@ -171,6 +171,7 @@ class SotaIncoming(BaseModel):
 
 class SotaOutgoing(BaseModel):
     image_url: Optional[str]
+    error_message: Optional[str]
 
 class SotaBase(SotaIncoming, SotaOutgoing):
     ...

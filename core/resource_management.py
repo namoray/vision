@@ -78,6 +78,7 @@ class SingletonResourceManager:
             cst.MODEL_UPSCALE: self.load_upscale_resources,
             cst.MODEL_CACHE: self.load_cache,
             cst.IMAGE_SAFETY_CHECKERS: self.load_safety_checkers,
+            cst.MODEL_SOTA: self.load_sota_resources
         }
 
     def load_config(self, config: Optional[ResourceConfig] = None):
@@ -160,6 +161,7 @@ class SingletonResourceManager:
     def load_sota_resources(self):
         bt.logging.info("here2")
         self._update_available_operations(protocols.Sota.__name__, True)
+        self._loaded_resources[cst.MODEL_SOTA] = self._config[cst.MODEL_SOTA]
 
     def load_upscale_resources(self):
         upscale_device = self._config.get(cst.MODEL_UPSCALE, None)
