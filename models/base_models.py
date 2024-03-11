@@ -166,11 +166,14 @@ class ClipEmbeddingsBase(ClipEmbeddingsIncoming, ClipEmbeddingsOutgoing):
     ...
 
 # SOTA
-class SOTAIncoming(BaseModel):
+class SotaIncoming(BaseModel):
     prompt: str
 
-class SOTAOutgoing(BaseModel):
+class SotaOutgoing(BaseModel):
     image_url: str
+
+class SotaBase(SotaIncoming, SotaOutgoing):
+    ...
 
 # SAM
 class SegmentIncoming(BaseModel):

@@ -99,6 +99,7 @@ class SingletonResourceManager:
                 cst.IMAGE_SAFETY_CHECKERS: get_hotkey_config_value(hotkey_config, cst.SAFETY_CHECKERS_PARAM),
                 # cst.MODEL_SAM: get_hotkey_config_value(hotkey_config, cst.SAM_DEVICE),
             }
+            bt.logging.info(f"config: {self._config}")
         else:
             self._config = {
                 cst.MODEL_CLIP: config.CLIP_DEVICE,
@@ -135,13 +136,17 @@ class SingletonResourceManager:
         if self._config[cst.MODEL_UPSCALE] is not None:
             self.load_resource(cst.MODEL_UPSCALE)
 
+        if self._config[cst.MODEL_SOTA] is not None:
+            bt.logging.info("here1")
+            self.load_sota_resources()
 
         self.load_resource(cst.MODEL_CACHE)
 
     def load_safety_checkers(self):
         safety_checker_device = self._config.get(cst.IMAGE_SAFETY_CHECKERS, None)
         if safety_checker_device is None:
-            raise ValueError("You MUST provide a device to run the safety checkers on")
+            bt.logging.warning("No safety checker devices, this will cause issues unless you're running SOTA only")
+            return
 
         print("safety checker device:", safety_checker_device)
 
@@ -151,6 +156,10 @@ class SingletonResourceManager:
         safety_pipe.to(safety_checker_device)
         safety_pipe.safety_checker.forward = partial(utils.forward_inspect, self=safety_pipe.safety_checker)
         self._loaded_resources[cst.IMAGE_SAFETY_CHECKERS] = (safety_pipe.feature_extractor, safety_pipe.safety_checker)
+
+    def load_sota_resources(self):
+        bt.logging.info("here2")
+        self._update_available_operations(protocols.Sota.__name__, True)
 
     def load_upscale_resources(self):
         upscale_device = self._config.get(cst.MODEL_UPSCALE, None)

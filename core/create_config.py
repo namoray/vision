@@ -49,7 +49,7 @@ MISC_PARAMETERS  = {
         "default": None,
         "message": "Subtensor Chain Endpoint ",
     },
-    core_cst.IS_VALIDATOR_PARAM: {"default": "y", "message": "Is this a Validator hotkey? (y/n) ", "process_function": bool_processing_func},
+    core_cst.IS_VALIDATOR_PARAM: {"default": "n", "message": "Is this a Validator hotkey? (y/n) ", "process_function": bool_processing_func},
 }
 
 VALIDATOR_PARAMETERS = {

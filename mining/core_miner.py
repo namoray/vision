@@ -17,7 +17,8 @@ T = TypeVar("T", bound=bt.Synapse)
 metagraph = None
 
 requests_from_each_validator = {}
-MIN_VALIDATOR_STAKE = 5000
+#  TODO: CHANGE BACK TO 5000
+MIN_VALIDATOR_STAKE = 0
 
 def base_blacklist(synapse: T) -> Tuple[bool, str]:
     if synapse.dendrite.hotkey not in metagraph.hotkeys:

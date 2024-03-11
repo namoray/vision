@@ -17,12 +17,12 @@ from typing import Optional
 from operation_logic.sota import goapi, imagine_slash
 
 async def sota_logic(
-    body: base_models.SOTAIncoming,
-) -> base_models.SOTAOutgoing:
+    body: base_models.SotaIncoming,
+) -> base_models.SotaOutgoing:
     
     resource_manager = resource_management.SingletonResourceManager()
 
-    output = base_models.SOTAOutgoing()
+    output = base_models.SotaOutgoing()
 
     SOTA_provider = resource_manager.get_resource(cst.MODEL_SOTA)
     if SOTA_provider is None:

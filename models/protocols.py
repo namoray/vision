@@ -40,6 +40,9 @@ class ClipEmbeddings(bt.Synapse, base_models.ClipEmbeddingsBase):
 
         return self.image_embeddings
 
+class Sota(bt.Synapse, base_models.SotaBase):
+    def deserialize(self) -> Optional[str]:
+        return self.image_url
 
 
 class Segment(bt.Synapse, base_models.SegmentBase):
