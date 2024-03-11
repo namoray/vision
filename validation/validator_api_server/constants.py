@@ -29,22 +29,24 @@ OPERATION_TIMEOUTS: Dict[str, float] = {
     "Upscale": 20,
     "Inpaint": 20,
     "Scribble": 20,
+    "Sota": 180,
     # "Segment": 15,
 }
 
 # This is to stop people claiming operations that don't exist
 ALLOWED_USEFUL_OPERATIONS = [
-    "TextToImage",
-    "ImageToImage",
-    "Upscale",
-    "Inpaint",
-    "Scribble",
-    "ClipEmbeddings",
+    # "TextToImage",
+    # "ImageToImage",
+    # "Upscale",
+    # "Inpaint",
+    # "Scribble",
+    # "ClipEmbeddings",
     # "Segment",
+    "Sota",
 ]
 
 # FOR PHASE 1 - where synthetic only validators may have a distribution different to organic ones
-AVAILABLE_OPERATIONS_MULTIPLIER = {0: 0, 1: 0.5, 2: 0.6, 3: 0.7, 4: 0.8, 5: 0.9, 6: 1, 7: 1.1, 8: 1.2}
+AVAILABLE_OPERATIONS_MULTIPLIER = {0: 0, 1: 0.5, 2: 0.6, 3: 0.7, 4: 0.8, 5: 0.9, 6: 1, 7: 1.1}
 
 
 OPERATIONS_TO_SCORE_SYNTHETICALLY = ALLOWED_USEFUL_OPERATIONS

@@ -138,3 +138,16 @@ async def clip_embeddings() -> base_models.ClipEmbeddingsIncoming:
     cache = resource_management.SingletonResourceManager().get_resource(core_cst.MODEL_CACHE)
     random_image_b64 = await utils.get_random_image_b64(cache)
     return base_models.ClipEmbeddingsIncoming(image_b64s=[random_image_b64])
+
+
+@router.get(f"/{core_cst.SYNTHETIC_ENDPOINT_PREFIX}/sota")
+async def text_to_image() -> base_models.SotaIncoming:
+
+    positive_text = utils.get_markov_short_sentence()
+    seed = random.randint(1, constants.LARGEST_SEED)
+
+
+    positive_text += f"--seed {seed} --ar 1:1"
+
+
+    return base_models.SotaIncoming(prompt=positive_text)

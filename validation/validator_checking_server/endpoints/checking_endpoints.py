@@ -60,6 +60,9 @@ async def clip_embeddings(request: base_models.ClipEmbeddingsIncoming) -> base_m
     resource_management.SingletonResourceManager().move_all_models_to_cpu()
     return expected_output
 
+
+
+
 # @router.post(f"/{core_cst.CHECKING_ENDPOINT_PREFIX}/segment")
 # async def segment(request: base_models.SegmentIncoming) -> base_models.SegmentOutgoing:
 #     expected_output = await segment_logic.segment_logic(request)

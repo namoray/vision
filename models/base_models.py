@@ -170,7 +170,7 @@ class SotaIncoming(BaseModel):
     prompt: str
 
 class SotaOutgoing(BaseModel):
-    image_url: str
+    image_url: Optional[str]
 
 class SotaBase(SotaIncoming, SotaOutgoing):
     ...
