@@ -1,6 +1,7 @@
 from core import constants as cst
 from core import resource_management
 from models import base_models
+import bittensor as bt
 from operation_logic.sota import goapi
 
 async def sota_logic(
@@ -16,4 +17,5 @@ async def sota_logic(
     image_url = await goapi.get_image(body.prompt, Sota_key)
     output.image_url = image_url
 
+    bt.logging.info("✅ Successfully got a midjourney image!")
     return output
