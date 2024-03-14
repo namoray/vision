@@ -68,7 +68,6 @@ async def is_sota_image_valid(image_url: str, prompt: str) -> bool:
 
     split_prompt = prompt.split("--")[0]
     texts_tensor = clip.tokenize([split_prompt]).to(clip_device)
-    bt.logging.info(split_prompt)
 
     with torch.no_grad():
         text_embeddings = clip_model.encode_text(texts_tensor)
