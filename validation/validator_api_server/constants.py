@@ -41,7 +41,6 @@ ALLOWED_USEFUL_OPERATIONS = [
     "Inpaint",
     "Scribble",
     "ClipEmbeddings",
-    "Segment",
     "Sota",
 ]
 
