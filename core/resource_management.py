@@ -48,6 +48,7 @@ class ResourceConfig(NamedTuple):
     SCRIBBLE_DEVICE: Optional[str] = None
     UPSCALE_DEVICE: Optional[str] = None
     SOTA_PROVIDER: Optional[str] = None
+    SOTA_KEY: Optional[str] = None
     SAFETY_CHECKERS_DEVICE: Optional[str] = None
     IS_VALIDATOR: bool = False
 
@@ -96,7 +97,7 @@ class SingletonResourceManager:
                 cst.MODEL_SCRIBBLE: get_hotkey_config_value(hotkey_config, cst.SCRIBBLE_DEVICE_PARAM),
                 cst.MODEL_UPSCALE: get_hotkey_config_value(hotkey_config, cst.UPSCALE_DEVICE_PARAM),
                 cst.MODEL_SOTA: get_hotkey_config_value(hotkey_config, cst.SOTA_PROVIDER_PARAM),
-                cst.SOTA_KEY: get_hotkey_config_value(hotkey_config, cst.SOTA_KEY_PARAM),
+                cst.SOTA_KEY: get_hotkey_config_value(hotkey_config, cst.SOTA_PROVIDER_API_KEY_PARAM),
                 cst.IS_VALIDATOR: hotkey_config.get(cst.IS_VALIDATOR, False),
                 cst.IMAGE_SAFETY_CHECKERS: get_hotkey_config_value(hotkey_config, cst.SAFETY_CHECKERS_PARAM),
                 # cst.MODEL_SAM: get_hotkey_config_value(hotkey_config, cst.SAM_DEVICE),
@@ -110,6 +111,7 @@ class SingletonResourceManager:
                 cst.MODEL_SCRIBBLE: config.SCRIBBLE_DEVICE,
                 cst.MODEL_UPSCALE: config.UPSCALE_DEVICE,
                 cst.MODEL_SOTA: config.SOTA_PROVIDER,
+                cst.SOTA_KEY: config.SOTA_KEY,
                 cst.IS_VALIDATOR: config.IS_VALIDATOR,
                 cst.IMAGE_SAFETY_CHECKERS: config.SAFETY_CHECKERS_DEVICE,
                 # cst.MODEL_SAM: config.SAM_DEVICE,

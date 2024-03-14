@@ -181,7 +181,7 @@ class CoreValidator:
 
             time_before_query = time.time()
 
-            await asyncio.create_task(self.execute_query(synapse, outgoing_model, synthetic_query=True))
+            await self.execute_query(synapse, outgoing_model, synthetic_query=True)
 
             time_to_execute_query = time.time() - time_before_query
             await asyncio.sleep(max(cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING - time_to_execute_query, 0))
@@ -646,6 +646,10 @@ class CoreValidator:
 
         for epoch in self.previous_uid_infos:
             for uid_info in epoch:
+
+                if len(uid_info.available_operations) == 0:
+                    continue
+            
                 scoring_periods_uid_was_in[uid_info.uid] = scoring_periods_uid_was_in.get(uid_info.uid, 0) + 1
                 if uid_info.organic_request_count + uid_info.synthetic_request_count == 0:
                     continue
