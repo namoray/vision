@@ -98,14 +98,25 @@ class CoreValidator:
 
     async def periodically_resync_and_set_weights(self) -> None:
         time_between_resyncing = 10 * 60
+
+        # Two initial cycles to make sure restarts don't impact scores too heavily
+        await self.resync_metagraph()
+        await asyncio.sleep(time_between_resyncing)
+
+        await self.resync_metagraph()
+        await asyncio.sleep(time_between_resyncing)
+        
         while True:
             await self.resync_metagraph()
             await asyncio.sleep(time_between_resyncing)
 
             await self.resync_metagraph()
-            await asyncio.to_thread(self.set_weights)
-
             await asyncio.sleep(time_between_resyncing)
+
+            await self.resync_metagraph()
+            await asyncio.to_thread(self.set_weights)
+            await asyncio.sleep(time_between_resyncing)
+
 
     async def _query_checking_server_for_expected_result(
         self, endpoint: str, synapse: bt.Synapse, outgoing_model: BaseModel
@@ -692,7 +703,7 @@ class CoreValidator:
     def set_weights(self):
         bt.logging.info("Setting weights!")
 
-        # TODO: CHANGE THIS
+
         uid_scores: Dict[int, List[float]] = {}
         scoring_periods_uid_was_in: Dict[int, int] = {}
 
