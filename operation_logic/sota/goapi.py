@@ -11,24 +11,24 @@ import bittensor as bt
 load_dotenv()
 
 
-HEADERS = {
-    "X-API-KEY": os.getenv("GO_API_KEY"),
-    "Content-Type": "application/json",
-}
 
 MAX_DURATION_TO_WAIT_FOR_IMAGE = 180
 PROCESS_MODE = "turbo"
 
 
-async def _create_image(prompt: str) -> Dict[ str, Any] | None:
+async def _create_image(prompt: str, sota_key: str) -> Dict[ str, Any] | None:
     async with httpx.AsyncClient() as client:
         data = {
             "prompt": prompt,
             "process_mode": PROCESS_MODE,
             "aspect_ratio": "1:1",
         }
+        headers = {
+        "X-API-KEY": sota_key,
+        "Content-Type": "application/json",
+    }
         response = await client.post(
-            "https://api.midjourneyapi.xyz/mj/v2/imagine", headers=HEADERS, json=data
+            "https://api.midjourneyapi.xyz/mj/v2/imagine", headers=headers, json=data
         )
 
     if response.status_code == 200:
@@ -39,26 +39,32 @@ async def _create_image(prompt: str) -> Dict[ str, Any] | None:
         )
 
 
-async def _get_image_from_task(task_id: str) -> Dict[str, Any]:
+async def _get_image_from_task(task_id: str, sota_key: str) -> Dict[str, Any]:
+        
     async with httpx.AsyncClient() as client:
         json = {"task_id": task_id}
+        headers = {
+            "X-API-KEY": sota_key,
+            "Content-Type": "application/json",
+        }
         response = await client.post(
-            "https://api.midjourneyapi.xyz/mj/v2/fetch", headers=HEADERS, json=json
+            "https://api.midjourneyapi.xyz/mj/v2/fetch", headers=headers, json=json
         )
     return response.json()
 
 
-async def get_image(prompt: str) -> Optional[str]:
+async def get_image(prompt: str, sota_key: str) -> Optional[str]:
 
     bt.logging.info(f"Prompt: {prompt}")
-    create_image_response = await _create_image(prompt)
+
+    create_image_response = await _create_image(prompt, sota_key)
     bt.logging.info("here 5")
     task_id = create_image_response["task_id"]
 
     beginning_time = time.time()
     while time.time() - beginning_time < MAX_DURATION_TO_WAIT_FOR_IMAGE:
         bt.logging.info("here 7")
-        task_response = await _get_image_from_task(task_id)
+        task_response = await _get_image_from_task(task_id, sota_key)
         status = task_response["status"]
         if status == "finished":
             return task_response["task_result"]["image_url"]

@@ -25,19 +25,23 @@ async def sota_logic(
     output = base_models.SotaOutgoing()
     bt.logging.info("here 1")
 
-    SOTA_provider = cst.PROVIDER_INT_TO_NAME.get(int(resource_manager.get_resource(cst.MODEL_SOTA)), None)
+    Sota_provider, Sota_key =resource_manager.get_resource(cst.MODEL_SOTA)
+    if Sota_provider is  None:
+        bt.logging.error("No SOTA provider was found!")
+    Sota_provider = cst.PROVIDER_INT_TO_NAME.get(Sota_provider, Sota_provider)
+    
 
-    bt.logging.info(f"SOTA provider: {SOTA_provider}")
+    bt.logging.info(f"SOTA provider: {Sota_provider}")
 
     bt.logging.info("here 2")
-    if SOTA_provider is None:
+    if Sota_provider is None:
         bt.logging.error(f"You're serving the synapse but with no provider?! How as that happened")
-    elif SOTA_provider == cst.GO_API_PROVIDER:
+    elif Sota_provider == cst.GO_API_PROVIDER:
         bt.logging.info("here 3")
-        image_url = await goapi.get_image(body.prompt)
+        image_url = await goapi.get_image(body.prompt, Sota_key)
         output.image_url = image_url
-    elif  SOTA_provider == cst.IMAGINE_SLASH_PROVIDER:
-        image_url = await imagine_slash.get_image(body.prompt)
+    elif  Sota_provider == cst.IMAGINE_SLASH_PROVIDER:
+        image_url = await imagine_slash.get_image(body.prompt, Sota_key)
         output.image_url = image_url
 
     

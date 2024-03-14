@@ -96,6 +96,7 @@ class SingletonResourceManager:
                 cst.MODEL_SCRIBBLE: get_hotkey_config_value(hotkey_config, cst.SCRIBBLE_DEVICE_PARAM),
                 cst.MODEL_UPSCALE: get_hotkey_config_value(hotkey_config, cst.UPSCALE_DEVICE_PARAM),
                 cst.MODEL_SOTA: get_hotkey_config_value(hotkey_config, cst.SOTA_PROVIDER_PARAM),
+                cst.SOTA_KEY: get_hotkey_config_value(hotkey_config, cst.SOTA_KEY_PARAM),
                 cst.IS_VALIDATOR: hotkey_config.get(cst.IS_VALIDATOR, False),
                 cst.IMAGE_SAFETY_CHECKERS: get_hotkey_config_value(hotkey_config, cst.SAFETY_CHECKERS_PARAM),
                 # cst.MODEL_SAM: get_hotkey_config_value(hotkey_config, cst.SAM_DEVICE),
@@ -161,7 +162,7 @@ class SingletonResourceManager:
     def load_sota_resources(self):
         bt.logging.info("here2")
         self._update_available_operations(protocols.Sota.__name__, True)
-        self._loaded_resources[cst.MODEL_SOTA] = self._config[cst.MODEL_SOTA]
+        self._loaded_resources[cst.MODEL_SOTA] = (self._config[cst.MODEL_SOTA], self._config[cst.SOTA_KEY])
 
     def load_upscale_resources(self):
         upscale_device = self._config.get(cst.MODEL_UPSCALE, None)

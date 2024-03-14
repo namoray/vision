@@ -147,7 +147,7 @@ async def text_to_image() -> base_models.SotaIncoming:
     seed = random.randint(1, constants.LARGEST_SEED)
 
 
-    positive_text += f" --seed {seed} --ar 1:1"
+    positive_text += f"  --seed {seed} --ar 1:1  --v 6"
 
 
     return base_models.SotaIncoming(prompt=positive_text)
