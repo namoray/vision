@@ -192,8 +192,8 @@ class CoreValidator:
 
             if synthetic_data is None:
                 bt.logging.error(
-                    f"Synthetic data is none which is weird, will try again in {cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING}."
-                    "Maybe the server hasn't finished initialising yet"
+                    f"Synthetic data is none for operation {operation}, which is weird, will try again in {cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING}."
+                    " Maybe the server hasn't finished initialising yet"
                 )
                 await asyncio.sleep(cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING)
                 continue
