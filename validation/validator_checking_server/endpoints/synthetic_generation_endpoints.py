@@ -143,11 +143,9 @@ async def clip_embeddings() -> base_models.ClipEmbeddingsIncoming:
 @router.get(f"/{core_cst.SYNTHETIC_ENDPOINT_PREFIX}/sota")
 async def sota() -> base_models.SotaIncoming:
 
-    positive_text = utils.get_markov_short_sentence()
+    positive_text = utils.get_markov_short_sentence()[:-1]
     seed = random.randint(1, constants.LARGEST_SEED)
 
-
     positive_text += f"  --seed {seed} --ar 1:1  --v 6"
-
 
     return base_models.SotaIncoming(prompt=positive_text)

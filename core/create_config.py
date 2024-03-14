@@ -59,7 +59,6 @@ VALIDATOR_PARAMETERS = {
 }
 
 MINER_PARAMETERS = {
-    core_cst.SOTA_PROVIDER_PARAM: {"default": None, "message": "Optional SOTA model (Currently midjourney) Provider. Options:\n1: goapi\n2: imagine_slash\n Enter a number: ", "process_function": int_processing_func},
     core_cst.SOTA_PROVIDER_API_KEY_PARAM: {"default": None, "message": "Optional SOTA Provider API Key: "},
     core_cst.AXON_PORT_PARAM: {"default": 8091, "message": "Axon Port: "},
     core_cst.AXON_EXTERNAL_IP_PARAM: {"default": None, "message": "Axon External IP: "},

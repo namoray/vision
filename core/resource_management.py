@@ -47,7 +47,6 @@ class ResourceConfig(NamedTuple):
     KANDINSKY_DEVICE: Optional[str] = None
     SCRIBBLE_DEVICE: Optional[str] = None
     UPSCALE_DEVICE: Optional[str] = None
-    SOTA_PROVIDER: Optional[str] = None
     SOTA_KEY: Optional[str] = None
     SAFETY_CHECKERS_DEVICE: Optional[str] = None
     IS_VALIDATOR: bool = False
@@ -96,7 +95,6 @@ class SingletonResourceManager:
                 cst.MODEL_KANDINSKY: get_hotkey_config_value(hotkey_config, cst.KANDINSKY_DEVICE_PARAM),
                 cst.MODEL_SCRIBBLE: get_hotkey_config_value(hotkey_config, cst.SCRIBBLE_DEVICE_PARAM),
                 cst.MODEL_UPSCALE: get_hotkey_config_value(hotkey_config, cst.UPSCALE_DEVICE_PARAM),
-                cst.MODEL_SOTA: get_hotkey_config_value(hotkey_config, cst.SOTA_PROVIDER_PARAM),
                 cst.SOTA_KEY: get_hotkey_config_value(hotkey_config, cst.SOTA_PROVIDER_API_KEY_PARAM),
                 cst.IS_VALIDATOR: hotkey_config.get(cst.IS_VALIDATOR, False),
                 cst.IMAGE_SAFETY_CHECKERS: get_hotkey_config_value(hotkey_config, cst.SAFETY_CHECKERS_PARAM),
@@ -110,7 +108,6 @@ class SingletonResourceManager:
                 cst.MODEL_KANDINSKY: config.KANDINSKY_DEVICE,
                 cst.MODEL_SCRIBBLE: config.SCRIBBLE_DEVICE,
                 cst.MODEL_UPSCALE: config.UPSCALE_DEVICE,
-                cst.MODEL_SOTA: config.SOTA_PROVIDER,
                 cst.SOTA_KEY: config.SOTA_KEY,
                 cst.IS_VALIDATOR: config.IS_VALIDATOR,
                 cst.IMAGE_SAFETY_CHECKERS: config.SAFETY_CHECKERS_DEVICE,
@@ -140,8 +137,7 @@ class SingletonResourceManager:
         if self._config[cst.MODEL_UPSCALE] is not None:
             self.load_resource(cst.MODEL_UPSCALE)
 
-        if self._config[cst.MODEL_SOTA] is not None:
-            bt.logging.info("here1")
+        if self._config[cst.SOTA_KEY] is not None:
             self.load_sota_resources()
 
         self.load_resource(cst.MODEL_CACHE)
@@ -164,7 +160,7 @@ class SingletonResourceManager:
     def load_sota_resources(self):
         bt.logging.info("here2")
         self._update_available_operations(protocols.Sota.__name__, True)
-        self._loaded_resources[cst.MODEL_SOTA] = (self._config[cst.MODEL_SOTA], self._config[cst.SOTA_KEY])
+        self._loaded_resources[cst.MODEL_SOTA] = self._config[cst.SOTA_KEY]
 
     def load_upscale_resources(self):
         upscale_device = self._config.get(cst.MODEL_UPSCALE, None)

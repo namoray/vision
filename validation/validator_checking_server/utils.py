@@ -9,9 +9,91 @@ import cv2
 import diskcache
 import numpy as np
 from PIL import Image
-
+from validation.validator_api_server import similarity_comparisons
+import httpx
 from core import constants as cst
 from core import resource_management
+import re
+import torch
+import clip
+import bittensor as bt
+
+async def fetch_image_as_bytes(url):
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url)
+            return response.content
+    except httpx.HTTPStatusError:
+        return False
+
+def validate_gojourney_url(url):
+    pattern = re.compile(r'^https:\/\/img\.midjourneyapi\.xyz\/mj\/.*\.png$')
+    if pattern.match(url):
+        return True
+    return False
+
+async def is_sota_image_valid(image_url: str, prompt: str) -> bool:
+    
+    valid_gojourney_url = validate_gojourney_url(image_url)
+
+    if not valid_gojourney_url:
+        return False
+
+    image_bytes = await fetch_image_as_bytes(image_url)
+
+    if not image_bytes:
+        return False
+
+    clip_model, clip_processor = resource_management.SingletonResourceManager().get_resource(cst.MODEL_CLIP)
+    clip_device = resource_management.SingletonResourceManager()._config.get(cst.MODEL_CLIP)
+    
+    
+    original_image = Image.open(io.BytesIO(image_bytes))
+
+    width, height = original_image.size
+    image_1 = original_image.crop((0, 0, width // 2, height // 2))
+    image_2 = original_image.crop((width // 2, 0, width, height // 2))
+    image_3 = original_image.crop((0, height // 2, width // 2, height))
+    image_4 = original_image.crop((width // 2, height // 2, width, height))
+
+    images = [image_1, image_2, image_3, image_4]
+
+    images = [clip_processor(image) for image in images]
+    images_tensor = torch.stack(images).to(clip_device)
+
+    with torch.no_grad():
+        image_embeddings = clip_model.encode_image(images_tensor)
+
+    image_embeddings = image_embeddings.cpu().numpy().tolist()
+
+    split_prompt = prompt.split("--")[0]
+    texts_tensor = clip.tokenize([split_prompt]).to(clip_device)
+    bt.logging.info(split_prompt)
+
+    with torch.no_grad():
+        text_embeddings = clip_model.encode_text(texts_tensor)
+
+    text_embedding = text_embeddings.cpu().numpy().tolist()[0]
+
+    sims = []
+    for image_embedding in image_embeddings:
+        embedding_sim = similarity_comparisons.get_clip_embedding_similarity(image_embedding, text_embedding)
+        sims.append(embedding_sim)
+    
+    average_sim = sum(sims) / len(sims)
+
+    # TODO: remove if you're happy with 0.2 as a threshold
+    with open('embeddings_for_testing.txt', 'a') as f:
+        f.write(str(average_sim) + '\n')
+
+    if average_sim > 0.20:
+        return True
+
+    return False
+    
+
+    
+
 
 
 def get_markov_short_sentence() -> str:
