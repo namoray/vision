@@ -3,7 +3,6 @@ import json
 from typing import Optional, Dict, Any
 import time
 import asyncio
-import bittensor as bt
 
 
 MAX_DURATION_TO_WAIT_FOR_IMAGE = 180
@@ -12,9 +11,6 @@ PROCESS_MODE = "turbo"
 
 async def _create_image(prompt: str, sota_key: str) -> Dict[ str, Any] | None:
 
-    bt.logging.info(f"Prompt: {prompt}")
-    bt.logging.info(f"Process mode: {PROCESS_MODE}")
-    bt.logging.info(f"API key: {sota_key}")
     async with httpx.AsyncClient() as client:
         data = {
             "prompt": prompt,
@@ -25,7 +21,7 @@ async def _create_image(prompt: str, sota_key: str) -> Dict[ str, Any] | None:
         "X-API-KEY": sota_key,
         "Content-Type": "application/json",
         }
-        bt.logging.info(f"data: {data}, headers: {headers}")
+
         response = await client.post(
             "https://api.midjourneyapi.xyz/mj/v2/imagine", headers=headers, json=data
         )
@@ -54,7 +50,6 @@ async def _get_image_from_task(task_id: str, sota_key: str) -> Dict[str, Any]:
 
 async def get_image(prompt: str, sota_key: str) -> Optional[str]:
 
-    bt.logging.info(f"Prompt: {prompt}")
 
     create_image_response = await _create_image(prompt, sota_key)
     task_id = create_image_response["task_id"]
