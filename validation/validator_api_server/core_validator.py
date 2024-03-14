@@ -372,6 +372,7 @@ class CoreValidator:
             bt.logging.info(
                 f"Not going to score {operation_name}, since there is only {len(available_axons)} available"
             )
+            return
 
         if should_score and sufficient_secondary_axons:
             bt.logging.info("Scoring a query!")
