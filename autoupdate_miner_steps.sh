@@ -4,6 +4,7 @@
 # THIS FILE ITSELF MAY CHANGE FROM UPDATE TO UPDATE, SO WE CAN DYNAMICALLY FIX ANY ISSUES
 
 
+echo "No steps to run for a miner!"
 # ./get_models.sh
 
 
@@ -21,4 +22,4 @@
 # fi
 
 
-./start_miners.sh
+# ./start_miners.sh
