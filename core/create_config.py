@@ -144,7 +144,8 @@ def get_config():
             subtensor_network = settings.get(core_cst.SUBTENSOR_NETWORK_PARAM)
             subtensor_chain_endpoint = settings.get(core_cst.SUBTENSOR_CHAINENDPOINT_PARAM)
 
-            netuid = 19 if subtensor_network != "test" else 51
+            s_networked_stripped = str(subtensor_network).strip() if subtensor_network is not None else None
+            netuid = 19 if s_networked_stripped != "test" else 51
             start_command = (
                 f'mining/run_miner.py --interpreter python3 -- --axon.port {axon_port} --axon.external_ip {axon_external_ip}'
                 f" --wallet.name {wallet_name} --wallet.hotkey {hotkey} --subtensor.network {subtensor_network}"
