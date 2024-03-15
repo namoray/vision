@@ -31,11 +31,11 @@ if __name__ == "__main__":
     singleton = resource_management.SingletonResourceManager()
     singleton.load_config()
     bt.logging.info("Loading all models into RAM")
-    # TODO: stop skipping this
-    # for i, load_function in enumerate(singleton.resource_name_to_load_function.values()):
-    #     bt.logging.info(f"Loading model {i}, might take a minute or so")
-    #     load_function()
-    #     singleton.move_all_models_to_cpu()
+
+    for i, load_function in enumerate(singleton.resource_name_to_load_function.values()):
+        bt.logging.info(f"Loading model {i}, might take a minute or so")
+        load_function()
+        singleton.move_all_models_to_cpu()
 
     singleton.load_validator_resources()
     singleton.load_resource(cst.MODEL_CACHE)

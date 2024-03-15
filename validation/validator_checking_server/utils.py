@@ -80,11 +80,8 @@ async def is_sota_image_valid(image_url: str, prompt: str) -> bool:
     
     average_sim = sum(sims) / len(sims)
 
-    # TODO: remove if you're happy with 0.2 as a threshold
-    with open('embeddings_for_testing.txt', 'a') as f:
-        f.write(str(average_sim) + '\n')
-
-    if average_sim > 0.20:
+    # Found that 0.21 finds valid images >99.9% of the time, but stops invalid ones > 99% of the time too!
+    if average_sim > 0.21:
         return True
 
     return False
