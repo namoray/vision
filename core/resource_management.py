@@ -95,7 +95,7 @@ class SingletonResourceManager:
                 cst.MODEL_KANDINSKY: get_hotkey_config_value(hotkey_config, cst.KANDINSKY_DEVICE_PARAM),
                 cst.MODEL_SCRIBBLE: get_hotkey_config_value(hotkey_config, cst.SCRIBBLE_DEVICE_PARAM),
                 cst.MODEL_UPSCALE: get_hotkey_config_value(hotkey_config, cst.UPSCALE_DEVICE_PARAM),
-                cst.SOTA_KEY: get_hotkey_config_value(hotkey_config, cst.SOTA_PROVIDER_API_KEY_PARAM),
+                cst.SOTA_KEY: hotkey_config.get(cst.SOTA_PROVIDER_API_KEY_PARAM),
                 cst.IS_VALIDATOR: hotkey_config.get(cst.IS_VALIDATOR, False),
                 cst.IMAGE_SAFETY_CHECKERS: get_hotkey_config_value(hotkey_config, cst.SAFETY_CHECKERS_PARAM),
                 # cst.MODEL_SAM: get_hotkey_config_value(hotkey_config, cst.SAM_DEVICE),
