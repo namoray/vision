@@ -29,6 +29,7 @@ OPERATION_TIMEOUTS: Dict[str, float] = {
     "Upscale": 20,
     "Inpaint": 20,
     "Scribble": 20,
+    "Sota": 180,
     # "Segment": 15,
 }
 
@@ -40,11 +41,11 @@ ALLOWED_USEFUL_OPERATIONS = [
     "Inpaint",
     "Scribble",
     "ClipEmbeddings",
-    # "Segment",
+    "Sota",
 ]
 
 # FOR PHASE 1 - where synthetic only validators may have a distribution different to organic ones
-AVAILABLE_OPERATIONS_MULTIPLIER = {0: 0, 1: 0.5, 2: 0.6, 3: 0.7, 4: 0.8, 5: 0.9, 6: 1, 7: 1.1, 8: 1.2}
+AVAILABLE_OPERATIONS_MULTIPLIER = {0: 0, 1: 0.5, 2: 0.6, 3: 0.7, 4: 0.8, 5: 0.9, 6: 1, 7: 1.1}
 
 
 OPERATIONS_TO_SCORE_SYNTHETICALLY = ALLOWED_USEFUL_OPERATIONS
@@ -57,7 +58,7 @@ STATUS_INTERNAL_SERVER_ERROR = 500
 
 SCORE_QUERY_PROBABILITY = 0.01
 NUMBER_OF_SECONDARY_AXONS_TO_COMPARE_WHEN_SCORING = 1  # head - head comparison
-BONUS_FOR_WINNING_MINER = 0.1
+BONUS_FOR_WINNING_MINER = 0.2
 FAILED_RESPONSE_SCORE = 0.5
 
 CHANCE_TO_CHECK_OUTPUT_WHEN_IMAGES_FROM_MINERS_WERE_SIMILAR = 0.02

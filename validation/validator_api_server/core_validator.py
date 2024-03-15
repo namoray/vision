@@ -8,7 +8,7 @@ import uuid
 from collections import defaultdict, deque
 from typing import Dict
 from typing import List
-from typing import Optional
+from typing import Optional, Any
 from typing import Set
 from typing import Tuple
 from typing import Callable
@@ -34,8 +34,7 @@ import traceback
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
 _UPPER_FOLLOWING_REGEXP = re.compile("([a-z0-9])([A-Z])")
 
-VERSION_KEY = 20_002
-
+VERSION_KEY = 20_003
 
 
 def _pascal_to_kebab(input_string: str) -> str:
@@ -51,6 +50,7 @@ class CoreValidator:
         self.config = self.prepare_config_and_logging()
         self.subtensor = bt.subtensor(config=self.config)
         self.wallet = bt.wallet(config=self.config)
+        self.keypair = self.wallet.hotkey
         self.dendrite = bto.dendrite(wallet=self.wallet)
         self.metagraph = self.subtensor.metagraph(netuid=self.config.netuid, lite=True)
 
@@ -98,16 +98,55 @@ class CoreValidator:
         self.score_task.add_done_callback(validation_utils.log_task_exception)
 
     async def periodically_resync_and_set_weights(self) -> None:
-        time_between_resyncing =  10 * 60
+        time_between_resyncing = 10 * 60
+
+        # Two initial cycles to make sure restarts don't impact scores too heavily
+        await self.resync_metagraph()
+        await asyncio.sleep(time_between_resyncing)
+
+        await self.resync_metagraph()
+        await asyncio.sleep(time_between_resyncing)
+
         while True:
             await self.resync_metagraph()
             await asyncio.sleep(time_between_resyncing)
-            
-            await self.resync_metagraph()
-            await asyncio.to_thread(self.set_weights)
 
+            await self.resync_metagraph()
             await asyncio.sleep(time_between_resyncing)
 
+            await self.resync_metagraph()
+            await asyncio.to_thread(self.set_weights)
+            await asyncio.sleep(time_between_resyncing)
+
+    async def _store_synthetic_result(self, sota_request: utility_models.SotaCheckingRequest) -> None:
+        """
+        Sends to taovision (subnet 19 api) the image url and prompt to store for later training.
+
+        Signed to authenticate using the same mechanism that dendrites use to send requests.
+        First, sign the message using the keypair, then send off the signed message (encrypted) and the
+        public key (which is just the hotkey ss58_address)
+
+        Then use the public key to decrypt the message - if it's from a validator then on subnet 19 then accept it,
+        else don't (so only validators can store images into the dataset)
+
+        This is entirely copied fron the preprocess_synapse_for_request method
+        in the bittensor dendrite class - which is utilised for every synapse request. I.e. this
+        information is already sent to every single miner you interact with
+        """
+        time_to_sign = time.time()
+        string_time_to_sign = str(time_to_sign)
+        time_signed = f"0x{self.keypair.sign(string_time_to_sign).hex()}"
+        async with httpx.AsyncClient(timeout=3) as client:
+            await client.post(
+                url="https://taovision.ai/store-sota-image",
+                json={
+                    "image_url": sota_request.image_url,
+                    "timestamp": string_time_to_sign,
+                    "signed_message": time_signed,
+                    "hotkey_public_address": self.keypair.ss58_address,
+                    "prompt": sota_request.prompt,
+                },
+            )
 
     async def _query_checking_server_for_expected_result(
         self, endpoint: str, synapse: bt.Synapse, outgoing_model: BaseModel
@@ -125,6 +164,18 @@ class CoreValidator:
             bt.logging.debug(f"Error when querying endpoint {url}: {e}")
             return None
 
+    async def _query_checking_server_for_sota_result(self, request: Dict[str, Any]):
+        url = self.BASE_CHECKING_SERVER_URL + core_cst.CHECKING_ENDPOINT_PREFIX + "/" + "sota-image"
+        try:
+            async with httpx.AsyncClient(timeout=45) as client:
+                response = await client.post(url, data=json.dumps(request))
+
+            if response.status_code == 200:
+                return response.json()
+        except httpx.HTTPError as e:
+            bt.logging.debug(f"Error when querying endpoint {url}: {e}")
+            return None
+
     async def _query_checking_server_for_synthetic_data(self, operation: str) -> Optional[utility_models.QueryResult]:
         endpoint = _pascal_to_kebab(operation)
         url = self.BASE_CHECKING_SERVER_URL + core_cst.SYNTHETIC_ENDPOINT_PREFIX + "/" + endpoint
@@ -137,7 +188,9 @@ class CoreValidator:
         except httpx.HTTPError as e:
             error_details = str(e)
             traceback_info = traceback.format_exc()
-            bt.logging.debug(f"Error when querying endpoint {url}: {error_details}\n Traceback information: {traceback_info}")
+            bt.logging.debug(
+                f"Error when querying endpoint {url}: {error_details}\n Traceback information: {traceback_info}"
+            )
             return None
 
     async def synthetically_score(self) -> None:
@@ -164,13 +217,18 @@ class CoreValidator:
         """
 
         while True:
-            operation = random.choice(cst.OPERATIONS_TO_SCORE_SYNTHETICALLY)
+            # Weight Sota slightly higher so we do Sota 22% of the time, non Sota 78% of the time
+            operation = random.choices(
+                cst.OPERATIONS_TO_SCORE_SYNTHETICALLY,
+                weights=[0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.22],
+                k=1
+            )[0]
             synthetic_data = await self._query_checking_server_for_synthetic_data(operation)
 
             if synthetic_data is None:
                 bt.logging.error(
-                    f"Synthetic data is none which is weird, will try again in {cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING}."
-                    "Maybe the server hasn't finished initialising yet"
+                    f"Synthetic data is none for operation {operation}, which is weird, will try again in {cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING}."
+                    " Maybe the server hasn't finished initialising yet"
                 )
                 await asyncio.sleep(cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING)
                 continue
@@ -181,7 +239,11 @@ class CoreValidator:
 
             time_before_query = time.time()
 
-            await asyncio.create_task(self.execute_query(synapse, outgoing_model, synthetic_query=True))
+            if operation == "Sota":
+                await self.execute_sota_synthetic_prompt(synapse, outgoing_model, synthetic_query=True)
+
+            else:
+                await self.execute_query(synapse, outgoing_model, synthetic_query=True)
 
             time_to_execute_query = time.time() - time_before_query
             await asyncio.sleep(max(cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING - time_to_execute_query, 0))
@@ -284,7 +346,7 @@ class CoreValidator:
             bt.logging.warning(
                 f"Operation {operation_name} not in operation_to_timeout, this is probably a mistake / bug 🐞"
             )
-        
+
         start_time = time.time()
 
         response = await self.dendrite.forward(
@@ -294,9 +356,51 @@ class CoreValidator:
             response_timeout=cst.OPERATION_TIMEOUTS.get(operation_name, 15),
             deserialize=deserialize,
             log_requests_and_responses=log_requests_and_responses,
-            streaming=False
+            streaming=False,
         )
         return response, time.time() - start_time
+
+    async def execute_sota_synthetic_prompt(self, synapse, outgoing_model: BaseModel, synthetic_query: bool = True):
+        operation_name = synapse.__class__.__name__
+
+        available_axons = self._get_available_axons(operation_name)
+        if not available_axons:
+            bt.logging.warning(f"No axons available for query for {operation_name}")
+            return utility_models.QueryResult(error_message=f"No axons available for operation {operation_name}")
+
+        miners_to_query_order = self._get_miners_query_order(available_axons)
+        main_query_result = await self._query_miners_until_result(miners_to_query_order, synapse, outgoing_model)
+
+        failed_axons = main_query_result.failed_axon_uids
+
+        if main_query_result.formatted_response is not None:
+            for axon_uid in failed_axons:
+                uid_info = self.uid_to_uid_info[axon_uid]
+                uid_info.add_score(cst.FAILED_RESPONSE_SCORE, synthetic=synthetic_query, count=20)
+
+            checking_request = utility_models.SotaCheckingRequest(
+                prompt=synapse.prompt,
+                image_url=main_query_result.formatted_response.image_url,
+            )
+            is_expected_result = await self._query_checking_server_for_sota_result(checking_request.dict())
+            main_uid = main_query_result.axon_uid
+            main_uid_info = self.uid_to_uid_info[main_uid]
+            time_for_response = main_query_result.response_time
+
+            time_mutliplier = (
+                1 + cst.BONUS_FOR_WINNING_MINER
+                if time_for_response < 60.0
+                else 1
+                if time_for_response < 120
+                else 1 - cst.BONUS_FOR_WINNING_MINER
+                if time_for_response < 180
+                else 0
+            )
+            reward = time_mutliplier if is_expected_result else cst.FAILED_RESPONSE_SCORE
+            main_uid_info.add_score(reward, synthetic=synthetic_query, count=20)
+            bt.logging.info(f"Score for {operation_name} is {reward} for uid {main_uid}")
+
+            await self._store_synthetic_result(checking_request)
 
     async def execute_query(
         self, synapse: bt.Synapse, outgoing_model: BaseModel, synthetic_query: bool = False
@@ -310,6 +414,12 @@ class CoreValidator:
 
         should_score = synthetic_query or random.random() < cst.SCORE_QUERY_PROBABILITY
         sufficient_secondary_axons = len(available_axons) > cst.NUMBER_OF_SECONDARY_AXONS_TO_COMPARE_WHEN_SCORING
+
+        if synthetic_query and not sufficient_secondary_axons:
+            bt.logging.info(
+                f"Not going to score {operation_name}, since there is only {len(available_axons)} available"
+            )
+            return
 
         if should_score and sufficient_secondary_axons:
             bt.logging.info("Scoring a query!")
@@ -391,16 +501,12 @@ class CoreValidator:
             )
             return
 
-
-
         axon_scores: Dict[int, float] = {}
 
         for result in results:
             for failed_axon in result.failed_axon_uids:
                 if failed_axon is not None:
                     axon_scores[failed_axon] = cst.FAILED_RESPONSE_SCORE
-        
-        
 
         similarity_comparison_function = self._get_similarity_comparison_function(synapse.__class__.__name__)
         responses_are_similar = similarity_comparison_function(result1.formatted_response, result2.formatted_response)
@@ -417,10 +523,12 @@ class CoreValidator:
                 result1, result2, synapse, outgoing_model, similarity_comparison_function
             )
             checked_with_server = True
-        
+
         axon_scores = {**axon_scores, **compared_axon_scores}
-        
-        validation_utils.store_and_print_scores(axon_scores, result1, result2, synapse, checked_with_server, self.uid_to_uid_info)
+
+        validation_utils.store_and_print_scores(
+            axon_scores, result1, result2, synapse, checked_with_server, self.uid_to_uid_info
+        )
 
         quickest_response_time = min(
             (t for t in [result1.response_time, result2.response_time] if t is not None), default=1
@@ -456,11 +564,12 @@ class CoreValidator:
         if expected_result is None:
             printable_synapse = core_utils.model_to_printable_dict(synapse)
             printable_outgoing_model = core_utils.model_to_printable_dict(outgoing_model)
-            bt.logging.error(f"Could not get expected output from server, which is weird! Please raise this with the subnet devs. Synapse: {printable_synapse}, outgoing_model: {printable_outgoing_model}")
+            bt.logging.error(
+                f"Could not get expected output from server, which is weird! Please raise this with the subnet devs. Synapse: {printable_synapse}, outgoing_model: {printable_outgoing_model}"
+            )
             return {}
-        
-        # Otherwise, get the respective similarities with the server and then compare response times
 
+        # Otherwise, get the respective similarities with the server and then compare response times
 
         result1_is_similar_to_truth = similarity_comparison_function(
             result1.formatted_response, expected_result.formatted_response
@@ -476,36 +585,36 @@ class CoreValidator:
             else:
                 axon_scores[result1.axon_uid] = slower_response_penalty
                 axon_scores[result2.axon_uid] = faster_response_bonus
-        
-        else:
 
+        else:
             if not result1_is_similar_to_truth == 1:
-                
                 if not result2_is_similar_to_truth == 1:
                     axon_scores[result1.axon_uid] = max(result1_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
                     axon_scores[result2.axon_uid] = max(result2_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
                 else:
-                    axon_scores[result1.axon_uid] = max(slower_response_penalty * result1_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
+                    axon_scores[result1.axon_uid] = max(
+                        slower_response_penalty * result1_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE
+                    )
                     axon_scores[result2.axon_uid] = faster_response_bonus
             else:
                 axon_scores[result1.axon_uid] = faster_response_bonus
-                axon_scores[result2.axon_uid] = max(slower_response_penalty * result2_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE)
+                axon_scores[result2.axon_uid] = max(
+                    slower_response_penalty * result2_is_similar_to_truth, cst.FAILED_RESPONSE_SCORE
+                )
 
         return axon_scores
 
     def _get_axon_scores_without_server_check(
         self, result1: utility_models.QueryResult, result2: utility_models.QueryResult
     ) -> Dict[int, float]:
-        
         if result1.response_time is None or result2.response_time is None:
-
             bt.logging.error(
                 "Some Response time is none in without server check! Why!?\n"
                 f"result 1: {core_utils.model_to_printable_dict(result1)}"
                 f"\nresult 2: {core_utils.model_to_printable_dict(result2)}"
             )
             return {}
-        
+
         assert not all([result.formatted_response is None for result in [result1, result2]])
 
         axon_scores = {}
@@ -603,7 +712,9 @@ class CoreValidator:
                 )
 
         return utility_models.QueryResult(
-            error_message="Unable to get a valid response from any axon", failed_axon_uids=failed_axon_uids, axon_uid=axon_uid
+            error_message="Unable to get a valid response from any axon",
+            failed_axon_uids=failed_axon_uids,
+            axon_uid=axon_uid,
         )
 
     def _get_formatted_response(
@@ -640,12 +751,14 @@ class CoreValidator:
     def set_weights(self):
         bt.logging.info("Setting weights!")
 
-        # TODO: CHANGE THIS
         uid_scores: Dict[int, List[float]] = {}
         scoring_periods_uid_was_in: Dict[int, int] = {}
 
         for epoch in self.previous_uid_infos:
             for uid_info in epoch:
+                if len(uid_info.available_operations) == 0:
+                    continue
+
                 scoring_periods_uid_was_in[uid_info.uid] = scoring_periods_uid_was_in.get(uid_info.uid, 0) + 1
                 if uid_info.organic_request_count + uid_info.synthetic_request_count == 0:
                     continue

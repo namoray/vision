@@ -14,7 +14,6 @@ from RealESRGAN import RealESRGAN
 import yaml
 from pydantic import BaseModel
 
-import bittensor as bt
 
 from RealESRGAN.utils import pad_reflect, split_image_into_overlapping_patches, stich_together, unpad_image
 
@@ -217,7 +216,7 @@ def get_validator_hotkey_name_from_config(yaml_config: Dict[str, str]) -> str:
     raise ValueError("Please set up the config for a validator!")
 
 
-set_stuff_for_deterministic_output()
+# set_stuff_for_deterministic_output()
 
 
 def model_to_printable_dict(model: Optional[BaseModel], max_length: int = 50) -> dict:
@@ -248,6 +247,7 @@ def model_to_printable_dict(model: Optional[BaseModel], max_length: int = 50) ->
             return {k: truncate_value(v) for k, v in value.items()}
         else:
             return value
+
     try:
         model_dict = model.dict()
         printable_dict = {k: truncate_value(v) for k, v in model_dict.items()}
@@ -256,5 +256,4 @@ def model_to_printable_dict(model: Optional[BaseModel], max_length: int = 50) ->
         return {}
 
 
-    
 set_stuff_for_deterministic_output()

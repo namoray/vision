@@ -101,3 +101,8 @@ class ImageHashes(BaseModel):
     perceptual_hash: str = ""
     difference_hash: str = ""
     color_hash: str = ""
+
+
+class SotaCheckingRequest(BaseModel):
+    image_url: str
+    prompt: str

@@ -4,7 +4,7 @@ from os import path
 
 from setuptools import find_packages, setup
 
-VERSION = "2.0.6"
+VERSION = "2.0.7"
 
 
 def read_requirements(path):

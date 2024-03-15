@@ -1,6 +1,6 @@
 import yaml
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from core import constants as core_cst
 from rich.prompt import Prompt
 import rich
@@ -23,6 +23,12 @@ def bool_processing_func(input: str) -> bool:
     else:
         return False
 
+def int_processing_func(input: str) -> Optional[int]:
+    try:
+        return int(input)
+    except ValueError:
+        return None
+
 GLOBAL_PARAMETERS = {
     core_cst.HOTKEY_PARAM: {"default": "default", "message": "Hotkey name: "},
 }
@@ -43,7 +49,7 @@ MISC_PARAMETERS  = {
         "default": None,
         "message": "Subtensor Chain Endpoint ",
     },
-    core_cst.IS_VALIDATOR_PARAM: {"default": "y", "message": "Is this a Validator hotkey? (y/n) ", "process_function": bool_processing_func},
+    core_cst.IS_VALIDATOR_PARAM: {"default": "n", "message": "Is this a Validator hotkey? (y/n) ", "process_function": bool_processing_func},
 }
 
 VALIDATOR_PARAMETERS = {
@@ -53,6 +59,7 @@ VALIDATOR_PARAMETERS = {
 }
 
 MINER_PARAMETERS = {
+    core_cst.SOTA_PROVIDER_API_KEY_PARAM: {"default": None, "message": "Optional SOTA Provider API Key: "},
     core_cst.AXON_PORT_PARAM: {"default": 8091, "message": "Axon Port: "},
     core_cst.AXON_EXTERNAL_IP_PARAM: {"default": None, "message": "Axon External IP: "},
 }
@@ -137,7 +144,8 @@ def get_config():
             subtensor_network = settings.get(core_cst.SUBTENSOR_NETWORK_PARAM)
             subtensor_chain_endpoint = settings.get(core_cst.SUBTENSOR_CHAINENDPOINT_PARAM)
 
-            netuid = 19 if subtensor_network != "test" else 51
+            s_networked_stripped = str(subtensor_network).strip() if subtensor_network is not None else None
+            netuid = 19 if s_networked_stripped != "test" else 51
             start_command = (
                 f'mining/run_miner.py --interpreter python3 -- --axon.port {axon_port} --axon.external_ip {axon_external_ip}'
                 f" --wallet.name {wallet_name} --wallet.hotkey {hotkey} --subtensor.network {subtensor_network}"

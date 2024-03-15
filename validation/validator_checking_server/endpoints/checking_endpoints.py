@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from validation.validator_checking_server import utils as checking_utils
 from operation_logic import utils as operation_utils
 from core import resource_management, constants as core_cst
-from models import base_models
+from models import base_models, utility_models
 from operation_logic import (
     text_to_image_logic,
     image_to_image_logic,
@@ -11,6 +11,7 @@ from operation_logic import (
     upscale_logic,
     scribble_logic
 )
+
 
 router = APIRouter()
 
@@ -59,6 +60,16 @@ async def clip_embeddings(request: base_models.ClipEmbeddingsIncoming) -> base_m
     expected_output = await clip_embeddings_logic.clip_embeddings_logic(request)
     resource_management.SingletonResourceManager().move_all_models_to_cpu()
     return expected_output
+
+
+
+@router.post(f"/{core_cst.CHECKING_ENDPOINT_PREFIX}/sota-image")
+async def sota(request: utility_models.SotaCheckingRequest) -> int:
+
+    is_valid = await checking_utils.is_sota_image_valid(request.image_url, request.prompt)
+    resource_management.SingletonResourceManager().move_all_models_to_cpu()
+    return int(is_valid)
+
 
 # @router.post(f"/{core_cst.CHECKING_ENDPOINT_PREFIX}/segment")
 # async def segment(request: base_models.SegmentIncoming) -> base_models.SegmentOutgoing:

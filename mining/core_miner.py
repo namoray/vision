@@ -17,6 +17,7 @@ T = TypeVar("T", bound=bt.Synapse)
 metagraph = None
 
 requests_from_each_validator = {}
+
 MIN_VALIDATOR_STAKE = 5000
 
 def base_blacklist(synapse: T) -> Tuple[bool, str]:

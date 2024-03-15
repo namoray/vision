@@ -47,6 +47,7 @@ class ResourceConfig(NamedTuple):
     KANDINSKY_DEVICE: Optional[str] = None
     SCRIBBLE_DEVICE: Optional[str] = None
     UPSCALE_DEVICE: Optional[str] = None
+    SOTA_KEY: Optional[str] = None
     SAFETY_CHECKERS_DEVICE: Optional[str] = None
     IS_VALIDATOR: bool = False
 
@@ -77,6 +78,7 @@ class SingletonResourceManager:
             cst.MODEL_UPSCALE: self.load_upscale_resources,
             cst.MODEL_CACHE: self.load_cache,
             cst.IMAGE_SAFETY_CHECKERS: self.load_safety_checkers,
+            cst.MODEL_SOTA: self.load_sota_resources
         }
 
     def load_config(self, config: Optional[ResourceConfig] = None):
@@ -93,10 +95,12 @@ class SingletonResourceManager:
                 cst.MODEL_KANDINSKY: get_hotkey_config_value(hotkey_config, cst.KANDINSKY_DEVICE_PARAM),
                 cst.MODEL_SCRIBBLE: get_hotkey_config_value(hotkey_config, cst.SCRIBBLE_DEVICE_PARAM),
                 cst.MODEL_UPSCALE: get_hotkey_config_value(hotkey_config, cst.UPSCALE_DEVICE_PARAM),
+                cst.SOTA_KEY: hotkey_config.get(cst.SOTA_PROVIDER_API_KEY_PARAM),
                 cst.IS_VALIDATOR: hotkey_config.get(cst.IS_VALIDATOR, False),
                 cst.IMAGE_SAFETY_CHECKERS: get_hotkey_config_value(hotkey_config, cst.SAFETY_CHECKERS_PARAM),
                 # cst.MODEL_SAM: get_hotkey_config_value(hotkey_config, cst.SAM_DEVICE),
             }
+            bt.logging.info(f"config: {self._config}")
         else:
             self._config = {
                 cst.MODEL_CLIP: config.CLIP_DEVICE,
@@ -104,6 +108,7 @@ class SingletonResourceManager:
                 cst.MODEL_KANDINSKY: config.KANDINSKY_DEVICE,
                 cst.MODEL_SCRIBBLE: config.SCRIBBLE_DEVICE,
                 cst.MODEL_UPSCALE: config.UPSCALE_DEVICE,
+                cst.SOTA_KEY: config.SOTA_KEY,
                 cst.IS_VALIDATOR: config.IS_VALIDATOR,
                 cst.IMAGE_SAFETY_CHECKERS: config.SAFETY_CHECKERS_DEVICE,
                 # cst.MODEL_SAM: config.SAM_DEVICE,
@@ -132,13 +137,16 @@ class SingletonResourceManager:
         if self._config[cst.MODEL_UPSCALE] is not None:
             self.load_resource(cst.MODEL_UPSCALE)
 
+        if self._config[cst.SOTA_KEY] is not None:
+            self.load_sota_resources()
 
         self.load_resource(cst.MODEL_CACHE)
 
     def load_safety_checkers(self):
         safety_checker_device = self._config.get(cst.IMAGE_SAFETY_CHECKERS, None)
         if safety_checker_device is None:
-            raise ValueError("You MUST provide a device to run the safety checkers on")
+            bt.logging.warning("No safety checker devices, this will cause issues unless you're running SOTA only")
+            return
 
         print("safety checker device:", safety_checker_device)
 
@@ -148,6 +156,10 @@ class SingletonResourceManager:
         safety_pipe.to(safety_checker_device)
         safety_pipe.safety_checker.forward = partial(utils.forward_inspect, self=safety_pipe.safety_checker)
         self._loaded_resources[cst.IMAGE_SAFETY_CHECKERS] = (safety_pipe.feature_extractor, safety_pipe.safety_checker)
+
+    def load_sota_resources(self):
+        self._update_available_operations(protocols.Sota.__name__, True)
+        self._loaded_resources[cst.MODEL_SOTA] = self._config[cst.SOTA_KEY]
 
     def load_upscale_resources(self):
         upscale_device = self._config.get(cst.MODEL_UPSCALE, None)
@@ -160,7 +172,7 @@ class SingletonResourceManager:
 
 
     def load_sam_resources(self):
-        # TODO: Re-enable
+ 
         return
         # sam_model = sam.sam_model_registry[cst.MODEL_TYPE](checkpoint=cst.CHECKPOINT_PATH)
         # sam_device = self._config.get(cst.MODEL_SAM, cst.DEVICE_DEFAULT)
@@ -250,8 +262,9 @@ class SingletonResourceManager:
 
     def load_resource(self, resource_name: str):
         if resource_name not in self._loaded_resources:
-            load_function = self.resource_name_to_load_function[resource_name]
-            load_function()
+            if resource_name in self.resource_name_to_load_function:
+                load_function = self.resource_name_to_load_function[resource_name]
+                load_function()
         else:
             resources = self._loaded_resources[resource_name]
             try:
