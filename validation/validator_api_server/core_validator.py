@@ -34,7 +34,7 @@ import traceback
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
 _UPPER_FOLLOWING_REGEXP = re.compile("([a-z0-9])([A-Z])")
 
-VERSION_KEY = 20_002
+VERSION_KEY = 20_003
 
 
 def _pascal_to_kebab(input_string: str) -> str:

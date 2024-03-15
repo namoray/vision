@@ -16,7 +16,6 @@ from core import resource_management
 import re
 import torch
 import clip
-import bittensor as bt
 
 async def fetch_image_as_bytes(url):
     try:
