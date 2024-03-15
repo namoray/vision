@@ -149,7 +149,9 @@ class CoreValidator:
                     },
                 )
         except Exception as e:
-            bt.logging.debug(f"Error when storing sota image: {e}. Doesn't matter too much, unless this repeatedly happens")
+            bt.logging.debug(
+                f"Error when storing sota image: {e}. Doesn't matter too much, unless this repeatedly happens"
+            )
 
     async def _query_checking_server_for_expected_result(
         self, endpoint: str, synapse: bt.Synapse, outgoing_model: BaseModel
@@ -222,9 +224,7 @@ class CoreValidator:
         while True:
             # Weight Sota slightly higher so we do Sota 22% of the time, non Sota 78% of the time
             operation = random.choices(
-                cst.OPERATIONS_TO_SCORE_SYNTHETICALLY,
-                weights=[0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.16],
-                k=1
+                cst.OPERATIONS_TO_SCORE_SYNTHETICALLY, weights=[0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.13], k=1
             )[0]
             synthetic_data = await self._query_checking_server_for_synthetic_data(operation)
 
@@ -780,7 +780,7 @@ class CoreValidator:
             bt.logging.info("No uids found to score, nothing to set")
             return
         for uid, periods_for_uid in scoring_periods_uid_was_in.items():
-            scores = uid_scores.get(uid, [0.5])
+            scores = uid_scores.get(uid, [cst.FAILED_RESPONSE_SCORE])
             average_score = sum(scores) / len(scores)
 
             uid_weights[uid] = average_score * (periods_for_uid / max_periods) ** 0.5
