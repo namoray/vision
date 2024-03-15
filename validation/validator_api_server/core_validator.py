@@ -105,7 +105,7 @@ class CoreValidator:
 
         await self.resync_metagraph()
         await asyncio.sleep(time_between_resyncing)
-        
+
         while True:
             await self.resync_metagraph()
             await asyncio.sleep(time_between_resyncing)
@@ -116,7 +116,6 @@ class CoreValidator:
             await self.resync_metagraph()
             await asyncio.to_thread(self.set_weights)
             await asyncio.sleep(time_between_resyncing)
-
 
     async def _query_checking_server_for_expected_result(
         self, endpoint: str, synapse: bt.Synapse, outgoing_model: BaseModel
@@ -351,12 +350,20 @@ class CoreValidator:
             )
             main_uid = main_query_result.axon_uid
             main_uid_info = self.uid_to_uid_info[main_uid]
-            reward = 1 if is_expected_result else cst.FAILED_RESPONSE_SCORE
-            main_uid_info.add_score(
-                reward, synthetic=synthetic_query, count=20
-            )
-            bt.logging.info(f"Score for {operation_name} is {reward}")
+            time_for_response = main_query_result.response_time
 
+            time_mutliplier = (
+                1 + cst.BONUS_FOR_WINNING_MINER
+                if time_for_response < 60.0
+                else 1
+                if time_for_response < 120
+                else 1 - cst.BONUS_FOR_WINNING_MINER
+                if time_for_response < 180
+                else 0
+            )
+            reward = time_mutliplier if is_expected_result else cst.FAILED_RESPONSE_SCORE
+            main_uid_info.add_score(reward, synthetic=synthetic_query, count=20)
+            bt.logging.info(f"Score for {operation_name} is {reward} for uid {main_uid}")
 
     async def execute_query(
         self, synapse: bt.Synapse, outgoing_model: BaseModel, synthetic_query: bool = False
@@ -706,7 +713,6 @@ class CoreValidator:
 
     def set_weights(self):
         bt.logging.info("Setting weights!")
-
 
         uid_scores: Dict[int, List[float]] = {}
         scoring_periods_uid_was_in: Dict[int, int] = {}
