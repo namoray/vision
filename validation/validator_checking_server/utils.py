@@ -16,13 +16,14 @@ from core import resource_management
 import re
 import torch
 import clip
-
+import bittensor as bt
 async def fetch_image_as_bytes(url):
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=45) as client:
             response = await client.get(url)
             return response.content
-    except httpx.HTTPStatusError:
+    except Exception as e:
+        bt.logging.debug(f"Error when fetching image {url}: {e}")
         return False
 
 def validate_gojourney_url(url):
