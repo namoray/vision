@@ -42,6 +42,7 @@ async def is_sota_image_valid(image_url: str, prompt: str) -> bool:
     image_bytes = await fetch_image_as_bytes(image_url)
 
     if not image_bytes:
+        bt.logging.warning(f"Error when fetching image {image_url}, can't parse the bytes into a PIL for some reason")
         return False
 
     clip_model, clip_processor = resource_management.SingletonResourceManager().get_resource(cst.MODEL_CLIP)
