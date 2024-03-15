@@ -7,7 +7,7 @@ from core import dataclasses as dc
 from core import resource_management
 from models import base_models, utility_models, request_models
 from operation_logic import utils as operation_utils
-from validation.validator_checking_server import utils
+from validation.validator_checking_server import utils, constants as checking_cst
 
 router = APIRouter()
 
@@ -143,7 +143,15 @@ async def clip_embeddings() -> base_models.ClipEmbeddingsIncoming:
 @router.get(f"/{core_cst.SYNTHETIC_ENDPOINT_PREFIX}/sota")
 async def sota() -> base_models.SotaIncoming:
 
-    positive_text = utils.get_markov_short_sentence()[:-1]
+    nsfw_prompt = True
+    while nsfw_prompt:
+        positive_text = utils.get_markov_short_sentence()[:-1]
+        for bad_word in checking_cst.MJ_BANNED_WORDS:
+            if bad_word in positive_text:
+                nsfw_prompt = True
+                break
+            else:
+                nsfw_prompt = False
     seed = random.randint(1, constants.LARGEST_SEED)
 
     positive_text += f"  --seed {seed} --ar 1:1  --v 6"
