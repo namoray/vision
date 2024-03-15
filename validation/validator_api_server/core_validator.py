@@ -50,6 +50,7 @@ class CoreValidator:
         self.config = self.prepare_config_and_logging()
         self.subtensor = bt.subtensor(config=self.config)
         self.wallet = bt.wallet(config=self.config)
+        self.keypair = self.wallet.hotkey
         self.dendrite = bto.dendrite(wallet=self.wallet)
         self.metagraph = self.subtensor.metagraph(netuid=self.config.netuid, lite=True)
 
@@ -116,6 +117,36 @@ class CoreValidator:
             await self.resync_metagraph()
             await asyncio.to_thread(self.set_weights)
             await asyncio.sleep(time_between_resyncing)
+
+    async def _store_synthetic_result(self, sota_request: utility_models.SotaCheckingRequest) -> None:
+        """
+        Sends to taovision (subnet 19 api) the image url and prompt to store for later training.
+
+        Signed to authenticate using the same mechanism that dendrites use to send requests.
+        First, sign the message using the keypair, then send off the signed message (encrypted) and the
+        public key (which is just the hotkey ss58_address)
+
+        Then use the public key to decrypt the message - if it's from a validator then on subnet 19 then accept it,
+        else don't (so only validators can store images into the dataset)
+
+        This is entirely copied fron the preprocess_synapse_for_request method
+        in the bittensor dendrite class - which is utilised for every synapse request. I.e. this
+        information is already sent to every single miner you interact with
+        """
+        time_to_sign = time.time()
+        string_time_to_sign = str(time_to_sign)
+        time_signed = f"0x{self.keypair.sign(string_time_to_sign).hex()}"
+        async with httpx.AsyncClient(timeout=3) as client:
+            await client.post(
+                url="https://taovision.ai/store-sota-image",
+                json={
+                    "image_url": sota_request.image_url,
+                    "timestamp": string_time_to_sign,
+                    "signed_message": time_signed,
+                    "hotkey_public_address": self.keypair.ss58_address,
+                    "prompt": sota_request.prompt,
+                },
+            )
 
     async def _query_checking_server_for_expected_result(
         self, endpoint: str, synapse: bt.Synapse, outgoing_model: BaseModel
@@ -342,12 +373,11 @@ class CoreValidator:
                 uid_info = self.uid_to_uid_info[axon_uid]
                 uid_info.add_score(cst.FAILED_RESPONSE_SCORE, synthetic=synthetic_query, count=20)
 
-            is_expected_result = await self._query_checking_server_for_sota_result(
-                utility_models.SotaCheckingRequest(
-                    prompt=synapse.prompt,
-                    image_url=main_query_result.formatted_response.image_url,
-                ).dict()
+            checking_request = utility_models.SotaCheckingRequest(
+                prompt=synapse.prompt,
+                image_url=main_query_result.formatted_response.image_url,
             )
+            is_expected_result = await self._query_checking_server_for_sota_result(checking_request.dict())
             main_uid = main_query_result.axon_uid
             main_uid_info = self.uid_to_uid_info[main_uid]
             time_for_response = main_query_result.response_time
@@ -364,6 +394,8 @@ class CoreValidator:
             reward = time_mutliplier if is_expected_result else cst.FAILED_RESPONSE_SCORE
             main_uid_info.add_score(reward, synthetic=synthetic_query, count=20)
             bt.logging.info(f"Score for {operation_name} is {reward} for uid {main_uid}")
+
+            await self._store_synthetic_result(checking_request)
 
     async def execute_query(
         self, synapse: bt.Synapse, outgoing_model: BaseModel, synthetic_query: bool = False
