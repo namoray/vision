@@ -217,7 +217,12 @@ class CoreValidator:
         """
 
         while True:
-            operation = random.choice(cst.OPERATIONS_TO_SCORE_SYNTHETICALLY)
+            # Weight Sota slightly higher so we do Sota 22% of the time, non Sota 78% of the time
+            operation = random.choices(
+                cst.OPERATIONS_TO_SCORE_SYNTHETICALLY,
+                weights=[0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.22],
+                k=1
+            )[0]
             synthetic_data = await self._query_checking_server_for_synthetic_data(operation)
 
             if synthetic_data is None:
