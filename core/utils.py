@@ -216,7 +216,7 @@ def get_validator_hotkey_name_from_config(yaml_config: Dict[str, str]) -> str:
     raise ValueError("Please set up the config for a validator!")
 
 
-set_stuff_for_deterministic_output()
+# set_stuff_for_deterministic_output()
 
 
 def model_to_printable_dict(model: Optional[BaseModel], max_length: int = 50) -> dict:
