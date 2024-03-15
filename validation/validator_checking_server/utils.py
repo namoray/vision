@@ -8,7 +8,7 @@ import aiohttp
 import cv2
 import diskcache
 import numpy as np
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from validation.validator_api_server import similarity_comparisons
 import httpx
 from core import constants as cst
@@ -16,13 +16,14 @@ from core import resource_management
 import re
 import torch
 import clip
-
+import bittensor as bt
 async def fetch_image_as_bytes(url):
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=45) as client:
             response = await client.get(url)
             return response.content
-    except httpx.HTTPStatusError:
+    except Exception as e:
+        bt.logging.debug(f"Error when fetching image {url}: {e}")
         return False
 
 def validate_gojourney_url(url):
@@ -46,8 +47,10 @@ async def is_sota_image_valid(image_url: str, prompt: str) -> bool:
     clip_model, clip_processor = resource_management.SingletonResourceManager().get_resource(cst.MODEL_CLIP)
     clip_device = resource_management.SingletonResourceManager()._config.get(cst.MODEL_CLIP)
     
-    
-    original_image = Image.open(io.BytesIO(image_bytes))
+    try:
+        original_image = Image.open(io.BytesIO(image_bytes))
+    except UnidentifiedImageError:
+        bt.logging.warning(f"Error when fetching image {image_url}, can't parse the bytes into a PIL for some reason")
 
     width, height = original_image.size
     image_1 = original_image.crop((0, 0, width // 2, height // 2))
