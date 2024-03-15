@@ -5,7 +5,7 @@
 
 
 # ./get_models.sh
-
+echo "No autoupdate steps for miners required!"
 
 # if command -v pip &> /dev/null
 # then
@@ -21,4 +21,4 @@
 # fi
 
 
-./start_miners.sh
+# ./start_miners.sh
