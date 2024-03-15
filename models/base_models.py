@@ -179,7 +179,7 @@ class SotaBase(SotaIncoming, SotaOutgoing):
 # SAM
 class SegmentIncoming(BaseModel):
 
-    # TODO: Re-enable in phase 2
+
     # image_uuid: Optional[str] = Field(None, description="The UUID for the image to be segmented", title="embedding")
 
     image_b64: str = Field(None, description="The base64 encoded image", title="image")

@@ -172,7 +172,7 @@ class SingletonResourceManager:
 
 
     def load_sam_resources(self):
-        # TODO: Re-enable
+ 
         return
         # sam_model = sam.sam_model_registry[cst.MODEL_TYPE](checkpoint=cst.CHECKPOINT_PATH)
         # sam_device = self._config.get(cst.MODEL_SAM, cst.DEVICE_DEFAULT)
