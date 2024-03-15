@@ -158,7 +158,6 @@ class SingletonResourceManager:
         self._loaded_resources[cst.IMAGE_SAFETY_CHECKERS] = (safety_pipe.feature_extractor, safety_pipe.safety_checker)
 
     def load_sota_resources(self):
-        bt.logging.info("here2")
         self._update_available_operations(protocols.Sota.__name__, True)
         self._loaded_resources[cst.MODEL_SOTA] = self._config[cst.SOTA_KEY]
 
