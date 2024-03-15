@@ -351,9 +351,12 @@ class CoreValidator:
             )
             main_uid = main_query_result.axon_uid
             main_uid_info = self.uid_to_uid_info[main_uid]
+            reward = 1 if is_expected_result else cst.FAILED_RESPONSE_SCORE
             main_uid_info.add_score(
-                1 if is_expected_result else cst.FAILED_RESPONSE_SCORE, synthetic=synthetic_query, count=20
+                reward, synthetic=synthetic_query, count=20
             )
+            bt.logging.info(f"Score for {operation_name} is {reward}")
+
 
     async def execute_query(
         self, synapse: bt.Synapse, outgoing_model: BaseModel, synthetic_query: bool = False

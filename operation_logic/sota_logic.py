@@ -17,5 +17,6 @@ async def sota_logic(
     image_url = await goapi.get_image(body.prompt, Sota_key)
     output.image_url = image_url
 
-    bt.logging.info("✅ Successfully got a midjourney image!")
+    if image_url is not None:
+        bt.logging.info("✅ Successfully got a midjourney image!")
     return output
