@@ -12,6 +12,24 @@ class dendrite(bittensor.dendrite):
         # info = {"headers": synapse.to_headers(), "json": synapse.dict()}
         # bittensor.logging.info(f"{info}")
 
+    def _get_endpoint_url(self, target_axon, request_name):
+        """
+        Constructs the endpoint URL for a network request to a target axon.
+
+        This internal method generates the full HTTP URL for sending a request to the specified axon. The
+        URL includes the IP address and port of the target axon, along with the specific request name. 
+
+        Args:
+            target_axon: The target axon object containing IP and port information.
+            request_name: The specific name of the request being made.
+
+        Returns:
+            str: A string representing the complete HTTP URL for the request.
+        """
+        endpoint = f"{target_axon.ip}:{str(target_axon.port)}"
+        return f"http://{endpoint}/{request_name}"
+
+
     async def forward(
         self,
         axons: Union[

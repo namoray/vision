@@ -152,6 +152,49 @@ pm2 start --name run_validator_auto_update "python run_validator_auto_update.py"
 
 This uses the config defined in the `config.yaml`.
 
+### Running the API server on a separate host - without auto updates
+
+With the methods mentioned above, all components of the validator (API server, checking server and safety server) run on the same host. It is also possible to run the API server on a separate host - even one without a GPU. To run the components separately, follow these steps:
+
+*Step 1: Run checking server and safety server on GPU host, individually*
+
+On the GPU host, edit the config.yaml to make sure the checking server and the safety server run on an exposed port. E.g.: 
+
+    CHECKING_SERVER_ADDRESS: http://0.0.0.0:43308/
+    SAFETY_CHECKER_SERVER_ADDRESS: http://0.0.0.0:43309/
+
+Then run the checking server and the safety server manually:
+
+    ./validation/checking_server.sh
+    ./validation/safety_server.sh
+
+*Step 2: Run the API server on the non-GPU host*
+
+On the non-GPU host, edit the config.yaml to make sure it points to the GPU host for the checking and safety servers. E.g.: 
+
+    CHECKING_SERVER_ADDRESS: http://141.193.30.26:43308/
+    SAFETY_CHECKER_SERVER_ADDRESS: http://141.193.30.26:43309/
+
+Then run the API server manually:
+
+    ./validation/api_server.sh
+
+Use the `pm2 logs` command to make sure the API server has now connected to the remote components on the GPU host. It hits the healthcheck endpoint on each of these services on start-up, to make sure they are online. If there are problems accessing that endpoint, there will be log entries indicating that. If not - the API server should now be accepting requests as normal. 
+
+
+### Running the API server on a separate host - with auto updates
+
+To run the API server on a separate host with auto updates, follow the same steps as above, but use the `run_validator_auto_update.py` script, passing it the correct starter script as argument. E.g.:
+
+*On the GPU host:*
+
+    pm2 start --name run_validator_workers_auto_update "python run_validator_auto_update.py --start-servers-script run_worker_servers.sh"
+
+*On the non-GPU host:*
+
+    pm2 start --name run_validator_api_auto_update "python run_validator_auto_update.py --start-servers-script api_server.sh"
+
+
 # Selling your bandwidth
 
 ### Creating the database
@@ -165,14 +208,14 @@ dbmate --url "sqlite:validator_database.db" up
 
 ### Managing access
 
-To manage access to the your api server and sell access to anyone you like, using the vision-cli is the easiest way.
+To manage access to your api server and sell access to anyone you like, using the vision-cli is the easiest way.
 
 
 ```bash
 vision --help
 ```
 
-Shows all the commands and should give self explanatory instructions.
+Shows all the commands and should give self-explanatory instructions.
 
 You can also do
 
