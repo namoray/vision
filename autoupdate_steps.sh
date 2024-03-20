@@ -6,8 +6,11 @@
 # SOME STEPS ARE COMMENTED OUT IN THIS UPDATE AS THEY ARE NOT NEEDED
 
 pm2 delete "api_server"
-pm2 delete "safety_server"
-pm2 delete "checking_server"
+./validation/api_server.sh
+
+
+# pm2 delete "safety_server"
+# pm2 delete "checking_server"
 
 # ./get_models.sh
 
@@ -25,4 +28,4 @@ pm2 delete "checking_server"
 #     pip3 install -r git_requirements.txt
 # fi
 
-./validation/run_all_servers.sh
+
