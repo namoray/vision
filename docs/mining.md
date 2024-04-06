@@ -15,7 +15,7 @@ I would advise starting with the worker servers. The simplest way to get started
 - One for the image generation stuff
 
 # Starting a worker server
-I recommend simply using docker templates for an easy setup - but the code can be found here: https://github.com/namoray/tau-workers
+I recommend simply using docker templates for an easy setup - but the code can be found here: https://github.com/namoray/vision-workers
 
 ## Template setup
 I'll use runpod as example, as it's easy with them
@@ -70,8 +70,8 @@ Note: if you're using a provider such as runpod or vast, make sure you expose th
 
 ### Clone the repo
 ```bash
-git clone https://github.com/namoray/vision-private.git
-cd vision-private
+git clone https://github.com/namoray/vision.git
+cd vision
 git checkout vision_3
 ```
 
