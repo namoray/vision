@@ -1,0 +1,11 @@
+bittensor>=6.6,<6.7
+pydantic
+fastapi
+httpx
+python-dotenv
+opencv-python
+diskcache
+imagehash
+typer==0.10.0
+xgboost==2.0.3
+scikit-learn
