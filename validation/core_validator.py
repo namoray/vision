@@ -9,7 +9,7 @@ from collections import defaultdict, deque
 from typing import Dict
 from typing import List
 from typing import AsyncIterator, AsyncGenerator
-from typing import Optional, Any
+from typing import Optional
 from typing import Set
 from typing import Tuple
 from core import tasks
@@ -162,22 +162,6 @@ class CoreValidator:
                 f"Error when storing sota image: {e}. Doesn't matter too much, unless this repeatedly happens"
             )
 
-    async def execute_sota_synthetic_prompt(self, sota_request: utility_models.SotaCheckingRequest) -> None:
-        # TODO: RE-ENABLE FOR MAINNET
-        ...
-
-    async def _query_checking_server_for_sota_result(self, request: Dict[str, Any]):
-        url = validator_config.external_server_url + "sota-image"
-        try:
-            async with httpx.AsyncClient(timeout=45) as client:
-                response = await client.post(url, data=json.dumps(request))
-
-            if response.status_code == 200:
-                return response.json()
-        except httpx.HTTPError as e:
-            bt.logging.debug(f"Error when querying endpoint {url}: {e}")
-            return None
-
     async def _query_checking_server_for_synthetic_data(self, operation: str) -> Optional[utility_models.QueryResult]:
         endpoint = _pascal_to_kebab(operation)
         url = validator_config.external_server_url + endpoint
@@ -221,6 +205,11 @@ class CoreValidator:
         while True:
             # TODO: mimic taovision when we're live
             task = random.choice(list(tasks.TASKS_TO_MINER_OPERATION_MODULES.keys()))
+
+            # For debug
+            if task != tasks.Tasks.sota.value:
+                continue
+            #
             synthetic_data = await synthetic_generations.get_synthetic_data(task)
             if synthetic_data is None:
                 bt.logging.debug(
@@ -236,17 +225,13 @@ class CoreValidator:
 
             time_before_query = time.time()
 
-            if task == "Sota":
-                await self.execute_sota_synthetic_prompt(synthetic_synapse, outgoing_model, synthetic_query=True)
-
-            else:
-                await self.execute_query(
-                    synapse=synthetic_synapse,
-                    outgoing_model=outgoing_model,
-                    synthetic_query=True,
-                    task=task,
-                    stream=stream,
-                )
+            await self.execute_query(
+                synapse=synthetic_synapse,
+                outgoing_model=outgoing_model,
+                synthetic_query=True,
+                task=task,
+                stream=stream,
+            )
 
             time_to_execute_query = time.time() - time_before_query
             await asyncio.sleep(
@@ -692,13 +677,13 @@ class CoreValidator:
         self, resulting_synapse: base_models.BaseSynapse, initial_synapse: bt.Synapse
     ) -> Optional[BaseModel]:
         if resulting_synapse and resulting_synapse.dendrite.status_code == 200 and resulting_synapse != initial_synapse:
-            formatted_response = self._extract_response_and_check_deserialization(resulting_synapse, initial_synapse)
+            formatted_response = self._extract_response(resulting_synapse, initial_synapse)
 
             return formatted_response
         else:
             return None
 
-    def _extract_response_and_check_deserialization(
+    def _extract_response(
         self, resulting_synapse: base_models.BaseSynapse, outgoing_model: BaseModel
     ) -> Optional[BaseModel]:
         try:

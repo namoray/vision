@@ -42,6 +42,8 @@ NOTE: I advise you use a estup with at least 80GB vram (H100 or A100 for example
 
 ## Image worker
 Very similar steps, just a slightly different template! 
+
+For detailed info on setup; read this [image_server_docs](https://github.com/namoray/vision-workers/blob/main/image_server/README.md)
 ![Image server template](image-server.png)
 
 I would recommend either a RTX4090 or H100

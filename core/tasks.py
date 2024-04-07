@@ -15,6 +15,7 @@ class Tasks(Enum):
     dreamshaper_image_to_image = "dreamshaper-image-to-image"
     jugger_inpainting = "inpaint"
     clip_image_embeddings = "clip-image-embeddings"
+    sota = "sota"
 
 
 # IF YOU ARE MINER, YOU WILL PROBABLY NEED TO FIDDLE WITH THIS:
@@ -45,7 +46,11 @@ if miner_config.mixtral_text_worker_url is not None:
         ]
     )
 if miner_config.sota_provider_api_key is not None:
-    ...
+    SUPPORTED_TASKS.extend(
+        [
+            Tasks.sota.value,
+        ]
+    )
 
 # TODO: Do we need this?
 TASKS_TO_SYNAPSE = {
@@ -59,7 +64,7 @@ TASKS_TO_SYNAPSE = {
     Tasks.dreamshaper_image_to_image.value: synapses.ImageToImage,
     Tasks.jugger_inpainting.value: synapses.Inpaint,
     Tasks.clip_image_embeddings.value: synapses.ClipEmbeddings,
-
+    Tasks.sota.value: synapses.Sota,
 }
 
 TASKS_TO_MINER_OPERATION_MODULES = {
@@ -73,5 +78,5 @@ TASKS_TO_MINER_OPERATION_MODULES = {
     Tasks.dreamshaper_image_to_image.value: operations.image_to_image_operation,
     Tasks.jugger_inpainting.value: operations.inpaint_operation,
     Tasks.clip_image_embeddings.value: operations.clip_embeddings_operation,
-
+    Tasks.sota.value: operations.sota_operation,
 }
