@@ -207,8 +207,8 @@ class CoreValidator:
             task = random.choice(list(tasks.TASKS_TO_MINER_OPERATION_MODULES.keys()))
 
             # For debug
-            if task != tasks.Tasks.sota.value:
-                continue
+            # if task != tasks.Tasks.sota.value:
+            #     continue
             #
             synthetic_data = await synthetic_generations.get_synthetic_data(task)
             if synthetic_data is None:
