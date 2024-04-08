@@ -9,7 +9,7 @@ def should_update_local(local_tag, remote_tag):
     return False
 
 
-subprocess.call(["./launch_validators.sh"], shell=True)
+subprocess.call(["bash", "/launch_validators.sh"], shell=True)
 branch_name = subprocess.getoutput("git rev-parse --abbrev-ref HEAD")
 
 
