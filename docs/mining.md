@@ -22,6 +22,8 @@ I'll use runpod as example, as it's easy with them
 
 ### Chat (LLM) servers
 
+FOR MORE INFO ON BARE METAL SETUP; READ [HERE](https://github.com/namoray/vision-workers/blob/main/llm_server/README.md)
+
 - Navigate to https://www.runpod.io/console/user/templates
 Create a new template
 ![Create template](create-template.png)
@@ -46,7 +48,7 @@ Very similar steps, just a slightly different template!
 For detailed info on setup; read this [image_server_docs](https://github.com/namoray/vision-workers/blob/main/image_server/README.md)
 ![Image server template](image-server.png)
 
-I would recommend either a RTX4090 or H100
+I would recommend either a RTX4090 or H100 or A100
 
 
 #### Getting the address of the servers
