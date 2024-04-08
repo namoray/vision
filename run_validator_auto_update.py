@@ -10,11 +10,13 @@ def should_update_local(local_tag, remote_tag):
 
 
 subprocess.call(["./launch_validators.sh"], shell=True)
+branch_name = subprocess.getoutput("git rev-parse --abbrev-ref HEAD")
+
 
 while True:
     local_tag = subprocess.getoutput("git describe --abbrev=0 --tags")
-    os.system("git fetch")
-    remote_tag = subprocess.getoutput("git describe --tags `git rev-list --tags --max-count=1`")
+    os.system(f"git fetch origin {branch_name}")
+    remote_tag = subprocess.getoutput("git describe --tags `git rev-list --tags=origin/{branch_name} --max-count=1`")
 
     if should_update_local(local_tag, remote_tag):
         print("Local repo is not up-to-date. Updating...")

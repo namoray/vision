@@ -55,10 +55,13 @@ MISC_PARAMETERS = {
 }
 
 VALIDATOR_PARAMETERS = {
-    core_cst.API_SERVER_PORT_PARAM: {"default": None, "message": "API server port (if you're running an organic validator, else leave it)"},
+    core_cst.API_SERVER_PORT_PARAM: {
+        "default": None,
+        "message": "API server port (if you're running an organic validator, else leave it)",
+    },
     core_cst.EXTERNAL_SERVER_ADDRESS_PARAM: {
         "default": core_cst.EXTERNAL_SERVER_ADDRESS_PARAM,
-        "message": "Checking Server address ",
+        "message": "External Server Address: ",
         "process_function": http_address_processing_func,
     },
 }
@@ -107,7 +110,9 @@ def handle_parameters(parameters: Dict[str, Any], hotkey: str):
 
 
 def get_input(parameter_metadata: Dict[str, Dict[str, Any]]) -> Any:
-    message = f"[yellow]{parameter_metadata['message']}[/yellow][white](default: {parameter_metadata['default']})[/white]"
+    message = (
+        f"[yellow]{parameter_metadata['message']}[/yellow][white](default: {parameter_metadata['default']})[/white]"
+    )
 
     user_input = Prompt.ask(message)
     if not user_input:
@@ -147,46 +152,3 @@ def get_config():
 
         if add_another.lower() != "y":
             break
-    
-    # Make a bash script for the validators:
-    for hotkey, settings in config.items():
-        if settings.get(core_cst.IS_VALIDATOR_PARAM, False):
-            continue
-        
-
-    # Now make a bash script for the miners, cos im kind
-    delete_command = "pm2 delete "
-
-    miner_start_commands = []
-
-    miner_start_command_template = "pm2 start --name miner_{} {}"
-
-    for hotkey, settings in config.items():
-        delete_command += f"miner_{hotkey} "
-
-        # If it's not a validator (aka miners), add the start command
-        if not settings.get(core_cst.IS_VALIDATOR_PARAM, False):
-            subtensor_network = settings.get(core_cst.SUBTENSOR_NETWORK_PARAM)
-
-            s_networked_stripped = (
-                str(subtensor_network).strip()
-                if subtensor_network is not None
-                else None
-            )
-            netuid = 19 if s_networked_stripped != "test" else 51
-            start_command = f"mining/proxy/run_miner.py --interpreter python3 -- --netuid {netuid} --logging.debug --env_file .{hotkey}.env"
-
-            miner_start_command = miner_start_command_template.format(
-                hotkey, start_command
-            )
-            miner_start_commands.append(miner_start_command)
-
-    all_miner_start_commands_str = "\n".join(miner_start_commands)
-    bash_script = f"#!/bin/bash\n{delete_command}\n{all_miner_start_commands_str}"
-
-    with open("start_miners.sh", "w") as f:
-        f.write(bash_script)
-
-    os.chmod("start_miners.sh", 0o700)
-
-    rich.print("env files saved! start miners script made")
