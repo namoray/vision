@@ -276,6 +276,8 @@ class ChatRequest(BaseModel):
         default=...,
         title="Temperature",
         description="Temperature for text generation.",
+        ge=0.1,
+        le=1.0
     )
 
     model: utility_models.ChatModels = Field(
