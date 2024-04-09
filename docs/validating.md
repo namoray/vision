@@ -8,13 +8,23 @@ A Validator consists of two parts:
 
 The proxy server is the server which has your hotkey, and spins up the axon, allows clients to query through you, etc. The External GPU server is the server (called the orchestrator) which performs the checking / scoring tasks!
 
-I would advise starting with the checking server:
+I would advise starting with the checking / external server:
+
+**⚠️USE CUDA <=12.2 PLEASE!! ⚠️**
 
 # Starting the checking server
-I recommend simply using docker templates for an easy setup - but the code can be found here: https://github.com/namoray/vision-workers
+The code can be found here: https://github.com/namoray/vision-workers
+
+There are two options:
+- With baremetal, downloading and running the image manually (https://github.com/namoray/vision-workers/blob/main/validator_orchestrator/README.md)
+- With vast, runpod, etc; using the template setup (below)
+
+**⛔️ I've had significantly moer sucess with VAST (100% success rate) vs runpod (50%) success rate - IF YOU HAVE TROUBLES WITH RUNPOD, TRY ANOTHER PROVIDER!**
 
 ## Template setup
-I'll use runpod as example, as it's easy with them
+I'll use runpod as example, but it's the same process on any template provider 
+
+**PLEASE NOTE, RUNPOD HAS A LOT OF SUBOPTIMAL GPUS. TRY TO USE A LOW CUDA VERSION (11.8, 12.0) IF YOU'RE USING RUNPOD**
 
 ### Checking server
 
