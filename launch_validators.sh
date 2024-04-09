@@ -2,6 +2,11 @@
 
 set -x
 
+<<<<<<< HEAD
+=======
+. venv/bin/activate
+
+>>>>>>> 9c3f552 (activate venv)
 for env_file in .*.env; do
     if grep -q 'IS_VALIDATOR=True' $env_file; then
         hotkey=$(basename $env_file .env | cut -c 2-)
