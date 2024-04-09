@@ -307,13 +307,11 @@ class CoreValidator:
                 bt.logging.error(f"Error occurred when parsing the response: {parse_err}")
                 continue
 
-            # TODO: Get synthetic information
-            # TODO: get this info returned
-            count = 1
             bt.logging.info(f"Adding scores: {axon_scores}")
             for uid, score in axon_scores.items():
+                count = max(int(score), 1)
                 uid_info = self.uid_to_uid_info[int(uid)]
-                uid_info.add_score(score, synthetic=True, count=count)
+                uid_info.add_score(1, synthetic=synthetic_query, count=count)
             i += 1
 
             task_uuid = str(uuid.uuid4())
