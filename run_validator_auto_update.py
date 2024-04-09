@@ -18,7 +18,7 @@ def run_auto_updater():
         local_tag = subprocess.getoutput("git describe --abbrev=0 --tags")
         os.system(f"git fetch origin {branch_name}")
         remote_tag = subprocess.getoutput(
-            "git describe --tags `git rev-list --tags=origin/{branch_name} --max-count=1`"
+            f"git describe --tags `git rev-list --tags=origin/{branch_name} --max-count=1`"
         )
 
         if should_update_local(local_tag, remote_tag):
