@@ -10,7 +10,6 @@ def should_update_local(local_tag, remote_tag):
 
 
 process = subprocess.Popen(["./launch_validators.sh"], stdout=subprocess.PIPE)
-branch_name = subprocess.getoutput("git rev-parse --abbrev-ref HEAD")
 
 
 def run_auto_updater():

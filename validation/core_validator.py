@@ -309,10 +309,8 @@ class CoreValidator:
 
             bt.logging.info(f"Adding scores: {axon_scores}")
             for uid, score in axon_scores.items():
-                # TODO: When using organic request summaries, change this
-                count = max(int(score), 1)
                 uid_info = self.uid_to_uid_info[int(uid)]
-                uid_info.add_score(1, synthetic=synthetic_query, count=count)
+                uid_info.add_score(score)
             i += 1
 
             # task_uuid = str(uuid.uuid4())
@@ -331,17 +329,17 @@ class CoreValidator:
             #         "miner_hotkey": self.uid_to_uid_info[int(uid)].hotkey,
             #         "testnet": validator_config.subtensor_network == "test",
             #     }
-                # bt.logging.info("Posting to taovision: " + json.dumps(data_to_post))
+            # bt.logging.info("Posting to taovision: " + json.dumps(data_to_post))
 
-                # Post to taovision
-                # async with httpx.AsyncClient(timeout=180) as client:
-                #     try:
-                #         await client.post(
-                #             url="https://taovision.ai/store_score_data",
-                #             data=json.dumps(data_to_post),
-                #         )
-                #     except Exception as e:
-                #         bt.logging.error(f"Error when posting to taovision to store score data: {e}")
+            # Post to taovision
+            # async with httpx.AsyncClient(timeout=180) as client:
+            #     try:
+            #         await client.post(
+            #             url="https://taovision.ai/store_score_data",
+            #             data=json.dumps(data_to_post),
+            #         )
+            #     except Exception as e:
+            #         bt.logging.error(f"Error when posting to taovision to store score data: {e}")
 
     async def fetch_available_tasks_for_each_axon(self) -> None:
         uid_to_query_task = {}
@@ -502,7 +500,7 @@ class CoreValidator:
 
         should_score = synthetic_query or random.random() < cst.SCORE_QUERY_PROBABILITY
 
-        miners_to_query_order = self._get_miners_query_order(available_axons, synthetic_query=synthetic_query)
+        miners_to_query_order = self._get_miners_query_order(available_axons)
 
         if stream:
             main_query_result = self._stream_response_from_stream_miners_until_result(
@@ -530,16 +528,7 @@ class CoreValidator:
         if axons_to_exclude:
             available_axons = [axon for axon in available_axons if axon not in axons_to_exclude]
 
-        if synthetic_query:
-            axons_to_number_of_queries = {
-                axon: self.uid_to_uid_info[axon].synthetic_request_count for axon in available_axons
-            }
-
-        else:
-            available_axons = [axon for axon in available_axons if axon not in self.low_incentive_uids]
-            axons_to_number_of_queries = {
-                axon: self.uid_to_uid_info[axon].organic_request_count for axon in available_axons
-            }
+        axons_to_number_of_queries = {axon: self.uid_to_uid_info[axon].request_count for axon in available_axons}
 
         queries_to_axons = defaultdict(list)
         for axon, num_queries in axons_to_number_of_queries.items():
