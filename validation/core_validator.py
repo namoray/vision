@@ -34,7 +34,7 @@ import traceback
 
 db_manager = DatabaseManager()
 
-VERSION_KEY = 20_003
+VERSION_KEY = 20_004
 
 
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
