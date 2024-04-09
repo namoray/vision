@@ -29,7 +29,6 @@ class Config(BaseModel):
     hotkey_name: str = os.getenv(core_cst.HOTKEY_PARAM, "default")
     wallet_name: str = os.getenv(core_cst.WALLET_NAME_PARAM, "default")
 
-    # TODO: CHANGE FROM TEST
     subtensor_network: str = os.getenv(core_cst.SUBTENSOR_NETWORK_PARAM, "test")
     subtensor_chainendpoint: Optional[str] = os.getenv(
         core_cst.SUBTENSOR_CHAINENDPOINT_PARAM, None
@@ -39,7 +38,6 @@ class Config(BaseModel):
 
     api_server_port: Optional[int] = os.getenv(core_cst.API_SERVER_PORT_PARAM, None)
 
-    # TODO; THIS SHOULDN'T BE IN THE MINER SETTINGS BIT
     is_validator: bool = False
 
 

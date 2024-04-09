@@ -14,7 +14,7 @@ class AvailableTasksOperation(abstract_operation.Operation):
     async def forward(
         synapse: synapses.AvailableTasksOperation,
     ) -> synapses.AvailableTasksOperation:
-        # tODO: CHANGE THIS
+
         synapse.available_tasks = tasks.SUPPORTED_TASKS
         bt.logging.info(f"✅ Available operations: {synapse.available_tasks}")
         return synapse

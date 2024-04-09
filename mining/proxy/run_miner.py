@@ -11,7 +11,6 @@ from config.miner_config import config
 
 tracemalloc.start()
 
-# TODO: Make this config
 
 
 if __name__ == "__main__":

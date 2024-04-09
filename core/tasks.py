@@ -54,7 +54,7 @@ if miner_config.sota_provider_api_key is not None:
         ]
     )
 
-# TODO: Do we need this?
+
 TASKS_TO_SYNAPSE = {
     Tasks.chat_bittensor_finetune.value: synapses.Chat,
     Tasks.chat_mixtral.value: synapses.Chat,
