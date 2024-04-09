@@ -34,6 +34,11 @@ Create a new template
 - **Fill out the template like so**
 ![Template details](template-details.png)
 
+```
+MODEL lgodwangl/new_01m
+HALF_PRECISION false
+```
+
 It's very important that port 6919 is exposed here, as well as TCP port 22 ( so you can ssh in if you need to)
 
 - **Create a GPU pod with this instance**
