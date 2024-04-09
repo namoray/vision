@@ -206,9 +206,9 @@ class CoreValidator:
             # TODO: mimic taovision when we're live
             task = random.choice(list(tasks.TASKS_TO_MINER_OPERATION_MODULES.keys()))
 
-            # For debug
-            # if task != tasks.Tasks.sota.value:
-            #     continue
+            # TEMP
+            if task == tasks.Tasks.avatar.value:
+                continue
             #
             synthetic_data = await synthetic_generations.get_synthetic_data(task)
             if synthetic_data is None:
