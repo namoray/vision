@@ -38,7 +38,7 @@ class dendrite(bittensor.dendrite):
             )
         else:
             endpoint = f"{target_axon.ip}:{str(target_axon.port)}"
-        
+
         return f"http://{endpoint}/{request_name}"
 
     async def forward(
@@ -54,9 +54,7 @@ class dendrite(bittensor.dendrite):
         run_async: bool = True,
         streaming: bool = False,
         log_requests_and_responses: bool = True,
-    ) -> List[
-        Union[AsyncGenerator[Any, Any], bittensor.Synapse, bittensor.StreamingSynapse]
-    ]:
+    ) -> List[Union[AsyncGenerator[Any, Any], bittensor.Synapse, bittensor.StreamingSynapse]]:
         """
         Asynchronously sends requests to one or multiple Axons and collates their responses.
 
@@ -96,9 +94,7 @@ class dendrite(bittensor.dendrite):
             axons = [axons]
 
         # Check if synapse is an instance of the StreamingSynapse class or if streaming flag is set.
-        is_streaming_subclass = issubclass(
-            synapse.__class__, bittensor.StreamingSynapse
-        )
+        is_streaming_subclass = issubclass(synapse.__class__, bittensor.StreamingSynapse)
         if streaming != is_streaming_subclass:
             bittensor.logging.warning(
                 f"Argument streaming is {streaming} while issubclass(synapse, StreamingSynapse) is {synapse.__class__.__name__}. This may cause unexpected behavior."
@@ -120,11 +116,7 @@ class dendrite(bittensor.dendrite):
 
             async def single_axon_response(
                 target_axon: Union[bittensor.AxonInfo, bittensor.axon],
-            ) -> (
-                AsyncGenerator[Any, Any]
-                | bittensor.Synapse
-                | bittensor.StreamingSynapse
-            ):
+            ) -> AsyncGenerator[Any, Any] | bittensor.Synapse | bittensor.StreamingSynapse:
                 """
                 Retrieve response for a single axon, either in streaming or non-streaming mode.
 
@@ -157,13 +149,9 @@ class dendrite(bittensor.dendrite):
 
             # If run_async flag is False, get responses one by one.
             if not run_async:
-                return [
-                    await single_axon_response(target_axon) for target_axon in axons
-                ]
+                return [await single_axon_response(target_axon) for target_axon in axons]
             # If run_async flag is True, get responses concurrently using asyncio.gather().
-            return await asyncio.gather(
-                *(single_axon_response(target_axon) for target_axon in axons)
-            )
+            return await asyncio.gather(*(single_axon_response(target_axon) for target_axon in axons))
 
         # Get responses for all axons.
         responses = await query_all_axons(streaming)
@@ -203,24 +191,16 @@ class dendrite(bittensor.dendrite):
 
         # Record start time
         start_time = time.time()
-        target_axon = (
-            target_axon.info()
-            if isinstance(target_axon, bittensor.axon)
-            else target_axon
-        )
+        target_axon = target_axon.info() if isinstance(target_axon, bittensor.axon) else target_axon
 
         # Build request endpoint from the synapse class
         request_name = synapse.__class__.__name__
-        url= self._get_endpoint_url(target_axon, request_name)
+        url = self._get_endpoint_url(target_axon, request_name)
 
         # Preprocess synapse for making a request
-        synapse = self.preprocess_synapse_for_request(
-            target_axon, synapse, response_timeout
-        )
+        synapse = self.preprocess_synapse_for_request(target_axon, synapse, response_timeout)
 
-        timeout_settings = aiohttp.ClientTimeout(
-            sock_connect=connect_timeout, sock_read=response_timeout
-        )
+        timeout_settings = aiohttp.ClientTimeout(sock_connect=connect_timeout, sock_read=response_timeout)
 
         try:
             # Log outgoing request
@@ -246,18 +226,14 @@ class dendrite(bittensor.dendrite):
             synapse.dendrite.process_time = str(time.time() - start_time)
 
         except Exception as e:
-            self._handle_request_errors(
-                synapse, request_name, e, connect_timeout, response_timeout
-            )
+            self._handle_request_errors(synapse, request_name, e, connect_timeout, response_timeout)
 
         finally:
             if log_requests_and_responses:
                 self._log_incoming_response(synapse)
 
             # Log synapse event history
-            self.synapse_history.append(
-                bittensor.Synapse.from_headers(synapse.to_headers())
-            )
+            self.synapse_history.append(bittensor.Synapse.from_headers(synapse.to_headers()))
 
             if deserialize:
                 yield synapse.deserialize()
@@ -292,24 +268,16 @@ class dendrite(bittensor.dendrite):
 
         # Record start time
         start_time = time.time()
-        target_axon = (
-            target_axon.info()
-            if isinstance(target_axon, bittensor.axon)
-            else target_axon
-        )
+        target_axon = target_axon.info() if isinstance(target_axon, bittensor.axon) else target_axon
 
         # Build request endpoint from the synapse class
         request_name = synapse.__class__.__name__
         url = self._get_endpoint_url(target_axon, request_name=request_name)
 
         # Preprocess synapse for making a request
-        synapse = self.preprocess_synapse_for_request(
-            target_axon, synapse, response_timeout
-        )
+        synapse = self.preprocess_synapse_for_request(target_axon, synapse, response_timeout)
 
-        timeout_settings = aiohttp.ClientTimeout(
-            sock_connect=connect_timeout, sock_read=response_timeout
-        )
+        timeout_settings = aiohttp.ClientTimeout(sock_connect=connect_timeout, sock_read=response_timeout)
 
         try:
             # Log outgoing request
@@ -332,18 +300,14 @@ class dendrite(bittensor.dendrite):
             synapse.dendrite.process_time = str(time.time() - start_time)
 
         except Exception as e:
-            self._handle_request_errors(
-                synapse, request_name, e, connect_timeout, response_timeout
-            )
+            self._handle_request_errors(synapse, request_name, e, connect_timeout, response_timeout)
 
         finally:
             if log_requests_and_responses:
                 self._log_incoming_response(synapse)
 
             # Log synapse event history
-            self.synapse_history.append(
-                bittensor.Synapse.from_headers(synapse.to_headers())
-            )
+            self.synapse_history.append(bittensor.Synapse.from_headers(synapse.to_headers()))
 
             # Return the updated synapse object after deserializing if requested
             if deserialize:
@@ -361,20 +325,16 @@ class dendrite(bittensor.dendrite):
     ) -> None:
         if isinstance(exception, aiohttp.ClientConnectorError):
             synapse.dendrite.status_code = "503"
-            synapse.dendrite.status_message = f"Service at {synapse.axon.ip}:{str(synapse.axon.port)}/{request_name} unavailable."
+            synapse.dendrite.status_message = (
+                f"Service at {synapse.axon.ip}:{str(synapse.axon.port)}/{request_name} unavailable."
+            )
         elif isinstance(exception, asyncio.TimeoutError):
             if "Connection timeout" in str(exception):
                 synapse.dendrite.status_code = "408"
-                synapse.dendrite.status_message = (
-                    f"Initial connection timeout after {connection_timeout} seconds."
-                )
+                synapse.dendrite.status_message = f"Initial connection timeout after {connection_timeout} seconds."
             else:
                 synapse.dendrite.status_code = "408"
-                synapse.dendrite.status_message = (
-                    f"Response timeout after {response_timeout} seconds."
-                )
+                synapse.dendrite.status_message = f"Response timeout after {response_timeout} seconds."
         else:
             synapse.dendrite.status_code = "422"
-            synapse.dendrite.status_message = (
-                f"Failed to parse response object with error: {str(exception)}"
-            )
+            synapse.dendrite.status_message = f"Failed to parse response object with error: {str(exception)}"

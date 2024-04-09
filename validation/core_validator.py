@@ -4,7 +4,6 @@ import random
 import re
 import threading
 import time
-import uuid
 from collections import defaultdict, deque
 from typing import Dict
 from typing import List
@@ -696,16 +695,10 @@ class CoreValidator:
                     continue
 
                 scoring_periods_uid_was_in[uid_info.uid] = scoring_periods_uid_was_in.get(uid_info.uid, 0) + 1
-                if uid_info.organic_request_count + uid_info.synthetic_request_count == 0:
+                if uid_info.request_count == 0:
                     continue
 
-                average_score = uid_info.average_score
-                available_tasks = uid_info.available_tasks
-
-                multiplier = (len(available_tasks) / max(len(uid_info.available_tasks), 1)) / 2 + 0.75
-                score = multiplier * average_score
-
-                uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
+                uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [uid_info.total_score]
 
         uid_weights: Dict[int, float] = {}
         max_periods = max([i for i in scoring_periods_uid_was_in.values()])
