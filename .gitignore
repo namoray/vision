@@ -26,7 +26,6 @@ valiator_autoupdate.log
 tmp/*
 *.pth
 *.pth.lock
-start_miners.sh
 sample.txt
 sample2.txt
 config.yaml
