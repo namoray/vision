@@ -10,7 +10,7 @@ The proxy server is the server which has your hotkey, and spins up the axon, all
 
 I would advise starting with the checking / external server:
 
-**⚠️USE CUDA <=12.2 PLEASE!! ⚠️**
+**⚠️USE CUDA <=12.2 PLEASE ON THE GPU DEVICES!! ⚠️**
 
 # Starting the checking server
 The code can be found here: https://github.com/namoray/vision-workers
