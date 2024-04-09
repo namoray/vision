@@ -714,7 +714,7 @@ class CoreValidator:
                 average_score = uid_info.average_score
                 available_tasks = uid_info.available_tasks
 
-                multiplier = (len(available_tasks) / len(tasks.SUPPORTED_TASKS)) / 2 + 0.75
+                multiplier = (len(available_tasks) / max(len(uid_info.available_tasks), 1)) / 2 + 0.75
                 score = multiplier * average_score
 
                 uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
