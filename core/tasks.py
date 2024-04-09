@@ -15,6 +15,7 @@ class Tasks(Enum):
     dreamshaper_image_to_image = "dreamshaper-image-to-image"
     jugger_inpainting = "inpaint"
     clip_image_embeddings = "clip-image-embeddings"
+    avatar = "avatar"
     sota = "sota"
 
 
@@ -31,6 +32,7 @@ if miner_config.image_worker_url is not None:
             Tasks.dreamshaper_image_to_image.value,
             Tasks.jugger_inpainting.value,
             Tasks.clip_image_embeddings.value,
+            Tasks.avatar.value,
         ]
     )
 if miner_config.finetune_text_worker_url is not None:
@@ -65,6 +67,7 @@ TASKS_TO_SYNAPSE = {
     Tasks.jugger_inpainting.value: synapses.Inpaint,
     Tasks.clip_image_embeddings.value: synapses.ClipEmbeddings,
     Tasks.sota.value: synapses.Sota,
+    Tasks.avatar.value: synapses.Avatar,
 }
 
 TASKS_TO_MINER_OPERATION_MODULES = {
@@ -79,4 +82,5 @@ TASKS_TO_MINER_OPERATION_MODULES = {
     Tasks.jugger_inpainting.value: operations.inpaint_operation,
     Tasks.clip_image_embeddings.value: operations.clip_embeddings_operation,
     Tasks.sota.value: operations.sota_operation,
+    Tasks.avatar.value: operations.avatar_operation,
 }
