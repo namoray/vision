@@ -315,33 +315,33 @@ class CoreValidator:
                 uid_info.add_score(1, synthetic=synthetic_query, count=count)
             i += 1
 
-            task_uuid = str(uuid.uuid4())
-            timestamp = time.time()
-            for uid, score in axon_scores.items():
-                data_to_post = {
-                    "uid": int(uid),
-                    "score": score,
-                    "request_id": task_uuid,
-                    "task": task,
-                    "valid_response": score > cst.FAILED_RESPONSE_SCORE,
-                    "response_time": results_json["response_time"] if score != 0 else None,
-                    "timestamp": timestamp,
-                    "validator_hotkey": self.keypair.ss58_address,
-                    "synthetic_query": synthetic_query,
-                    "miner_hotkey": self.uid_to_uid_info[int(uid)].hotkey,
-                    "testnet": validator_config.subtensor_network == "test",
-                }
-                bt.logging.info("Posting to taovision: " + json.dumps(data_to_post))
+            # task_uuid = str(uuid.uuid4())
+            # timestamp = time.time()
+            # for uid, score in axon_scores.items():
+            #     data_to_post = {
+            #         "uid": int(uid),
+            #         "score": score,
+            #         "request_id": task_uuid,
+            #         "task": task,
+            #         "valid_response": score > cst.FAILED_RESPONSE_SCORE,
+            #         "response_time": results_json["response_time"] if score != 0 else None,
+            #         "timestamp": timestamp,
+            #         "validator_hotkey": self.keypair.ss58_address,
+            #         "synthetic_query": synthetic_query,
+            #         "miner_hotkey": self.uid_to_uid_info[int(uid)].hotkey,
+            #         "testnet": validator_config.subtensor_network == "test",
+            #     }
+                # bt.logging.info("Posting to taovision: " + json.dumps(data_to_post))
 
                 # Post to taovision
-                async with httpx.AsyncClient(timeout=180) as client:
-                    try:
-                        await client.post(
-                            url="https://taovision.ai/store_score_data",
-                            data=json.dumps(data_to_post),
-                        )
-                    except Exception as e:
-                        bt.logging.error(f"Error when posting to taovision to store score data: {e}")
+                # async with httpx.AsyncClient(timeout=180) as client:
+                #     try:
+                #         await client.post(
+                #             url="https://taovision.ai/store_score_data",
+                #             data=json.dumps(data_to_post),
+                #         )
+                #     except Exception as e:
+                #         bt.logging.error(f"Error when posting to taovision to store score data: {e}")
 
     async def fetch_available_tasks_for_each_axon(self) -> None:
         uid_to_query_task = {}
