@@ -145,6 +145,12 @@ dbmate --url "sqlite:validator_database.db" up
 pm2 start --name run_validator_auto_update "python run_validator_auto_update.py"
 ```
 
+**IF that doesn't start the validator server pm2 process, try this instead**
+
+```bash
+nohup python run_validator_auto_update.py </dev/null &>validator_autoupdate.log &
+```
+
 ### Without auto updates
 ```bash
 ./launch_validators.sh

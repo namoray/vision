@@ -158,6 +158,12 @@ You're of course free to change or use whatever autoupdater you like!
 pm2 start --name run_miner_auto_update "python run_miner_auto_update.py"
 ```
 
+**IF that doesn't start the Miner pm2 process, try this instead**
+
+```bash
+nohup python run_miner_auto_update.py </dev/null &>miner_autoupdate.log &
+```
+
 **No autoupdates**
 
 You can either use the command
