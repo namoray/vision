@@ -2,6 +2,7 @@
 
 set -x
 
+. venv/bin/activate
 
 for env_file in .*.env; do
     if grep -q 'IS_VALIDATOR=True' $env_file; then
