@@ -44,6 +44,11 @@ NOTE: I advise you use a estup with at least 80GB vram (H100 or A100 for example
 - Follow the same steps for mixtral (slightly different template)
 ![Mixtral template](mixtral-template.png)
 
+```
+MODEL TheBloke/Nous-Hermes-2-Mixtral-8x7B-DPO-GPTQ
+HALF_PRECISION true
+REVISION gptq-8bit-128g-actorder_True
+```
 
 ## Image worker
 Very similar steps, just a slightly different template! 
