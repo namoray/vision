@@ -68,7 +68,6 @@ Note: if you're using a provider such as runpod or vast, make sure you expose th
 ```bash
 git clone https://github.com/namoray/vision.git
 cd vision
-git checkout vision_3
 ```
 
 ### Install system dependencies
