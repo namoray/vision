@@ -17,7 +17,7 @@ I would advise starting with the worker servers. The simplest way to get started
 # Starting a worker server
 I recommend simply using docker templates for an easy setup - but the code can be found here: https://github.com/namoray/vision-workers
 
-**⚠️USE CUDA <=12.2 PLEASE!! ⚠️**
+**⚠️USE CUDA <=12.2 PLEASE ON THE GPU DEVICES!! ⚠️**
 
 
 ## Template setup
