@@ -28,10 +28,12 @@ class Inpaint(bt.Synapse, base_models.InpaintBase):
     def deserialize(self) -> Optional[List[str]]:
         return self.image_b64
 
+
 class Avatar(bt.Synapse, base_models.AvatarBase):
     def deserialize(self) -> Optional[List[str]]:
         return self.image_b64
-    
+
+
 # class Scribble(bt.Synapse, base_models.ScribbleBase):
 #     def deserialize(self) -> Optional[List[str]]:
 #         return self.image_b64
@@ -56,13 +58,10 @@ class Chat(bt.StreamingSynapse, base_models.ChatBase):
     def deserialize(self) -> Optional[Dict[str, str]]:
         return None
 
-    async def process_streaming_response(
-        self, response: StreamingResponse
-    ) -> AsyncIterator[str]:
+    async def process_streaming_response(self, response: StreamingResponse) -> AsyncIterator[str]:
         async for chunk in response.content.iter_any():
             if isinstance(chunk, bytes):
                 tokens = chunk.decode("utf-8")
-                # TODO: Wrap up into a payload?
                 yield tokens
 
     def extract_response_json(self, response) -> dict:
@@ -75,4 +74,16 @@ class Chat(bt.StreamingSynapse, base_models.ChatBase):
         Args:
             response: The response object from which to extract JSON data.
         """
-        return {}
+        headers = {k.decode("utf-8"): v.decode("utf-8") for k, v in response.__dict__["_raw_headers"]}
+
+        def extract_info(prefix: str) -> dict[str, str]:
+            return {key.split("_")[-1]: value for key, value in headers.items() if key.startswith(prefix)}
+
+        return {
+            "name": headers.get("name", ""),
+            "timeout": float(headers.get("timeout", 0)),
+            "total_size": int(headers.get("total_size", 0)),
+            "header_size": int(headers.get("header_size", 0)),
+            "dendrite": extract_info("bt_header_dendrite"),
+            "axon": extract_info("bt_header_axon"),
+        }
