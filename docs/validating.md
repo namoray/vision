@@ -76,7 +76,6 @@ apt-get install -y jq
 apt-get update
 apt-get install nano
 ```
-
 If you are on a bare metal machine (e.g. Vast) where you require `sudo`, use the following:
 ```bash
 ### Install pm2 & jq
@@ -88,7 +87,7 @@ sudo apt-get install -y jq
 ### Install nano so you can edit the config easily
 sudo apt-get update
 sudo apt-get install nano
-```
+``` 
 
 ### Install python dependencies
 Make sure you have installed the correct python version (python 3.10). If you don't, try this:
