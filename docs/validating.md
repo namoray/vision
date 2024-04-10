@@ -147,17 +147,7 @@ dbmate --url "sqlite:validator_database.db" up
 
 ### With autoupdates
 
-> **WARNING:** Autoupdates will work best if you use the `one gpu for all` setting in the config - otherwise if there is a new model we won't know what to do!
-
-```bash
-pm2 start --name run_validator_auto_update "python run_validator_auto_update.py"
-```
-
-**IF that doesn't start the validator server pm2 process, try this instead**
-
-```bash
-nohup python run_validator_auto_update.py </dev/null &>validator_autoupdate.log &
-```
+**BOINKED RIGHT NOW, PLEASE START MANUALLY**
 
 ### Without auto updates
 ```bash
