@@ -6,7 +6,7 @@ import threading
 import time
 from collections import defaultdict, deque
 from typing import Dict
-from typing import List
+from typing import List, Any
 from typing import AsyncIterator, AsyncGenerator
 from typing import Optional
 from typing import Set
@@ -53,8 +53,18 @@ async def _store_result_in_sql_lite_db(
     db_manager.insert_task_results(task, result_in_dict_form, synapse, synthetic_query)
 
 
-def _load_sse_json(text: str) -> str:
-    return json.loads(text.split("data: ")[1].split("\n\n")[0])
+def _load_sse_jsons(chunk: str) -> List[Dict[str, Any]]:
+    jsons = []
+    received_event_chunks = chunk.split("\n\n")
+    for event in received_event_chunks:
+        if event == "":
+            continue
+        prefix, _, data = event.partition(":")
+        if data.strip() == "[DONE]":
+            break
+        loaded_chunk = json.loads(data)
+        jsons.append(loaded_chunk)
+    return jsons
 
 
 class CoreValidator:
@@ -574,13 +584,13 @@ class CoreValidator:
                 async for text in text_generator:
                     if isinstance(text, str):
                         try:
-                            text_json = _load_sse_json(text)
+                            loaded_jsons = _load_sse_jsons(text)
                         except IndexError as e:
                             bt.logging.warning(f"Error {e} when trying to load text {text}")
                             break
 
-                        text_jsons.append(text_json)
-                        text = text_json["text"]
+                        text_jsons.extend(loaded_jsons)
+                        text = "".join([text_json["text"] for text_json in text_jsons])
                         yield f"data: {text}\n\n"
 
                 if len(text_jsons) > 0:
