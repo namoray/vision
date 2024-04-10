@@ -50,7 +50,7 @@ def get_miner_cli_config() -> "bt.Config":
         help="Chain endpoint to connect to.",
     )
 
-    parser.add_argument("--netuid", type=int, default=19, help="The chain subnet uid.")
+    parser.add_argument("--netuid", type=int, default=19 if miner_config.subtensor_network!="test" else 51, help="The chain subnet uid.")
 
     parser.add_argument("--wallet.name", type=str, default=miner_config.wallet_name)
     parser.add_argument("--wallet.hotkey", type=str, default=miner_config.hotkey_name)
