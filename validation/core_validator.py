@@ -14,6 +14,7 @@ from typing import Tuple
 from core import tasks
 import bittensor as bt
 import httpx
+import math
 import torch
 from pydantic import BaseModel
 from pydantic import ValidationError
@@ -115,26 +116,30 @@ class CoreValidator:
         self.score_results_task = asyncio.create_task(self.score_results())
         self.score_results_task.add_done_callback(validation_utils.log_task_exception)
 
+    async def _resync_metagraph_and_sleep(self, time_between_resyncing: float, set_weights: bool) -> None:
+        await self.resync_metagraph()
+        if set_weights:
+            await asyncio.to_thread(self.set_weights)
+        await asyncio.sleep(time_between_resyncing)
+
     async def periodically_resync_and_set_weights(self) -> None:
-        time_between_resyncing = 10 * 60
+        # TODO: CHANGE AFTER DEBUGING
+        cycle_length_initial = 1
+        cycle_length_in_loop = 1
+        time_between_resyncing = 1 * 10  # 10 mins
 
-        # Two initial cycles to make sure restarts don't impact scores too heavily
-        await self.resync_metagraph()
-        await asyncio.sleep(time_between_resyncing)
-
-        await self.resync_metagraph()
-        await asyncio.sleep(time_between_resyncing)
+        # Initial cycles to make sure restarts don't impact scores too heavily
+        for _ in range(cycle_length_initial):
+            await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights = False)
 
         while True:
-            await self.resync_metagraph()
-            await asyncio.sleep(time_between_resyncing)
 
-            await self.resync_metagraph()
-            await asyncio.sleep(time_between_resyncing)
+            for _ in range(cycle_length_in_loop):
+                await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights = False)
+            
+            await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights = True)
 
-            await self.resync_metagraph()
-            await asyncio.to_thread(self.set_weights)
-            await asyncio.sleep(time_between_resyncing)
+            
 
     async def _store_synthetic_result(self, sota_request: utility_models.SotaCheckingRequest) -> None:
         """
@@ -321,6 +326,8 @@ class CoreValidator:
                 uid_info = self.uid_to_uid_info[int(uid)]
                 uid_info.add_score(score)
             i += 1
+
+            ## Renabled soon, this is to enable beautiful stats for the network
 
             # task_uuid = str(uuid.uuid4())
             # timestamp = time.time()
@@ -528,29 +535,9 @@ class CoreValidator:
     def _get_available_axons(self, task_name: str) -> List[int]:
         return list(self.tasks_to_available_axon_uids.get(task_name, []))
 
-    def _get_miners_query_order(
-        self,
-        available_axons: List[int],
-        axons_to_exclude: List[int] = [],
-        synthetic_query: bool = False,
-    ) -> list:
-        if axons_to_exclude:
-            available_axons = [axon for axon in available_axons if axon not in axons_to_exclude]
-
-        axons_to_number_of_queries = {axon: self.uid_to_uid_info[axon].request_count for axon in available_axons}
-
-        queries_to_axons = defaultdict(list)
-        for axon, num_queries in axons_to_number_of_queries.items():
-            queries_to_axons[num_queries].append(axon)
-
-        sorted_query_groups = sorted(queries_to_axons.items(), key=lambda item: item[0])
-
-        query_order = []
-        for _, axons in sorted_query_groups:
-            random.shuffle(axons)
-            query_order.extend(axons)
-
-        return query_order
+    def _get_miners_query_order(self, available_axons: List[int]) -> list:
+        random.shuffle(available_axons)
+        return available_axons
 
     async def _get_text_from_text_generator(
         self,
@@ -694,32 +681,24 @@ class CoreValidator:
             return None
 
     def set_weights(self):
+        """
+        Set the weights as the total score you have obtained, after some transformation function (e..g log)
+        """
         bt.logging.info("Setting weights!")
 
         uid_scores: Dict[int, List[float]] = {}
-        scoring_periods_uid_was_in: Dict[int, int] = {}
 
         for epoch in self.previous_uid_infos:
             for uid_info in epoch:
                 if len(uid_info.available_tasks) == 0:
                     continue
 
-                scoring_periods_uid_was_in[uid_info.uid] = scoring_periods_uid_was_in.get(uid_info.uid, 0) + 1
                 if uid_info.request_count == 0:
                     continue
 
                 uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [uid_info.total_score]
 
-        uid_weights: Dict[int, float] = {}
-        max_periods = max([i for i in scoring_periods_uid_was_in.values()])
-        if max_periods == 0:
-            bt.logging.info("No uids found to score, nothing to set")
-            return
-        for uid, periods_for_uid in scoring_periods_uid_was_in.items():
-            scores = uid_scores.get(uid, [cst.FAILED_RESPONSE_SCORE])
-            average_score = sum(scores) / len(scores)
-
-            uid_weights[uid] = average_score * (periods_for_uid / max_periods) ** 0.5
+        uid_weights: Dict[int, float] = {uid: math.log(score) for uid, score in uid_scores.items()}
 
         if uid_weights == {}:
             bt.logging.info("No scores found, nothing to set")
