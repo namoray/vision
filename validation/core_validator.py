@@ -126,7 +126,7 @@ class CoreValidator:
         # TODO: CHANGE AFTER DEBUGING
         cycle_length_initial = 1
         cycle_length_in_loop = 1
-        time_between_resyncing = 1 * 10  # 10 mins
+        time_between_resyncing = 1 * 30  # 10 mins
 
         # Initial cycles to make sure restarts don't impact scores too heavily
         for _ in range(cycle_length_initial):
