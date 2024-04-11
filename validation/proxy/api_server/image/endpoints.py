@@ -21,7 +21,9 @@ async def text_to_image(
     result: utility_models.QueryResult = await core_validator.execute_query(
         synapse, outgoing_model=base_models.TextToImageOutgoing, task=synapse.engine + "-text-to-image"
     )
+    print("result before validating", result)
     validation_utils.handle_bad_result(result)
+    print(result, "this was the result after text-to-image")
 
     formatted_response: base_models.TextToImageOutgoing = result.formatted_response
 
