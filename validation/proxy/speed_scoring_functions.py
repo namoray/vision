@@ -42,7 +42,7 @@ SOTA_MAX_ALLOWED_TIME = 120
 
 async def speed_scoring_sota(result: utility_models.QueryResult, synapse: Dict[str, Any], task: str):
     speed_modifier = _calculate_speed_modifier(
-        result.response_time - SOTA_OVERHEAD, SOTA_LOWER_BOUND, SOTA_MAX_ALLOWED_TIME
+        SOTA_LOWER_BOUND, SOTA_LOWER_BOUND, SOTA_MAX_ALLOWED_TIME
     )
     work_bonus = SOTA_LOWER_BOUND
     return work_bonus * speed_modifier
@@ -58,16 +58,10 @@ CLIP_MAX_ALLOWED_TIME = 3
 async def speed_scoring_clip(result: utility_models.QueryResult, synapse: Dict[str, Any], task: str) -> float:
     clip_result = base_models.ClipEmbeddingsOutgoing(**result.formatted_response)
 
-    response_time = result.response_time
-
     number_of_clip_embeddings = len(clip_result.clip_embeddings)
 
-    normalised_response_time = (
-        max(response_time - CLIP_OVERHEAD + 0.1 * number_of_clip_embeddings, 0.1) / number_of_clip_embeddings
-    )
-
     speed_modifier = _calculate_speed_modifier(
-        normalised_response_time,
+        CLIP_SUFFICIENTLY_QUICK_THRESHOLD_TIME,
         CLIP_SUFFICIENTLY_QUICK_THRESHOLD_TIME,
         CLIP_MAX_ALLOWED_TIME,
     )
@@ -86,72 +80,58 @@ INPAINTING_OVERHEAD = 4
 
 
 async def speed_scoring_images(result: utility_models.QueryResult, synapse: Dict[str, Any], task: str) -> float:
-    response_time = result.response_time
-
     steps = synapse.get("steps", 1)
 
     if task == Tasks.proteus_text_to_image.value or task == Tasks.dreamshaper_text_to_image.value:
-        response_time_without_overhead = max(response_time - T2I_OVERHEAD, 0.1)
-        seconds_per_step = response_time_without_overhead / steps
         lower_bound_time = 0.5
         upper_thershold_time = 1.5
 
-        speed_modifier = _calculate_speed_modifier(seconds_per_step, lower_bound_time, upper_thershold_time)
+        speed_modifier = _calculate_speed_modifier(lower_bound_time, lower_bound_time, upper_thershold_time)
         work_bonus = _calculate_work_bonus_images(steps, T2I_OVERHEAD, lower_bound_time)
 
         return speed_modifier * work_bonus
 
     if task == Tasks.playground_text_to_image.value:
-        response_time_without_overhead = max(response_time - T2I_OVERHEAD, 0.1)
-        seconds_per_step = response_time_without_overhead / steps
         lower_bound_time = 0.2
         upper_thershold_time = 0.8
 
-        speed_modifier = _calculate_speed_modifier(seconds_per_step, lower_bound_time, upper_thershold_time)
+        speed_modifier = _calculate_speed_modifier(lower_bound_time, lower_bound_time, upper_thershold_time)
         work_bonus = _calculate_work_bonus_images(steps, T2I_OVERHEAD, lower_bound_time)
 
         return speed_modifier * work_bonus
 
     if task == Tasks.proteus_image_to_image.value or task == Tasks.dreamshaper_image_to_image.value:
-        response_time_without_overhead = max(response_time - I2I_OVERHEAD, 0.1)
-        seconds_per_step = response_time_without_overhead / steps
         lower_bound_time = 0.6
         upper_thershold_time = 1.6
 
-        speed_modifier = _calculate_speed_modifier(seconds_per_step, lower_bound_time, upper_thershold_time)
+        speed_modifier = _calculate_speed_modifier(lower_bound_time, lower_bound_time, upper_thershold_time)
         work_bonus = _calculate_work_bonus_images(steps, I2I_OVERHEAD, lower_bound_time)
 
         return speed_modifier * work_bonus
 
     if task == Tasks.playground_image_to_image.value:
-        response_time_without_overhead = max(response_time - I2I_OVERHEAD, 0.1)
-        seconds_per_step = response_time_without_overhead / steps
         lower_bound_time = 0.3
         upper_thershold_time = 0.9
 
-        speed_modifier = _calculate_speed_modifier(seconds_per_step, lower_bound_time, upper_thershold_time)
+        speed_modifier = _calculate_speed_modifier(lower_bound_time, lower_bound_time, upper_thershold_time)
         work_bonus = _calculate_work_bonus_images(steps, I2I_OVERHEAD, lower_bound_time)
 
         return speed_modifier * work_bonus
 
     if task == Tasks.jugger_inpainting.value:
-        response_time_without_overhead = max(response_time - INPAINTING_OVERHEAD, 0.1)
-        seconds_per_step = response_time_without_overhead / steps
         lower_bound_time = 0.5
         upper_thershold_time = 1.5
 
-        speed_modifier = _calculate_speed_modifier(seconds_per_step, lower_bound_time, upper_thershold_time)
+        speed_modifier = _calculate_speed_modifier(lower_bound_time, lower_bound_time, upper_thershold_time)
         work_bonus = _calculate_work_bonus_images(steps, INPAINTING_OVERHEAD, lower_bound_time)
 
         return speed_modifier * work_bonus
 
     if task == Tasks.avatar.value:
-        response_time_without_overhead = max(response_time - AVATAR_OVERHEAD, 0.1)
-        seconds_per_step = response_time_without_overhead / steps
         lower_bound_time = 0.5
         upper_thershold_time = 1.5
 
-        speed_modifier = _calculate_speed_modifier(seconds_per_step, lower_bound_time, upper_thershold_time)
+        speed_modifier = _calculate_speed_modifier(lower_bound_time, lower_bound_time, upper_thershold_time)
         work_bonus = _calculate_work_bonus_images(steps, AVATAR_OVERHEAD, lower_bound_time)
         return speed_modifier * work_bonus
 
@@ -181,26 +161,20 @@ async def speed_scoring_chat(result: utility_models.QueryResult, synapse: Dict[s
     if number_of_characters == 0:
         return 1
 
-    response_time = result.response_time
-
     if task == Tasks.chat_bittensor_finetune.value:
-        response_time_without_overhead = max(response_time - CHAT_OVERHEAD, 0.1)
-        seconds_per_character = response_time_without_overhead / number_of_characters
         lower_bound_time = 1 / 120  # equivalent to ~ 30 tokens per second
         upper_thershold_time = 1 / 40  # equivalen to ~ 15 tokens per second
 
-        speed_modifier = _calculate_speed_modifier(seconds_per_character, lower_bound_time, upper_thershold_time)
+        speed_modifier = _calculate_speed_modifier(lower_bound_time, lower_bound_time, upper_thershold_time)
         work_bonus = _calculate_work_bonus_text(number_of_characters, CHAT_OVERHEAD, lower_bound_time)
 
         return speed_modifier * work_bonus
 
     if task == Tasks.chat_mixtral.value:
-        response_time_without_overhead = max(response_time - CHAT_OVERHEAD, 0.1)
-        seconds_per_character = response_time_without_overhead / number_of_characters
         lower_bound_time = 1 / 70  # equivalent to ~ 24 tokens per second
         upper_thershold_time = 1 / 30  # equivalen to ~ 15 tokens per second
 
-        speed_modifier = _calculate_speed_modifier(seconds_per_character, lower_bound_time, upper_thershold_time)
+        speed_modifier = _calculate_speed_modifier(lower_bound_time, lower_bound_time, upper_thershold_time)
         work_bonus = _calculate_work_bonus_text(number_of_characters, CHAT_OVERHEAD, lower_bound_time)
 
         return speed_modifier * work_bonus
