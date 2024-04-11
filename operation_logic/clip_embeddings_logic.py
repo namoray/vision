@@ -39,7 +39,7 @@ async def clip_embeddings_logic(
 ) -> base_models.ClipEmbeddingsOutgoing:
     output = base_models.ClipEmbeddingsOutgoing()
 
-    clip_embeddings_response = await _get_clip_embeddings_from_server(body)
+    clip_embeddings_response = await _get_clip_embeddings_from_server(body, timeout=5)
     embeddings = clip_embeddings_response.clip_embeddings
     output.clip_embeddings = clip_embeddings_response.clip_embeddings
 
