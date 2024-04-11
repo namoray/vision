@@ -5,7 +5,7 @@ from validation.proxy import validation_utils
 from fastapi import routing
 from validation.proxy.api_server.image import utils
 from validation.core_validator import core_validator
-
+import bittensor as bt
 router = routing.APIRouter(tags=["image"])
 
 
@@ -21,9 +21,9 @@ async def text_to_image(
     result: utility_models.QueryResult = await core_validator.execute_query(
         synapse, outgoing_model=base_models.TextToImageOutgoing, task=synapse.engine + "-text-to-image"
     )
-    print("result before validating", result)
+    bt.logging.info(f"result before validating {result}")
     validation_utils.handle_bad_result(result)
-    print(result, "this was the result after text-to-image")
+    bt.logging.info(f"result after validating {result}")
 
     formatted_response: base_models.TextToImageOutgoing = result.formatted_response
 
