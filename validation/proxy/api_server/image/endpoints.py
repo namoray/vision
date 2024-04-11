@@ -118,7 +118,7 @@ async def clip_embeddings(
     )
 
     result = await core_validator.execute_query(
-        synapse, outgoing_model=base_models.ClipEmbeddingsOutgoing, task="clip-embeddings"
+        synapse, outgoing_model=base_models.ClipEmbeddingsOutgoing, task="clip-image-embeddings"
     )
     if result is None:
         raise HTTPException(
