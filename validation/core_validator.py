@@ -124,9 +124,9 @@ class CoreValidator:
 
     async def periodically_resync_and_set_weights(self) -> None:
         # TODO: CHANGE AFTER DEBUGING
-        cycle_length_initial = 3
-        cycle_length_in_loop = 3
-        time_between_resyncing = 60 * 10  # 10 mins
+        cycle_length_initial = 1
+        cycle_length_in_loop = 1
+        time_between_resyncing = 1 * 10  # 10 mins
 
         # Initial cycles to make sure restarts don't impact scores too heavily
         for _ in range(cycle_length_initial):
