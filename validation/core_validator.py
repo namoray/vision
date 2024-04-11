@@ -125,7 +125,7 @@ class CoreValidator:
         # TODO: CHANGE AFTER DEBUGING
         cycle_length_initial = 0
         cycle_length_in_loop = 1
-        time_between_resyncing = 1 * 30  # 10 mins
+        time_between_resyncing = 60 * 5  # 10 mins
 
         # Initial cycles to make sure restarts don't impact scores too heavily
         for _ in range(cycle_length_initial):
@@ -323,7 +323,9 @@ class CoreValidator:
             max_expected_score = await validation_utils.get_expected_score(
                 utility_models.QueryResult(**results_json), synapse, task
             )
-            bt.logging.info(f"Adding scores: {axon_scores}; for synapse {synapse} with max expected score to normalise with {max_expected_score}")
+            bt.logging.info(
+                f"Adding scores: {axon_scores}; for synapse {synapse} with max expected score to normalise with {max_expected_score}"
+            )
             for uid, score in axon_scores.items():
                 uid_info = self.uid_to_uid_info[int(uid)]
                 uid_info.add_score(score / max_expected_score)
@@ -705,13 +707,12 @@ class CoreValidator:
 
                 average_score = uid_info.total_score / max(uid_info.request_count, 1)
                 available_tasks = uid_info.available_tasks
-                bt.logging.debug(f"Available tasks: {available_tasks}, uid: {uid_info.uid}")
+                bt.logging.warning(f"Available tasks: {available_tasks}, uid: {uid_info.uid}; total_score: {uid_info.total_score}; request_count: {uid_info.request_count}; average_score: {average_score}")
 
-                multiplier = cst.AVAILABLE_OPERATIONS_MULTIPLIER[len(available_tasks)]
+                multiplier = cst.AVAILABLE_TASKS_MULTIPLIER[len(available_tasks)]
                 score = multiplier * average_score
 
                 uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
-
 
         uid_weights: Dict[int, float] = {}
         max_periods = max([i for i in scoring_periods_uid_was_in.values()])
