@@ -53,6 +53,7 @@ class UIDinfo(BaseModel):
 
     def add_score(self, score: float) -> None:
         self.total_score += score
+        self.request_count += 1
 
 
 class OperationDistribution(BaseModel):

@@ -698,7 +698,7 @@ class CoreValidator:
 
                 uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [uid_info.total_score]
 
-        uid_weights: Dict[int, float] = {uid: math.log(score) for uid, score in uid_scores.items()}
+        uid_weights: Dict[int, float] = {uid: math.log(1 + score) for uid, score in uid_scores.items()}
 
         if uid_weights == {}:
             bt.logging.info("No scores found, nothing to set")
