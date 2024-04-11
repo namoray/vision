@@ -384,21 +384,21 @@ class CoreValidator:
         uids = uid_to_query_task.keys()
         all_available_tasks = [i[0] for i in responses_and_response_times]
 
-        bt.logging.info(f"Got {len(all_available_tasks)} available tasks for {len(uids)} axons!")
         for uid, available_tasks in zip(uids, all_available_tasks):
             if available_tasks is None:
                 continue
 
-            tasks_for_uids = []
+            tasks_for_uid = []
             allowed_tasks = set([task.value for task in tasks.Tasks])
             for task_name in available_tasks:
                 # This is to stop people claiming tasks that don't exist
                 if task_name not in allowed_tasks:
                     continue
                 self.tasks_to_available_axon_uids[task_name].add(uid)
-                tasks_for_uids.append(task_name)
+                tasks_for_uid.append(task_name)
 
-            self.uid_to_uid_info[uid].available_tasks = tasks_for_uids
+            self.uid_to_uid_info[uid].available_tasks = tasks_for_uid
+            bt.logging.debug(f"{uid} has available tasks: {tasks_for_uid}")
         bt.logging.info("Done fetching available tasks!")
 
     async def resync_metagraph(self):
