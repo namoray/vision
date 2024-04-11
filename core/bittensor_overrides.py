@@ -29,7 +29,7 @@ class dendrite(bittensor.dendrite):
         """
         if (
             validator_config.subtensor_network is not None
-            and validator_config.subtensor_network.strip().lower() == "test"
+            and validator_config.subtensor_network.strip().lower() == "test-dsabled"
         ):
             endpoint = (
                 f"0.0.0.0:{str(target_axon.port)}"
