@@ -211,7 +211,6 @@ class CoreValidator:
 
         This function does not return any value.
         """
-        return
 
         while True:
             # TODO: mimic taovision when we're live
