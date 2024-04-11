@@ -323,7 +323,7 @@ class CoreValidator:
             max_expected_score = await validation_utils.get_expected_score(
                 utility_models.QueryResult(**results_json), synapse, task
             )
-            bt.logging.info(f"Adding scores: {axon_scores}")
+            bt.logging.info(f"Adding scores: {axon_scores}; for synapse {synapse} with max expected score to normalise with {max_expected_score}")
             for uid, score in axon_scores.items():
                 uid_info = self.uid_to_uid_info[int(uid)]
                 uid_info.add_score(score / max_expected_score)
