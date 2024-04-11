@@ -539,6 +539,7 @@ class CoreValidator:
         return main_query_result
 
     def _get_available_axons(self, task_name: str) -> List[int]:
+        return [5, 6]
         return list(self.tasks_to_available_axon_uids.get(task_name, []))
 
     def _get_miners_query_order(self, available_axons: List[int]) -> list:
