@@ -235,6 +235,7 @@ class CoreValidator:
 
             time_before_query = time.time()
 
+            # Make an asyncio task when wanting to ramp up the rate
             await self.execute_query(
                 synapse=synthetic_synapse,
                 outgoing_model=outgoing_model,
