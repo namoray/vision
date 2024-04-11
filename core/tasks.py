@@ -86,5 +86,5 @@ TASKS_TO_MINER_OPERATION_MODULES = {
     Tasks.clip_image_embeddings.value: operations.clip_embeddings_operation,
     Tasks.sota.value: operations.sota_operation,
     Tasks.avatar.value: operations.avatar_operation,
-    Tasks.upscale.value: operations.Upscale,
+    Tasks.upscale.value: operations.upscale_operation,
 }
