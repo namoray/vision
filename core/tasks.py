@@ -17,6 +17,7 @@ class Tasks(Enum):
     clip_image_embeddings = "clip-image-embeddings"
     avatar = "avatar"
     sota = "sota"
+    upscale = "upscale"
 
 
 # IF YOU ARE MINER, YOU WILL PROBABLY NEED TO FIDDLE WITH THIS:
@@ -33,6 +34,7 @@ if miner_config.image_worker_url:
             Tasks.jugger_inpainting.value,
             Tasks.clip_image_embeddings.value,
             Tasks.avatar.value,
+            Tasks.upscale.value,
         ]
     )
 if miner_config.finetune_text_worker_url:
@@ -68,6 +70,7 @@ TASKS_TO_SYNAPSE = {
     Tasks.clip_image_embeddings.value: synapses.ClipEmbeddings,
     Tasks.sota.value: synapses.Sota,
     Tasks.avatar.value: synapses.Avatar,
+    Tasks.upscale.value: synapses.Upscale,
 }
 
 TASKS_TO_MINER_OPERATION_MODULES = {
@@ -83,4 +86,5 @@ TASKS_TO_MINER_OPERATION_MODULES = {
     Tasks.clip_image_embeddings.value: operations.clip_embeddings_operation,
     Tasks.sota.value: operations.sota_operation,
     Tasks.avatar.value: operations.avatar_operation,
+    Tasks.upscale.value: synapses.Upscale,
 }
