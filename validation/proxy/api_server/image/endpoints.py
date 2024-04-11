@@ -27,7 +27,7 @@ async def text_to_image(
 
     formatted_response: base_models.TextToImageOutgoing = result.formatted_response
 
-    await utils.do_formatted_response_image_checks(formatted_response, result)
+    utils.do_formatted_response_image_checks(formatted_response, result)
     return request_models.TextToImageResponse(image_b64=formatted_response.image_b64)
 
 
