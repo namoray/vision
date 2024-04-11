@@ -471,8 +471,8 @@ class CoreValidator:
         response = await self.dendrite.forward(
             axons=self.uid_to_uid_info[axon_uid].axon,
             synapse=synapse,
-            connect_timeout=5,
-            response_timeout=cst.OPERATION_TIMEOUTS.get(synapse_name, 15),
+            connect_timeout=0.3,
+            response_timeout=2,  # if X seconds without any data, its boinked
             deserialize=deserialize,
             log_requests_and_responses=log_requests_and_responses,
             streaming=True,
