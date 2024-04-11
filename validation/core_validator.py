@@ -602,6 +602,8 @@ class CoreValidator:
                         text_jsons.extend(loaded_jsons)
                         for text_json in loaded_jsons:
                             content = text_json.get("text", "")
+                            if content == "":
+                                continue
                             dumped_payload = self._get_formatted_payload(content, first_message)
                             first_message = False
                             yield f"data: {dumped_payload}\n\n"
