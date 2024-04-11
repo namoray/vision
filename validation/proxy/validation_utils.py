@@ -5,7 +5,7 @@ import traceback
 from typing import Optional
 from typing import Dict
 from typing import Type
-from typing import Union
+from typing import Union, Any
 from rich.console import Console
 from rich.table import Table
 import bittensor as bt
@@ -21,7 +21,9 @@ from models import utility_models, base_models
 import numpy as np
 from PIL import Image
 import sqlite3
+from validation.proxy import speed_scoring_functions
 import os
+from core.tasks import Tasks
 
 console = Console()
 
@@ -66,6 +68,7 @@ def health_check(base_url):
         print(f"Health check failed for now - can't connect to {base_url}.")
         return False
 
+
 def connect_to_external_server() -> str:
     hotkey_name = validator_config.hotkey_name
 
@@ -82,9 +85,7 @@ def connect_to_external_server() -> str:
         while True:
             connected = health_check(url)
             if connected:
-                bt.logging.info(
-                    f"Health check successful - connected to {name} at {url}."
-                )
+                bt.logging.info(f"Health check successful - connected to {name} at {url}.")
                 break
             else:
                 bt.logging.info(
@@ -114,9 +115,7 @@ def alter_clip_body(
 
             for i in range(3):
                 change = random.choice([-1, 1])
-                numpy_image[rand_y, rand_x, i] = np.clip(
-                    numpy_image[rand_y, rand_x, i] + change, 0, 255
-                )
+                numpy_image[rand_y, rand_x, i] = np.clip(numpy_image[rand_y, rand_x, i] + change, 0, 255)
 
         pil_image = Image.fromarray(numpy_image)
         new_image = core_utils.pil_to_base64(pil_image)
@@ -154,17 +153,9 @@ def store_and_print_scores(
 
     for uid, score in axon_scores.items():
         if uid == result1.axon_uid:
-            response_time = (
-                "N/A"
-                if result1.response_time is None
-                else str(round(result1.response_time, 2))
-            )
+            response_time = "N/A" if result1.response_time is None else str(round(result1.response_time, 2))
         elif uid == result2.axon_uid:
-            response_time = (
-                "N/A"
-                if result2.response_time is None
-                else str(round(result2.response_time, 2))
-            )
+            response_time = "N/A" if result2.response_time is None else str(round(result2.response_time, 2))
         else:
             response_time = "N/A"
 
@@ -204,3 +195,24 @@ def store_and_print_scores(
     if conn is not None:
         conn.commit()
         conn.close()
+
+
+tasks_to_scoring_function = {
+    Tasks.chat_bittensor_finetune.value: speed_scoring_functions.speed_scoring_chat,
+    Tasks.chat_mixtral.value: speed_scoring_functions.speed_scoring_chat,
+    Tasks.proteus_text_to_image: speed_scoring_functions.speed_scoring_images,
+    Tasks.playground_text_to_image: speed_scoring_functions.speed_scoring_images,
+    Tasks.dreamshaper_text_to_image: speed_scoring_functions.speed_scoring_images,
+    Tasks.proteus_image_to_image: speed_scoring_functions.speed_scoring_images,
+    Tasks.playground_image_to_image: speed_scoring_functions.speed_scoring_images,
+    Tasks.dreamshaper_text_to_image: speed_scoring_functions.speed_scoring_images,
+    Tasks.jugger_inpainting: speed_scoring_functions.speed_scoring_images,
+    Tasks.avatar: speed_scoring_functions.speed_scoring_images,
+    Tasks.clip_image_embeddings.value: speed_scoring_functions.speed_scoring_clip,
+    Tasks.sota.value: speed_scoring_functions.speed_scoring_sota,
+}
+
+
+async def get_expected_score(result: utility_models.QueryResult, synapse: Dict[str, Any], task: str) -> float:
+    expected_score =  await tasks_to_scoring_function[task](result, synapse, task)
+    return max(expected_score, 1)

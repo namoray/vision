@@ -90,3 +90,7 @@ class ImageResponseBody(BaseModel):
     is_nsfw: Optional[bool] = None
     clip_embeddings: Optional[List[float]] = None
     image_hashes: Optional[ImageHashes] = None
+
+class MinerChatResponse(BaseModel):
+    text: str
+    logprob: float

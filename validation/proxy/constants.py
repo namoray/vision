@@ -35,13 +35,16 @@ OPERATION_TIMEOUTS: Dict[str, float] = {
 # FOR PHASE 1 - where synthetic only validators may have a distribution different to organic ones
 AVAILABLE_OPERATIONS_MULTIPLIER = {
     0: 0,
-    1: 0.5,
-    2: 0.6,
-    3: 0.7,
-    4: 0.8,
-    5: 0.9,
-    6: 1,
-    7: 1.1,
+    1: 0.4,
+    2: 0.4,
+    3: 0.5,
+    4: 0.5,
+    5: 0.5,
+    6: 0.6,
+    7: 0.7,
+    8: 1.0,
+    9: 1.1,
+    10: 1.2,
 }
 
 

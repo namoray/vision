@@ -14,7 +14,6 @@ from typing import Tuple
 from core import tasks
 import bittensor as bt
 import httpx
-import math
 import torch
 from pydantic import BaseModel
 from pydantic import ValidationError
@@ -130,16 +129,13 @@ class CoreValidator:
 
         # Initial cycles to make sure restarts don't impact scores too heavily
         for _ in range(cycle_length_initial):
-            await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights = False)
+            await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights=False)
 
         while True:
-
             for _ in range(cycle_length_in_loop):
-                await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights = False)
-            
-            await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights = True)
+                await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights=False)
 
-            
+            await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights=True)
 
     async def _store_synthetic_result(self, sota_request: utility_models.SotaCheckingRequest) -> None:
         """
@@ -282,14 +278,17 @@ class CoreValidator:
             checking_data = db_manager.select_and_delete_task_result(task)  # noqa
             if checking_data is None:
                 return
-            results, synthetic_query, synapse = (
+            results, synthetic_query, synapse_dict_str = (
                 checking_data["result"],
                 checking_data["synthetic_query"],
                 checking_data["synapse"],
             )
             results_json = json.loads(results)
+
+            synapse = json.dumps(synapse_dict_str)
+
             data = {
-                "synapse": json.loads(synapse),
+                "synapse": synapse,
                 "synthetic_query": synthetic_query,
                 "result": results_json,
                 "task": task,
@@ -321,10 +320,13 @@ class CoreValidator:
                 bt.logging.error(f"Error occurred when parsing the response: {parse_err}")
                 continue
 
+            max_expected_score = await validation_utils.get_expected_score(
+                utility_models.QueryResult(**results_json), synapse, task
+            )
             bt.logging.info(f"Adding scores: {axon_scores}")
             for uid, score in axon_scores.items():
                 uid_info = self.uid_to_uid_info[int(uid)]
-                uid_info.add_score(score)
+                uid_info.add_score(score / max_expected_score)
             i += 1
 
             ## Renabled soon, this is to enable beautiful stats for the network
@@ -687,22 +689,38 @@ class CoreValidator:
         bt.logging.info("Setting weights!")
 
         uid_scores: Dict[int, List[float]] = {}
+        scoring_periods_uid_was_in: Dict[int, int] = {}
 
         for epoch in self.previous_uid_infos:
             for uid_info in epoch:
                 if len(uid_info.available_tasks) == 0:
                     continue
 
+                scoring_periods_uid_was_in[uid_info.uid] = scoring_periods_uid_was_in.get(uid_info.uid, 0) + 1
                 if uid_info.request_count == 0:
                     continue
 
-                uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [uid_info.total_score]
+                if uid_info.request_count == 0:
+                    continue
 
-        uid_weights: Dict[int, float] = {uid: math.log(1 + score) for uid, score in uid_scores.items()}
+                average_score = uid_info.total_score / max(uid_info.request_count, 1)
+                available_tasks = uid_info.available_tasks
 
-        if uid_weights == {}:
-            bt.logging.info("No scores found, nothing to set")
+                multiplier = cst.AVAILABLE_OPERATIONS_MULTIPLIER[len(available_tasks)]
+                score = multiplier * average_score
+
+                uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
+
+        uid_weights: Dict[int, float] = {}
+        max_periods = max([i for i in scoring_periods_uid_was_in.values()])
+        if max_periods == 0:
+            bt.logging.info("No uids found to score, nothing to set")
             return
+        for uid, periods_for_uid in scoring_periods_uid_was_in.items():
+            scores = uid_scores.get(uid, [cst.FAILED_RESPONSE_SCORE])
+            average_score = sum(scores) / len(scores)
+
+            uid_weights[uid] = average_score * (periods_for_uid / max_periods) ** 0.5
 
         weights_tensor = torch.zeros_like(self.metagraph.S, dtype=torch.float32)
         for uid, weight in uid_weights.items():
