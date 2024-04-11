@@ -11,8 +11,7 @@ class NSFWContentException(fastapi.HTTPException):
 
 
 def _do_nsfw_checks(formatted_response: BaseModel):
-    bt.logging.info(f"Formatted response is nsfw: {formatted_response.is_nsfw}")
-    if formatted_response.is_nsfw:
+    if formatted_response is not None and formatted_response.is_nsfw:
         raise NSFWContentException()
     
 def do_formatted_response_image_checks(formatted_response: BaseModel, result: utility_models.QueryResult):
