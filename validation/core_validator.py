@@ -584,7 +584,7 @@ class CoreValidator:
                             break
 
                         text_jsons.extend(loaded_jsons)
-                        text = "".join([text_json["text"] for text_json in text_jsons])
+                        text = "".join([text_json["text"] for text_json in loaded_jsons])
                         yield f"data: {text}\n\n"
 
                 if len(text_jsons) > 0:
