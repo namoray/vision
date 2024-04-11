@@ -211,6 +211,7 @@ class CoreValidator:
 
         This function does not return any value.
         """
+        return
 
         while True:
             # TODO: mimic taovision when we're live
@@ -383,21 +384,21 @@ class CoreValidator:
         uids = uid_to_query_task.keys()
         all_available_tasks = [i[0] for i in responses_and_response_times]
 
-        bt.logging.info(f"Got {len(all_available_tasks)} available tasks for {len(uids)} axons!")
         for uid, available_tasks in zip(uids, all_available_tasks):
             if available_tasks is None:
                 continue
 
-            tasks_for_uids = []
+            tasks_for_uid = []
             allowed_tasks = set([task.value for task in tasks.Tasks])
             for task_name in available_tasks:
                 # This is to stop people claiming tasks that don't exist
                 if task_name not in allowed_tasks:
                     continue
                 self.tasks_to_available_axon_uids[task_name].add(uid)
-                tasks_for_uids.append(task_name)
+                tasks_for_uid.append(task_name)
 
-            self.uid_to_uid_info[uid].available_tasks = tasks_for_uids
+            self.uid_to_uid_info[uid].available_tasks = tasks_for_uid
+            bt.logging.debug(f"{uid} has available tasks: {tasks_for_uid}")
         bt.logging.info("Done fetching available tasks!")
 
     async def resync_metagraph(self):
@@ -470,8 +471,8 @@ class CoreValidator:
         response = await self.dendrite.forward(
             axons=self.uid_to_uid_info[axon_uid].axon,
             synapse=synapse,
-            connect_timeout=5,
-            response_timeout=cst.OPERATION_TIMEOUTS.get(synapse_name, 15),
+            connect_timeout=0.3,
+            response_timeout=2,  # if X seconds without any data, its boinked
             deserialize=deserialize,
             log_requests_and_responses=log_requests_and_responses,
             streaming=True,
@@ -498,7 +499,7 @@ class CoreValidator:
         response = await self.dendrite.forward(
             axons=self.uid_to_uid_info[axon_uid].axon,
             synapse=synapse,
-            connect_timeout=2,
+            connect_timeout=1.0,
             response_timeout=cst.OPERATION_TIMEOUTS.get(operation_name, 15),
             deserialize=deserialize,
             log_requests_and_responses=log_requests_and_responses,
@@ -538,7 +539,23 @@ class CoreValidator:
         return main_query_result
 
     def _get_available_axons(self, task_name: str) -> List[int]:
+        return [8]
         return list(self.tasks_to_available_axon_uids.get(task_name, []))
+
+    def _get_formatted_payload(self, content: str, first_message: bool, add_finish_reason: bool = False) -> str:
+        delta_payload = {"content": content}
+        if first_message:
+            delta_payload["role"] = "assistant"
+        choices_payload = {"delta": delta_payload}
+        if add_finish_reason:
+            choices_payload["finish_reason"] = "stop"
+        payload = {
+            "choices": [choices_payload],
+        }
+
+        dumped_payload = json.dumps(payload)
+        return dumped_payload
+        
 
     def _get_miners_query_order(self, available_axons: List[int]) -> list:
         random.shuffle(available_axons)
@@ -573,6 +590,7 @@ class CoreValidator:
             if text_generator is not None:
                 text_jsons = []
 
+                first_message = True
                 async for text in text_generator:
                     if isinstance(text, str):
                         try:
@@ -582,10 +600,17 @@ class CoreValidator:
                             break
 
                         text_jsons.extend(loaded_jsons)
-                        text = "".join([text_json["text"] for text_json in text_jsons])
-                        yield f"data: {text}\n\n"
+                        for text_json in loaded_jsons:
+                            content = text_json.get("text", "")
+                            if content == "":
+                                continue
+                            dumped_payload = self._get_formatted_payload(content, first_message)
+                            first_message = False
+                            yield f"data: {dumped_payload}\n\n"
 
                 if len(text_jsons) > 0:
+                    last_payload = self._get_formatted_payload("", False, add_finish_reason=True)
+                    yield f"data: {last_payload}\n\n"
                     yield "data: [DONE]\n\n"
                     if should_score:
                         bt.logging.info(f"✅ Successfully queried axon: {axon_uid} for task: {task}")

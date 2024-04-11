@@ -205,7 +205,7 @@ tasks_to_scoring_function = {
     Tasks.dreamshaper_text_to_image.value: speed_scoring_functions.speed_scoring_images,
     Tasks.proteus_image_to_image.value: speed_scoring_functions.speed_scoring_images,
     Tasks.playground_image_to_image.value: speed_scoring_functions.speed_scoring_images,
-    Tasks.dreamshaper_text_to_image.value: speed_scoring_functions.speed_scoring_images,
+    Tasks.dreamshaper_image_to_image.value: speed_scoring_functions.speed_scoring_images,
     Tasks.jugger_inpainting.value: speed_scoring_functions.speed_scoring_images,
     Tasks.avatar.value: speed_scoring_functions.speed_scoring_images,
     Tasks.clip_image_embeddings.value: speed_scoring_functions.speed_scoring_clip,

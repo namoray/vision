@@ -21,12 +21,12 @@ MINIMUM_TASKS_TO_START_SCORING = 40
 OPERATION_TIMEOUTS: Dict[str, float] = {
     "AvailableTasksOperation": 30,
     "ClipEmbeddings": 6,
-    "TextToImage": 30,
-    "ImageToImage": 30,
+    "TextToImage": 20,
+    "ImageToImage": 20,
     "Upscale": 30,
-    "Inpaint": 30,
-    "Scribble": 30,
-    "Avatar": 30,
+    "Inpaint": 20,
+    "Scribble": 20,
+    "Avatar": 50,
     "Sota": 180,
     "Chat": 60,
     # "Segment": 15,
@@ -45,8 +45,8 @@ AVAILABLE_TASKS_MULTIPLIER = {
     8: 0.7,
     9: 0.8,
     10: 1.0,
-    11: 1.1,
-    12: 1.2,
+    11: 1.3,
+    12: 1.4,
 }
 
 
