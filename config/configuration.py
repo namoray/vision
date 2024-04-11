@@ -30,13 +30,9 @@ def get_miner_cli_config() -> "bt.Config":
         help="Port to run the axon on.",
     )
 
-    parser.add_argument(
-        "--axon.external_ip", type=str, default=miner_config.axon_external_ip
-    )
+    parser.add_argument("--axon.external_ip", type=str, default=miner_config.axon_external_ip)
 
-    parser.add_argument(
-        "--debug_miner", action="store_true", default=miner_config.debug_miner
-    )
+    parser.add_argument("--debug_miner", action="store_true", default=miner_config.debug_miner)
 
     parser.add_argument(
         "--subtensor.network",
@@ -50,7 +46,12 @@ def get_miner_cli_config() -> "bt.Config":
         help="Chain endpoint to connect to.",
     )
 
-    parser.add_argument("--netuid", type=int, default=19, help="The chain subnet uid.")
+    parser.add_argument(
+        "--netuid",
+        type=int,
+        default=19 if miner_config.subtensor_network != "test" else 51,
+        help="The chain subnet uid.",
+    )
 
     parser.add_argument("--wallet.name", type=str, default=miner_config.wallet_name)
     parser.add_argument("--wallet.hotkey", type=str, default=miner_config.hotkey_name)

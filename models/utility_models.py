@@ -48,45 +48,12 @@ class UIDinfo(BaseModel):
     is_low_incentive: bool = False
     incentive: float = 0.0
 
-    total_organic_score: float = 0.0
-    organic_request_count: int = 0
+    total_score: float = 0.0
+    request_count: int = 0
 
-    total_synthetic_score: float = 0.0
-    synthetic_request_count: int = 0
-
-    @property
-    def average_score(self) -> float:
-        """You get the minimum of the scores, to prevent attack vectors.
-
-        If you didn't get any requests of one type, then I will just use the other."""
-
-        if self.organic_request_count == 0 and self.synthetic_request_count == 0:
-            return 0.0
-
-        if self.organic_request_count == 0:
-            return self.total_synthetic_score / self.synthetic_request_count
-
-        elif self.synthetic_request_count == 0:
-            return self.total_organic_score / self.organic_request_count
-
-        average_organic_score = self.total_organic_score / max(1, self.organic_request_count)
-        average_synthetic_score = self.total_synthetic_score / max(1, self.synthetic_request_count)
-        return min(average_organic_score, average_synthetic_score)
-
-    def add_score(self, score: float, synthetic: bool = False, count: Optional[int] = 1) -> None:
-        if synthetic:
-            self.total_synthetic_score += score * count
-            self.synthetic_request_count += count
-        else:
-            self.total_organic_score += score * count
-            self.organic_request_count += count
-
-    def reset_scores(self) -> None:
-        self.total_organic_score = 0
-        self.organic_request_count = 0
-
-        self.total_synthetic_score = 0
-        self.synthetic_request_count = 0
+    def add_score(self, score: float) -> None:
+        self.total_score += score
+        self.request_count += 1
 
 
 class OperationDistribution(BaseModel):
@@ -117,8 +84,13 @@ class SotaCheckingRequest(BaseModel):
     image_url: str
     prompt: str
 
+
 class ImageResponseBody(BaseModel):
     image_b64: Optional[str] = None
     is_nsfw: Optional[bool] = None
     clip_embeddings: Optional[List[float]] = None
     image_hashes: Optional[ImageHashes] = None
+
+class MinerChatResponse(BaseModel):
+    text: str
+    logprob: float

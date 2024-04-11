@@ -5,6 +5,7 @@ from validation.proxy import validation_utils
 from fastapi import routing
 from validation.proxy.api_server.image import utils
 from validation.core_validator import core_validator
+import bittensor as bt
 
 router = routing.APIRouter(tags=["image"])
 
@@ -25,7 +26,7 @@ async def text_to_image(
 
     formatted_response: base_models.TextToImageOutgoing = result.formatted_response
 
-    await utils.do_formatted_response_image_checks(formatted_response, result)
+    utils.do_formatted_response_image_checks(formatted_response, result)
     return request_models.TextToImageResponse(image_b64=formatted_response.image_b64)
 
 
@@ -45,7 +46,7 @@ async def image_to_image(
 
     formatted_response: base_models.ImageToImageOutgoing = result.formatted_response
 
-    await utils.do_formatted_response_image_checks(formatted_response, result)
+    utils.do_formatted_response_image_checks(formatted_response, result)
     return request_models.ImageToImageResponse(image_b64=formatted_response.image_b64)
 
 
@@ -63,9 +64,10 @@ async def inpaint(
 
     formatted_response: base_models.InpaintOutgoing = result.formatted_response
 
-    await utils.do_formatted_response_image_checks(formatted_response, result)
+    utils.do_formatted_response_image_checks(formatted_response, result)
 
     return request_models.InpaintResponse(image_b64=formatted_response.image_b64)
+
 
 @router.post("/avatar")
 async def avatar(
@@ -81,7 +83,7 @@ async def avatar(
 
     formatted_response: base_models.AvatarOutgoing = result.formatted_response
 
-    await utils.do_formatted_response_image_checks(formatted_response, result)
+    utils.do_formatted_response_image_checks(formatted_response, result)
 
     return request_models.AvatarResponse(image_b64=formatted_response.image_b64)
 
@@ -100,7 +102,7 @@ async def upscale(
 
     formatted_response: base_models.UpscaleOutgoing = result.formatted_response
 
-    await utils.do_formatted_response_image_checks(formatted_response, result)
+    utils.do_formatted_response_image_checks(formatted_response, result)
 
     return request_models.UpscaleResponse(image_b64=formatted_response.image_b64)
 
@@ -115,7 +117,9 @@ async def clip_embeddings(
         synapse_model=synapses.ClipEmbeddings,
     )
 
-    result = await core_validator.execute_query(synapse, outgoing_model=base_models.ClipEmbeddingsOutgoing, task="clip-embeddings")
+    result = await core_validator.execute_query(
+        synapse, outgoing_model=base_models.ClipEmbeddingsOutgoing, task="clip-embeddings"
+    )
     if result is None:
         raise HTTPException(
             status_code=fastapi.status.HTTP_400_BAD_REQUEST,
