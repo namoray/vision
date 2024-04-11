@@ -285,7 +285,7 @@ class CoreValidator:
             )
             results_json = json.loads(results)
 
-            synapse = json.dumps(synapse_dict_str)
+            synapse = json.loads(synapse_dict_str)
 
             data = {
                 "synapse": synapse,
