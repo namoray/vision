@@ -710,7 +710,7 @@ class CoreValidator:
                 available_tasks = uid_info.available_tasks
 
                 multiplier = cst.AVAILABLE_TASKS_MULTIPLIER[len(available_tasks)]
-                score = multiplier * average_score
+                score = (multiplier * average_score) ** 2
 
                 uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
 
