@@ -542,6 +542,21 @@ class CoreValidator:
         return [8]
         return list(self.tasks_to_available_axon_uids.get(task_name, []))
 
+    def _get_formatted_payload(self, content: str, first_message: bool, add_finish_reason: bool = False) -> str:
+        delta_payload = {"content": content}
+        if first_message:
+            delta_payload["role"] = "assistant"
+        choices_payload = {"delta": delta_payload}
+        if add_finish_reason:
+            choices_payload["finish_reason"] = "stop"
+        payload = {
+            "choices": [choices_payload],
+        }
+
+        dumped_payload = json.dumps(payload)
+        return dumped_payload
+        
+
     def _get_miners_query_order(self, available_axons: List[int]) -> list:
         random.shuffle(available_axons)
         return available_axons
@@ -575,6 +590,7 @@ class CoreValidator:
             if text_generator is not None:
                 text_jsons = []
 
+                first_message = True
                 async for text in text_generator:
                     if isinstance(text, str):
                         try:
@@ -584,10 +600,15 @@ class CoreValidator:
                             break
 
                         text_jsons.extend(loaded_jsons)
-                        text = "".join([text_json["text"] for text_json in loaded_jsons])
-                        yield f"data: {text}\n\n"
+                        for text_json in loaded_jsons:
+                            content = text_json.get("text", "")
+                            dumped_payload = self._get_formatted_payload(content, first_message)
+                            first_message = False
+                            yield f"data: {dumped_payload}\n\n"
 
                 if len(text_jsons) > 0:
+                    last_payload = self._get_formatted_payload("", False, add_finish_reason=True)
+                    yield f"data: {last_payload}\n\n"
                     yield "data: [DONE]\n\n"
                     if should_score:
                         bt.logging.info(f"✅ Successfully queried axon: {axon_uid} for task: {task}")
