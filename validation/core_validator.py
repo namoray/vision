@@ -325,7 +325,7 @@ class CoreValidator:
                 utility_models.QueryResult(**results_json), synapse, task
             )
             bt.logging.info(
-                f"Adding scores: {axon_scores}; for synapse {synapse} with max expected score to normalise with {max_expected_score}"
+                f"Adding scores: {axon_scores}; for task {task} with max expected score to normalise with {max_expected_score}"
             )
             for uid, score in axon_scores.items():
                 uid_info = self.uid_to_uid_info[int(uid)]
