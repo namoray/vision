@@ -705,11 +705,13 @@ class CoreValidator:
 
                 average_score = uid_info.total_score / max(uid_info.request_count, 1)
                 available_tasks = uid_info.available_tasks
+                bt.logging.debug(f"Available tasks: {available_tasks}, uid: {uid_info.uid}")
 
                 multiplier = cst.AVAILABLE_OPERATIONS_MULTIPLIER[len(available_tasks)]
                 score = multiplier * average_score
 
                 uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
+
 
         uid_weights: Dict[int, float] = {}
         max_periods = max([i for i in scoring_periods_uid_was_in.values()])
