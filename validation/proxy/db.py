@@ -32,6 +32,16 @@ class DatabaseManager:
         self, task: str, result: Dict[str, Any], synapse: bt.Synapse, synthetic_query: bool
     ) -> None:
         cursor = self.conn.cursor()
+
+        # Get the count of rows in the table
+        cursor.execute("SELECT COUNT(*) FROM tasks")
+        row_count = cursor.fetchone()[0]
+
+        # If there are 300 or more rows, delete a random row
+        if row_count >= 310:
+            for _ in range(10):
+                cursor.execute("DELETE FROM tasks WHERE rowid = (SELECT rowid FROM tasks ORDER BY RANDOM() LIMIT 1)")
+
         data_to_store = {
             "result": json.dumps(result),
             "synapse": json.dumps(synapse.dict()),

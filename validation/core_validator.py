@@ -123,9 +123,9 @@ class CoreValidator:
 
     async def periodically_resync_and_set_weights(self) -> None:
         # TODO: CHANGE AFTER DEBUGING
-        cycle_length_initial = 3
-        cycle_length_in_loop = 3
-        time_between_resyncing = 60 * 10  # 10 mins
+        cycle_length_initial = 0
+        cycle_length_in_loop = 2
+        time_between_resyncing = 60 * 30  # 10 mins
 
         # Initial cycles to make sure restarts don't impact scores too heavily
         for _ in range(cycle_length_initial):
@@ -235,13 +235,14 @@ class CoreValidator:
 
             time_before_query = time.time()
 
-            # Make an asyncio task when wanting to ramp up the rate
-            await self.execute_query(
-                synapse=synthetic_synapse,
-                outgoing_model=outgoing_model,
-                synthetic_query=True,
-                task=task,
-                stream=stream,
+            asyncio.create_task(
+                self.execute_query(
+                    synapse=synthetic_synapse,
+                    outgoing_model=outgoing_model,
+                    synthetic_query=True,
+                    task=task,
+                    stream=stream,
+                )
             )
 
             time_to_execute_query = time.time() - time_before_query
@@ -553,7 +554,6 @@ class CoreValidator:
 
         dumped_payload = json.dumps(payload)
         return dumped_payload
-        
 
     def _get_miners_query_order(self, available_axons: List[int]) -> list:
         random.shuffle(available_axons)
@@ -709,9 +709,6 @@ class CoreValidator:
             return None
 
     def set_weights(self):
-        """
-        Set the weights as the total score you have obtained, after some transformation function (e..g log)
-        """
         bt.logging.info("Setting weights!")
 
         uid_scores: Dict[int, List[float]] = {}
