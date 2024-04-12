@@ -5,13 +5,16 @@ from starlette.responses import StreamingResponse
 from core import tasks
 from fastapi.routing import APIRouter
 from validation.core_validator import core_validator
+import fastapi
+from validation.proxy import dependencies
+
 router = APIRouter()
 
 
 @router.post("/chat")
 async def chat(
     body: request_models.ChatRequest,
-    # _: None = fastapi.Depends(dependencies.get_token),
+    _: None = fastapi.Depends(dependencies.get_token),
 ) -> StreamingResponse:
     synapse = validation_utils.get_synapse_from_body(
         body=body,
@@ -24,7 +27,6 @@ async def chat(
         task = tasks.Tasks.chat_mixtral.value
     else:
         raise HTTPException(status_code=400, detail="Invalid model provided")
-
 
     text_generator = await core_validator.execute_query(
         synapse, outgoing_model=base_models.ChatOutgoing, stream=True, task=task, synthetic_query=False
