@@ -13,9 +13,10 @@ time.sleep(10)
 
 def run_auto_updater():
     while True:
+        current_branch = subprocess.getoutput("git rev-parse --abbrev-ref HEAD")
         local_commit = subprocess.getoutput("git rev-parse HEAD")
         os.system("git fetch")
-        remote_commit = subprocess.getoutput("git rev-parse origin/HEAD")
+        remote_commit = subprocess.getoutput(f"git rev-parse origin/{current_branch}")
 
         if should_update_local(local_commit, remote_commit):
             print("Local repo is not up-to-date. Updating...")
