@@ -75,7 +75,7 @@ async def speed_scoring_clip(result: utility_models.QueryResult, synapse: Dict[s
 T2I_OVERHEAD = 3
 I2I_OVERHEAD = 3
 UPSCALE_OVERHEAD = 5
-AVATAR_OVERHEAD = 10
+AVATAR_OVERHEAD = 21
 INPAINTING_OVERHEAD = 4
 
 
