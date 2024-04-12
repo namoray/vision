@@ -38,7 +38,7 @@ VERSION_KEY = 20_004
 
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
 _UPPER_FOLLOWING_REGEXP = re.compile("([a-z0-9])([A-Z])")
-MAX_PERIODS_TO_LOOK_FOR_SCORE = 30
+MAX_PERIODS_TO_LOOK_FOR_SCORE = 16
 
 
 def _pascal_to_kebab(input_string: str) -> str:
@@ -125,7 +125,7 @@ class CoreValidator:
         # TODO: CHANGE AFTER DEBUGING
         cycle_length_initial = 0
         cycle_length_in_loop = 1
-        time_between_resyncing = 60 * 1  # 30 mins
+        time_between_resyncing = 60 * 30  # 30 mins
 
         # Initial cycles to make sure restarts don't impact scores too heavily
         for _ in range(cycle_length_initial):
