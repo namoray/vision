@@ -1,5 +1,14 @@
 # Full instructions for setup
 
+Welcome to S19 Mining 🔥
+
+
+## Contents:
+
+- [Worker server setup](#worker-server-setup)
+- [Proxy server setup](#proxy-server-setup)
+
+
 # Overview
 A miner consists of serveral parts, fitting into two categories:
 
@@ -14,11 +23,12 @@ I would advise starting with the worker servers. The simplest way to get started
 - One for the mixtral chat model
 - One for the image generation stuff
 
-# Starting a worker server
-I recommend simply using docker templates for an easy setup - but the code can be found here: https://github.com/namoray/vision-workers
+# Worker server setup
+I recommend using bare metal where possible. The documentation for bare metal can be found in here https://github.com/namoray/vision-workers
 
-**⚠️USE CUDA <=12.2 PLEASE ON THE GPU DEVICES!! ⚠️**
+Below is the documentation for a template provder, such as runpod:
 
+**⚠️USE 11.8 <= CUDA <=12.2 For an easier life! ⚠️**
 
 ## Template setup
 I'll use runpod as example, as it's easy with them
@@ -29,25 +39,10 @@ FOR MORE INFO ON BARE METAL SETUP; READ [HERE](https://github.com/namoray/vision
 
 - Navigate to https://www.runpod.io/console/user/templates
 Create a new template
-![Create template](create-template.png)
+![Create template](images/create-template.png)
 
 - **Fill out the template like so**
-![Template details](template-details.png)
-
-```
-MODEL lgodwangl/new_01m
-HALF_PRECISION false
-```
-
-It's very important that port 6919 is exposed here, as well as TCP port 22 ( so you can ssh in if you need to)
-
-- **Create a GPU pod with this instance**
-![With template selected](selected-template.png)
-Select the template to use, then pick a gpu to use, and you're off!
-NOTE: I advise you use a estup with at least 80GB vram (H100 or A100 for example)
-
-- Follow the same steps for mixtral (slightly different template)
-![Mixtral template](mixtral-template.png)
+![Mixtral template](images/mixtral-template.png)
 
 ```
 MODEL TheBloke/Nous-Hermes-2-Mixtral-8x7B-DPO-GPTQ
@@ -55,11 +50,31 @@ HALF_PRECISION true
 REVISION gptq-8bit-128g-actorder_True
 ```
 
+
+
+It's very important that port 6919 is exposed here, as well as TCP port 22 ( so you can ssh in if you need to)
+
+- **Create a GPU pod with this instance**
+- Pick a GPU, pick a template, and you're off! and you're off!
+NOTE: I advise you use a estup with at least 80GB vram (H100 or A100 for example)
+
+NOTE DONT USE THE TEMPLATE BELOW, ITS JUST AN EXAMPLE :D
+![With template selected](images/select-template.png)
+
+
+- Follow the same steps for Finetune (slightly different template)
+
+![Template details](images/finetune-template.png)
+```
+MODEL lgodwangl/new_01m
+HALF_PRECISION false
+```
+
 ## Image worker
 Very similar steps, just a slightly different template! 
 
 For detailed info on setup; read this [image_server_docs](https://github.com/namoray/vision-workers/blob/main/image_server/README.md)
-![Image server template](image-server.png)
+![Image server template](images/image-server-template.png)
 
 I would recommend either a RTX4090 or H100 or A100
 
@@ -70,7 +85,7 @@ Navigate to one of the pods, click 'connect', and then click the orange button, 
 
 
 
-# Proxy setup steps
+# Proxy server setup
 
 Get a CPU VM (Digital Ocean Droplet, OVH, Vultr, etc)  - make sure you have an open port if you want to run a organic API server.
 **Note: Runpod CPU's don't seem to be the best**

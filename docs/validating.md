@@ -1,57 +1,75 @@
 # Full instructions for setup
 
+Welcome to S19 Validating 🔥
+
+
+## Contents:
+
+- [Orchestrator setup](#orchestrator-setup)
+- [Proxy server setup](#proxy-server-setup)
+- [Managing organic access](#managing-organic-access)
+
+
 # Overview
+
+Validating on 19 is special.
+
+Not only do you validate, check miners are behaving, set some weights and get some tao - you also get to sell your access to these miners 🤩
+
+
 A Validator consists of two parts:
 
 - Proxy API server
-- External GPU server
+- Orchestrator server
 
-The proxy server is the server which has your hotkey, and spins up the axon, allows clients to query through you, etc. The External GPU server is the server (called the orchestrator) which performs the checking / scoring tasks!
+The proxy server is the server which has your hotkey,  spins up the axon, allows you to sell your bandwidth, etc. 
 
-I would advise starting with the checking / external server:
+The Orchestrator performs the checking tasks, to make sure the miners are behaving 🫡
 
-**⚠️USE CUDA <=12.2 PLEASE ON THE GPU DEVICES!! ⚠️**
+# Orchestrator setup
 
-# Starting the checking server
-The code can be found here: https://github.com/namoray/vision-workers
+## Starting the Orchestrator server
+The code for the orchestrator can be found here: https://github.com/namoray/vision-workers
 
 There are two options:
-- With baremetal, downloading and running the image manually (https://github.com/namoray/vision-workers/blob/main/validator_orchestrator/README.md)
+- With baremetal, downloading and running the image manually (https://github.com/namoray/vision-workers/blob/main/validator_orchestrator/README.md) (ADVISED)
 - With vast, runpod, etc; using the template setup (below)
 
-**⛔️ I've had significantly moer sucess with VAST (100% success rate) vs runpod (50%) success rate - IF YOU HAVE TROUBLES WITH RUNPOD, TRY ANOTHER PROVIDER!**
+**⛔️ VALIDATORS HAVE HISTORICALLY HAD MORE SUCCESS WITH RUNNING GPU STUFF ON BARE METAL VS RUNPOD (50%) - IF YOU HAVE TROUBLES WITH RUNPOD, TRY ANOTHER PROVIDER!**
 
 ## Template setup
 I'll use runpod as example, but it's the same process on any template provider 
 
-**PLEASE NOTE, RUNPOD HAS A LOT OF SUBOPTIMAL GPUS. TRY TO USE A LOW CUDA VERSION (11.8, 12.0) IF YOU'RE USING RUNPOD**
+(Note on runpod there is a public template called vision-19-orchestrator, you can search for that instead, but I'll show the full steps here for completeness)
 
-### Checking server
 
-- Navigate to https://www.runpod.io/console/user/templates
+Navigate to https://www.runpod.io/console/user/templates
+
 Create a new template
-![Create template](create-template.png)
+![Create template](images/create-template.png)
 
-- **Fill out the template like so**
-![Orchestrator template](orch-template.png)
+**Fill out the template like so**
+
+![Orchestrator template](images/orchestrator-template.png)
 
 It's very important that port 6920 is exposed here, as well as TCP port 22 ( so you can ssh in if you need to)
 
 Try to get as much storage as you can for future proofing! 500gb-1TB is ideal
 
-- **Create a GPU pod with this instance**
-![With template selected](orch-template-selected.png)
-Select the template to use, then pick a gpu to use, and you're off!
-You need to pick a setup with at least 80GB vram (H100 or A100 for example).
-I would advise just using an H100 or A100 for an easy life
+**Create a GPU pod with this instance**
+
+Select a machine, then configure the template 
+
+![select-template](images/select-template.png)
 
 **THIS WILL TAKE ABOUT 10-15 MINUTES TO SPIN UP AS IT DOWNLOADS ALL MODELS AN EVERYTHING FOR YOU!**
 
 #### Getting the address of the server
 Navigate to one of the pods, click 'connect', and then click the `connect to http port` button, and copy the URL in your browser
-![HTTP button](http-button.png)
+![HTTP button](images/http-button.png)
 
-# Proxy setup steps
+
+# Proxy server setup
 
 Get a CPU VM (Digital Ocean Droplet, OVH, Vultr, etc)  - make sure you have an open port if you want to run a organic API server.
 **Note: Runpod CPU's don't seem to be the best**
@@ -143,7 +161,7 @@ dbmate --url "sqlite:validator_database.db" up
 
 
 
-#### Starting the server
+#### Starting the proxy server
 
 ### With autoupdates
 
@@ -154,7 +172,10 @@ dbmate --url "sqlite:validator_database.db" up
 ./launch_validators.sh
 ```
 
-### Organic validator; managing access 
+
+# Managing organic access
+
+**Note this is optional - only if you want to sell your bandwidth**
 
 Using the vision-cli is the easiest way to manage access to your api server and sell access to anyone you like
 
@@ -172,9 +193,9 @@ vision some-command --help
 
 To get more info about that command!
 
-# Examples
+### Some Examples
 
-For example:
+Create a key:
 
 ```bash
 vision create-key 10 60 test
@@ -183,17 +204,18 @@ Creates a test key with a balance of 10 (which corresponds to 10 images), a rate
 
 **Recommend values:**
 - Balance: Depends on how much you want to sell! Each credit is an image (so a balance of 1000 will allow 1000 images to be generated)
-- Rate limit: I would recommend a rate limit of ~20/minute for casual users trying out the API, and around ~120/minute for production users
-- Name: Just for you to remember who you want to use that key :)
+- Rate limit: I would recommend a rate limit of ~5/minute for casual users trying out the API, and around ~60/minute for production users
+- Name: Just for you to remember who is using that key :)
 
 Now you can do:
 ```bash
 vision list-keys
 ```
-To see the API key. Give / sell this access to whoever you want to have access to your API server to query the network organically - these will be scored too!
+To see the API key. Give / sell this access to whoever you want to have access to your API server to query the network organically - these requests will be scored too, miners must still behave!!
 
 ## Allowing people to access your server
 For them to use your server, you will need to communicate:
 
 - Your server address (IP_ADDRESS:PORT)
-- Use /redoc or /docs for automatic documentation on how to use it!
+- Their API key
+- Use server_address/redoc or server_address/docs for automatic documentation on how to use it!
