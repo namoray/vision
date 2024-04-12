@@ -5,7 +5,8 @@ from validation.proxy import validation_utils
 from fastapi import routing
 from validation.proxy.api_server.image import utils
 from validation.core_validator import core_validator
-import bittensor as bt
+
+from validation.proxy import dependencies
 
 router = routing.APIRouter(tags=["image"])
 
@@ -13,6 +14,7 @@ router = routing.APIRouter(tags=["image"])
 @router.post("/text-to-image")
 async def text_to_image(
     body: request_models.TextToImageRequest,
+    _: None = fastapi.Depends(dependencies.get_token),
 ) -> request_models.TextToImageResponse:
     synapse: synapses.TextToImage = validation_utils.get_synapse_from_body(
         body=body,
@@ -33,6 +35,7 @@ async def text_to_image(
 @router.post("/image-to-image")
 async def image_to_image(
     body: request_models.ImageToImageRequest,
+    _: None = fastapi.Depends(dependencies.get_token),
 ) -> request_models.ImageToImageResponse:
     synapse: synapses.ImageToImage = validation_utils.get_synapse_from_body(
         body=body,
@@ -53,6 +56,7 @@ async def image_to_image(
 @router.post("/inpaint")
 async def inpaint(
     body: request_models.InpaintRequest,
+    _: None = fastapi.Depends(dependencies.get_token),
 ) -> request_models.InpaintResponse:
     synapse = validation_utils.get_synapse_from_body(
         body=body,
@@ -72,6 +76,7 @@ async def inpaint(
 @router.post("/avatar")
 async def avatar(
     body: request_models.AvatarRequest,
+    _: None = fastapi.Depends(dependencies.get_token),
 ) -> request_models.AvatarResponse:
     synapse = validation_utils.get_synapse_from_body(
         body=body,
@@ -91,6 +96,7 @@ async def avatar(
 @router.post("/upscale")
 async def upscale(
     body: request_models.UpscaleRequest,
+    _: None = fastapi.Depends(dependencies.get_token),
 ) -> request_models.UpscaleResponse:
     synapse = validation_utils.get_synapse_from_body(
         body=body,
@@ -110,6 +116,7 @@ async def upscale(
 @router.post("/clip-embeddings")
 async def clip_embeddings(
     body: request_models.ClipEmbeddingsRequest,
+    _: None = fastapi.Depends(dependencies.get_token),
 ) -> request_models.ClipEmbeddingsResponse:
     altered_clip_body = validation_utils.alter_clip_body(body)
     synapse = validation_utils.get_synapse_from_body(

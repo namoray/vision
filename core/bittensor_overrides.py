@@ -217,10 +217,16 @@ class dendrite(bittensor.dendrite):
                 # Use synapse subclass' process_streaming_response method to yield the response chunks
                 async for chunk in synapse.process_streaming_response(response):
                     yield chunk
-                json_response = synapse.extract_response_json(response)
 
-                # Process the server response
-                self.process_server_response(response, json_response, synapse)
+                # OVERRIDE: DISABLE THIS AS I ALSO HAVE NO IDEA WHY WE EVEN NEED IT
+                # json_response = synapse.extract_response_json(response)
+
+                # OVERRIDE: DISABLE THIS AS WE DON'T NEED MOST OF IT
+                # self.process_server_response(response, json_response, synapse)
+
+                # Keep this as useful for logging ?
+                synapse.dendrite.status_code = synapse.axon.status_code
+                synapse.dendrite.status_message = synapse.axon.status_message
 
             # Set process time and log the response
             synapse.dendrite.process_time = str(time.time() - start_time)
@@ -232,13 +238,15 @@ class dendrite(bittensor.dendrite):
             if log_requests_and_responses:
                 self._log_incoming_response(synapse)
 
+            # OVERRIDE: DISABLE THIS AS IT SEEMS LIKE ITS NEVER USED
             # Log synapse event history
-            self.synapse_history.append(bittensor.Synapse.from_headers(synapse.to_headers()))
+            # self.synapse_history.append(bittensor.Synapse.from_headers(synapse.to_headers()))
 
-            if deserialize:
-                yield synapse.deserialize()
-            else:
-                yield synapse
+            # OVERRIDE: DISABLE THIS AS I DON'T WANT TO YIELD THE SYNAPSE, I DONT NEED IT
+            # if deserialize:
+            #     yield synapse.deserialize()
+            # else:
+            #     yield synapse
 
     async def call(
         self,

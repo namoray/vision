@@ -124,8 +124,8 @@ class CoreValidator:
     async def periodically_resync_and_set_weights(self) -> None:
         # TODO: CHANGE AFTER DEBUGING
         cycle_length_initial = 0
-        cycle_length_in_loop = 2
-        time_between_resyncing = 60 * 30  # 10 mins
+        cycle_length_in_loop = 1
+        time_between_resyncing = 60 * 1  # 30 mins
 
         # Initial cycles to make sure restarts don't impact scores too heavily
         for _ in range(cycle_length_initial):
@@ -211,7 +211,6 @@ class CoreValidator:
 
         This function does not return any value.
         """
-
         while True:
             # TODO: mimic taovision when we're live
             task = random.choice(list(tasks.TASKS_TO_MINER_OPERATION_MODULES.keys()))
@@ -220,6 +219,11 @@ class CoreValidator:
             if task == tasks.Tasks.avatar.value:
                 continue
             #
+
+            # We don't want to put too much emphasis on sota, so query it a lot less
+            if task == tasks.Tasks.sota.value:
+                if random.random() > 0.03:
+                    continue
             synthetic_data = await synthetic_generations.get_synthetic_data(task)
             if synthetic_data is None:
                 bt.logging.debug(
@@ -720,9 +724,6 @@ class CoreValidator:
                     continue
 
                 scoring_periods_uid_was_in[uid_info.uid] = scoring_periods_uid_was_in.get(uid_info.uid, 0) + 1
-                if uid_info.request_count == 0:
-                    continue
-
                 if uid_info.request_count == 0:
                     continue
 
