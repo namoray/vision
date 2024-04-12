@@ -172,12 +172,9 @@ If you get the error message `vision not found`, you should make sure that requi
 
 **Autoupdates**
 
-Autoupdates will reinstall dependencies and rerun ./start_miners.sh when a new tag is introduced.
-
 Announcements will still be made ahead of time. If you choose to run autoupdates as a miner, make sure your ./start_miners.sh
 script is up to date & working, and I would advise monitoring around update releases regardless.
 
-If there is a model change with an update, you will need manual intervention (this will be made clear before each update though)
 
 You're of course free to change or use whatever autoupdater you like!
 

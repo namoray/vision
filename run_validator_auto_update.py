@@ -7,7 +7,7 @@ def should_update_local(local_commit, remote_commit):
     return local_commit != remote_commit
 
 
-process = subprocess.Popen(["./launch_validators.sh"], stdout=subprocess.PIPE)
+os.system("./launch_validators.sh")
 time.sleep(10)
 
 
@@ -30,7 +30,7 @@ def run_auto_updater():
 
                 print("Running the autoupdate steps...")
                 # Trigger shell script. Make sure this file path starts from root
-                subprocess.call(["./autoupdate_validator_steps.sh"], shell=True)
+                os.system("./autoupdate_validator_steps.sh")
                 time.sleep(20)
 
                 print("Finished running the autoupdate steps! Ready to go 😎")

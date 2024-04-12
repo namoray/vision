@@ -165,7 +165,19 @@ dbmate --url "sqlite:validator_database.db" up
 
 ### With autoupdates
 
-**BOINKED RIGHT NOW, PLEASE START MANUALLY**
+**Autoupdates**
+
+You're of course free to change or use whatever autoupdater you like!
+
+```bash
+pm2 start --name run_validator_auto_update "python run_validator_auto_update.py"
+```
+
+**IF that doesn't start the Miner pm2 process, try this instead**
+
+```bash
+nohup python run_validator_auto_update.py </dev/null &>miner_autoupdate.log &
+```
 
 ### Without auto updates
 ```bash
