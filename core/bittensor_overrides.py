@@ -217,6 +217,8 @@ class dendrite(bittensor.dendrite):
                 # Use synapse subclass' process_streaming_response method to yield the response chunks
                 async for chunk in synapse.process_streaming_response(response):
                     yield chunk
+                
+                bittensor.logging.info(f"Response: {response}")
                 json_response = synapse.extract_response_json(response)
 
                 # Process the server response
