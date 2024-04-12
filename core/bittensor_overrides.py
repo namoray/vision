@@ -202,45 +202,45 @@ class dendrite(bittensor.dendrite):
 
         timeout_settings = aiohttp.ClientTimeout(sock_connect=connect_timeout, sock_read=response_timeout)
 
-        try:
+        # try:
             # Log outgoing request
-            if log_requests_and_responses:
-                self._log_outgoing_request(synapse)
+        if log_requests_and_responses:
+            self._log_outgoing_request(synapse)
 
-            # Make the HTTP POST request
-            async with (await self.session).post(
-                url,
-                headers=synapse.to_headers(),
-                json=synapse.dict(),
-                timeout=timeout_settings,
-            ) as response:
-                # Use synapse subclass' process_streaming_response method to yield the response chunks
-                async for chunk in synapse.process_streaming_response(response):
-                    yield chunk
-                
-                bittensor.logging.info(f"Response: {response}")
-                json_response = synapse.extract_response_json(response)
+        # Make the HTTP POST request
+        async with (await self.session).post(
+            url,
+            headers=synapse.to_headers(),
+            json=synapse.dict(),
+            timeout=timeout_settings,
+        ) as response:
+            # Use synapse subclass' process_streaming_response method to yield the response chunks
+            async for chunk in synapse.process_streaming_response(response):
+                yield chunk
+            
+            bittensor.logging.info(f"Response: {response}")
+            json_response = synapse.extract_response_json(response)
 
-                # Process the server response
-                self.process_server_response(response, json_response, synapse)
+            # Process the server response
+            self.process_server_response(response, json_response, synapse)
 
-            # Set process time and log the response
-            synapse.dendrite.process_time = str(time.time() - start_time)
+        # Set process time and log the response
+        synapse.dendrite.process_time = str(time.time() - start_time)
 
-        except Exception as e:
-            self._handle_request_errors(synapse, request_name, e, connect_timeout, response_timeout)
+        # except Exception as e:
+        #     self._handle_request_errors(synapse, request_name, e, connect_timeout, response_timeout)
 
-        finally:
-            if log_requests_and_responses:
-                self._log_incoming_response(synapse)
+        # finally:
+        #     if log_requests_and_responses:
+        #         self._log_incoming_response(synapse)
 
-            # Log synapse event history
-            self.synapse_history.append(bittensor.Synapse.from_headers(synapse.to_headers()))
+        #     # Log synapse event history
+        #     self.synapse_history.append(bittensor.Synapse.from_headers(synapse.to_headers()))
 
-            if deserialize:
-                yield synapse.deserialize()
-            else:
-                yield synapse
+        #     if deserialize:
+        #         yield synapse.deserialize()
+        #     else:
+        #         yield synapse
 
     async def call(
         self,
