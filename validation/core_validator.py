@@ -727,9 +727,6 @@ class CoreValidator:
                 if uid_info.request_count == 0:
                     continue
 
-                if uid_info.request_count == 0:
-                    continue
-
                 average_score = uid_info.total_score / max(uid_info.request_count, 1)
                 available_tasks = uid_info.available_tasks
 
