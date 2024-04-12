@@ -5,6 +5,17 @@ import cv2
 import random
 from io import BytesIO
 
+import base64
+
+import cv2
+import numpy as np
+from PIL import Image
+import io
+import binascii
+
+
+
+
 def generate_mask_with_circle(image_b64: str) -> np.ndarray:
     imgdata = base64.b64decode(image_b64)
     image = Image.open(BytesIO(imgdata))
@@ -28,3 +39,19 @@ def generate_mask_with_circle(image_b64: str) -> np.ndarray:
     mask_img.save(buffered, format="PNG")
     mask_img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return mask_img_str
+
+def pil_to_base64(image: Image, format: str = "JPEG") -> str:
+    buffered = io.BytesIO()
+    image.save(buffered, format=format)
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    return img_str
+
+
+def base64_to_pil(image_b64: str) -> Image.Image:
+    try:
+        image_data = base64.b64decode(image_b64)
+        image = Image.open(io.BytesIO(image_data))
+        return image
+    except binascii.Error:
+        return None
+    

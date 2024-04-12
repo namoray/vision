@@ -16,32 +16,37 @@ MINIMUM_ACTIVE_MINERS_TO_APPLY_TIERS = 20
 NETUID = 19
 NETWORK = "finney"
 MAX_RESULTS_TO_SCORE_FOR_TASK = 50
-MINIMUM_TASKS_TO_START_SCORING = 20
+MINIMUM_TASKS_TO_START_SCORING = 40
 
 OPERATION_TIMEOUTS: Dict[str, float] = {
     "AvailableTasksOperation": 30,
     "ClipEmbeddings": 6,
-    "TextToImage": 30,
-    "ImageToImage": 30,
-    "Upscale": 30,
-    "Inpaint": 30,
-    "Scribble": 30,
-    "Avatar": 30,
+    "TextToImage": 8,
+    "ImageToImage": 8,
+    "Upscale": 15,
+    "Inpaint": 12,
+    "Scribble": 20,
+    "Avatar": 50,
     "Sota": 180,
     "Chat": 60,
     # "Segment": 15,
 }
 
 # FOR PHASE 1 - where synthetic only validators may have a distribution different to organic ones
-AVAILABLE_OPERATIONS_MULTIPLIER = {
+AVAILABLE_TASKS_MULTIPLIER = {
     0: 0,
-    1: 0.5,
-    2: 0.6,
-    3: 0.7,
-    4: 0.8,
-    5: 0.9,
-    6: 1,
-    7: 1.1,
+    1: 0.4,
+    2: 0.4,
+    3: 0.5,
+    4: 0.5,
+    5: 0.5,
+    6: 0.6,
+    7: 0.7,
+    8: 0.7,
+    9: 0.8,
+    10: 1.0,
+    11: 1.3,
+    12: 1.4,
 }
 
 
@@ -56,4 +61,4 @@ FAILED_RESPONSE_SCORE = 0.25
 
 CHANCE_TO_CHECK_OUTPUT_WHEN_IMAGES_FROM_MINERS_WERE_SIMILAR = 0.02
 
-MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING = 10
+MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING = 5

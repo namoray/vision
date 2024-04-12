@@ -4,10 +4,9 @@ import random
 import re
 import threading
 import time
-import uuid
 from collections import defaultdict, deque
 from typing import Dict
-from typing import List
+from typing import List, Any
 from typing import AsyncIterator, AsyncGenerator
 from typing import Optional
 from typing import Set
@@ -39,7 +38,7 @@ VERSION_KEY = 20_004
 
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
 _UPPER_FOLLOWING_REGEXP = re.compile("([a-z0-9])([A-Z])")
-MAX_PERIODS_TO_LOOK_FOR_SCORE = 30
+MAX_PERIODS_TO_LOOK_FOR_SCORE = 16
 
 
 def _pascal_to_kebab(input_string: str) -> str:
@@ -54,8 +53,18 @@ async def _store_result_in_sql_lite_db(
     db_manager.insert_task_results(task, result_in_dict_form, synapse, synthetic_query)
 
 
-def _load_sse_json(text: str) -> str:
-    return json.loads(text.split("data: ")[1].split("\n\n")[0])
+def _load_sse_jsons(chunk: str) -> List[Dict[str, Any]]:
+    jsons = []
+    received_event_chunks = chunk.split("\n\n")
+    for event in received_event_chunks:
+        if event == "":
+            continue
+        prefix, _, data = event.partition(":")
+        if data.strip() == "[DONE]":
+            break
+        loaded_chunk = json.loads(data)
+        jsons.append(loaded_chunk)
+    return jsons
 
 
 class CoreValidator:
@@ -106,26 +115,27 @@ class CoreValidator:
         self.score_results_task = asyncio.create_task(self.score_results())
         self.score_results_task.add_done_callback(validation_utils.log_task_exception)
 
+    async def _resync_metagraph_and_sleep(self, time_between_resyncing: float, set_weights: bool) -> None:
+        await self.resync_metagraph()
+        if set_weights:
+            await asyncio.to_thread(self.set_weights)
+        await asyncio.sleep(time_between_resyncing)
+
     async def periodically_resync_and_set_weights(self) -> None:
-        time_between_resyncing = 10 * 60
+        # TODO: CHANGE AFTER DEBUGING
+        cycle_length_initial = 0
+        cycle_length_in_loop = 1
+        time_between_resyncing = 60 * 30  # 30 mins
 
-        # Two initial cycles to make sure restarts don't impact scores too heavily
-        await self.resync_metagraph()
-        await asyncio.sleep(time_between_resyncing)
-
-        await self.resync_metagraph()
-        await asyncio.sleep(time_between_resyncing)
+        # Initial cycles to make sure restarts don't impact scores too heavily
+        for _ in range(cycle_length_initial):
+            await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights=False)
 
         while True:
-            await self.resync_metagraph()
-            await asyncio.sleep(time_between_resyncing)
+            for _ in range(cycle_length_in_loop):
+                await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights=False)
 
-            await self.resync_metagraph()
-            await asyncio.sleep(time_between_resyncing)
-
-            await self.resync_metagraph()
-            await asyncio.to_thread(self.set_weights)
-            await asyncio.sleep(time_between_resyncing)
+            await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights=True)
 
     async def _store_synthetic_result(self, sota_request: utility_models.SotaCheckingRequest) -> None:
         """
@@ -201,7 +211,6 @@ class CoreValidator:
 
         This function does not return any value.
         """
-
         while True:
             # TODO: mimic taovision when we're live
             task = random.choice(list(tasks.TASKS_TO_MINER_OPERATION_MODULES.keys()))
@@ -210,6 +219,11 @@ class CoreValidator:
             if task == tasks.Tasks.avatar.value:
                 continue
             #
+
+            # We don't want to put too much emphasis on sota, so query it a lot less
+            if task == tasks.Tasks.sota.value:
+                if random.random() > 0.03:
+                    continue
             synthetic_data = await synthetic_generations.get_synthetic_data(task)
             if synthetic_data is None:
                 bt.logging.debug(
@@ -225,12 +239,14 @@ class CoreValidator:
 
             time_before_query = time.time()
 
-            await self.execute_query(
-                synapse=synthetic_synapse,
-                outgoing_model=outgoing_model,
-                synthetic_query=True,
-                task=task,
-                stream=stream,
+            asyncio.create_task(
+                self.execute_query(
+                    synapse=synthetic_synapse,
+                    outgoing_model=outgoing_model,
+                    synthetic_query=True,
+                    task=task,
+                    stream=stream,
+                )
             )
 
             time_to_execute_query = time.time() - time_before_query
@@ -268,14 +284,17 @@ class CoreValidator:
             checking_data = db_manager.select_and_delete_task_result(task)  # noqa
             if checking_data is None:
                 return
-            results, synthetic_query, synapse = (
+            results, synthetic_query, synapse_dict_str = (
                 checking_data["result"],
                 checking_data["synthetic_query"],
                 checking_data["synapse"],
             )
             results_json = json.loads(results)
+
+            synapse = json.loads(synapse_dict_str)
+
             data = {
-                "synapse": json.loads(synapse),
+                "synapse": synapse,
                 "synthetic_query": synthetic_query,
                 "result": results_json,
                 "task": task,
@@ -307,13 +326,18 @@ class CoreValidator:
                 bt.logging.error(f"Error occurred when parsing the response: {parse_err}")
                 continue
 
-            bt.logging.info(f"Adding scores: {axon_scores}")
+            max_expected_score = await validation_utils.get_expected_score(
+                utility_models.QueryResult(**results_json), synapse, task
+            )
+            bt.logging.info(
+                f"Adding scores: {axon_scores}; for task {task} with max expected score to normalise with {max_expected_score}"
+            )
             for uid, score in axon_scores.items():
-                # TODO: When using organic request summaries, change this
-                count = max(int(score), 1)
                 uid_info = self.uid_to_uid_info[int(uid)]
-                uid_info.add_score(1, synthetic=synthetic_query, count=count)
+                uid_info.add_score(score / max_expected_score)
             i += 1
+
+            ## Renabled soon, this is to enable beautiful stats for the network
 
             # task_uuid = str(uuid.uuid4())
             # timestamp = time.time()
@@ -331,17 +355,17 @@ class CoreValidator:
             #         "miner_hotkey": self.uid_to_uid_info[int(uid)].hotkey,
             #         "testnet": validator_config.subtensor_network == "test",
             #     }
-                # bt.logging.info("Posting to taovision: " + json.dumps(data_to_post))
+            # bt.logging.info("Posting to taovision: " + json.dumps(data_to_post))
 
-                # Post to taovision
-                # async with httpx.AsyncClient(timeout=180) as client:
-                #     try:
-                #         await client.post(
-                #             url="https://taovision.ai/store_score_data",
-                #             data=json.dumps(data_to_post),
-                #         )
-                #     except Exception as e:
-                #         bt.logging.error(f"Error when posting to taovision to store score data: {e}")
+            # Post to taovision
+            # async with httpx.AsyncClient(timeout=180) as client:
+            #     try:
+            #         await client.post(
+            #             url="https://taovision.ai/store_score_data",
+            #             data=json.dumps(data_to_post),
+            #         )
+            #     except Exception as e:
+            #         bt.logging.error(f"Error when posting to taovision to store score data: {e}")
 
     async def fetch_available_tasks_for_each_axon(self) -> None:
         uid_to_query_task = {}
@@ -364,21 +388,21 @@ class CoreValidator:
         uids = uid_to_query_task.keys()
         all_available_tasks = [i[0] for i in responses_and_response_times]
 
-        bt.logging.info(f"Got {len(all_available_tasks)} available tasks for {len(uids)} axons!")
         for uid, available_tasks in zip(uids, all_available_tasks):
             if available_tasks is None:
                 continue
 
-            tasks_for_uids = []
+            tasks_for_uid = []
             allowed_tasks = set([task.value for task in tasks.Tasks])
             for task_name in available_tasks:
                 # This is to stop people claiming tasks that don't exist
                 if task_name not in allowed_tasks:
                     continue
                 self.tasks_to_available_axon_uids[task_name].add(uid)
-                tasks_for_uids.append(task_name)
+                tasks_for_uid.append(task_name)
 
-            self.uid_to_uid_info[uid].available_tasks = tasks_for_uids
+            self.uid_to_uid_info[uid].available_tasks = tasks_for_uid
+            bt.logging.debug(f"{uid} has available tasks: {tasks_for_uid}")
         bt.logging.info("Done fetching available tasks!")
 
     async def resync_metagraph(self):
@@ -451,8 +475,8 @@ class CoreValidator:
         response = await self.dendrite.forward(
             axons=self.uid_to_uid_info[axon_uid].axon,
             synapse=synapse,
-            connect_timeout=5,
-            response_timeout=cst.OPERATION_TIMEOUTS.get(synapse_name, 15),
+            connect_timeout=0.3,
+            response_timeout=2,  # if X seconds without any data, its boinked
             deserialize=deserialize,
             log_requests_and_responses=log_requests_and_responses,
             streaming=True,
@@ -479,7 +503,7 @@ class CoreValidator:
         response = await self.dendrite.forward(
             axons=self.uid_to_uid_info[axon_uid].axon,
             synapse=synapse,
-            connect_timeout=2,
+            connect_timeout=1.0,
             response_timeout=cst.OPERATION_TIMEOUTS.get(operation_name, 15),
             deserialize=deserialize,
             log_requests_and_responses=log_requests_and_responses,
@@ -502,7 +526,7 @@ class CoreValidator:
 
         should_score = synthetic_query or random.random() < cst.SCORE_QUERY_PROBABILITY
 
-        miners_to_query_order = self._get_miners_query_order(available_axons, synthetic_query=synthetic_query)
+        miners_to_query_order = self._get_miners_query_order(available_axons)
 
         if stream:
             main_query_result = self._stream_response_from_stream_miners_until_result(
@@ -521,38 +545,23 @@ class CoreValidator:
     def _get_available_axons(self, task_name: str) -> List[int]:
         return list(self.tasks_to_available_axon_uids.get(task_name, []))
 
-    def _get_miners_query_order(
-        self,
-        available_axons: List[int],
-        axons_to_exclude: List[int] = [],
-        synthetic_query: bool = False,
-    ) -> list:
-        if axons_to_exclude:
-            available_axons = [axon for axon in available_axons if axon not in axons_to_exclude]
+    def _get_formatted_payload(self, content: str, first_message: bool, add_finish_reason: bool = False) -> str:
+        delta_payload = {"content": content}
+        if first_message:
+            delta_payload["role"] = "assistant"
+        choices_payload = {"delta": delta_payload}
+        if add_finish_reason:
+            choices_payload["finish_reason"] = "stop"
+        payload = {
+            "choices": [choices_payload],
+        }
 
-        if synthetic_query:
-            axons_to_number_of_queries = {
-                axon: self.uid_to_uid_info[axon].synthetic_request_count for axon in available_axons
-            }
+        dumped_payload = json.dumps(payload)
+        return dumped_payload
 
-        else:
-            available_axons = [axon for axon in available_axons if axon not in self.low_incentive_uids]
-            axons_to_number_of_queries = {
-                axon: self.uid_to_uid_info[axon].organic_request_count for axon in available_axons
-            }
-
-        queries_to_axons = defaultdict(list)
-        for axon, num_queries in axons_to_number_of_queries.items():
-            queries_to_axons[num_queries].append(axon)
-
-        sorted_query_groups = sorted(queries_to_axons.items(), key=lambda item: item[0])
-
-        query_order = []
-        for _, axons in sorted_query_groups:
-            random.shuffle(axons)
-            query_order.extend(axons)
-
-        return query_order
+    def _get_miners_query_order(self, available_axons: List[int]) -> list:
+        random.shuffle(available_axons)
+        return available_axons
 
     async def _get_text_from_text_generator(
         self,
@@ -583,19 +592,27 @@ class CoreValidator:
             if text_generator is not None:
                 text_jsons = []
 
+                first_message = True
                 async for text in text_generator:
                     if isinstance(text, str):
                         try:
-                            text_json = _load_sse_json(text)
+                            loaded_jsons = _load_sse_jsons(text)
                         except IndexError as e:
                             bt.logging.warning(f"Error {e} when trying to load text {text}")
                             break
 
-                        text_jsons.append(text_json)
-                        text = text_json["text"]
-                        yield f"data: {text}\n\n"
+                        text_jsons.extend(loaded_jsons)
+                        for text_json in loaded_jsons:
+                            content = text_json.get("text", "")
+                            if content == "":
+                                continue
+                            dumped_payload = self._get_formatted_payload(content, first_message)
+                            first_message = False
+                            yield f"data: {dumped_payload}\n\n"
 
                 if len(text_jsons) > 0:
+                    last_payload = self._get_formatted_payload("", False, add_finish_reason=True)
+                    yield f"data: {last_payload}\n\n"
                     yield "data: [DONE]\n\n"
                     if should_score:
                         bt.logging.info(f"✅ Successfully queried axon: {axon_uid} for task: {task}")
@@ -707,14 +724,14 @@ class CoreValidator:
                     continue
 
                 scoring_periods_uid_was_in[uid_info.uid] = scoring_periods_uid_was_in.get(uid_info.uid, 0) + 1
-                if uid_info.organic_request_count + uid_info.synthetic_request_count == 0:
+                if uid_info.request_count == 0:
                     continue
 
-                average_score = uid_info.average_score
+                average_score = uid_info.total_score / max(uid_info.request_count, 1)
                 available_tasks = uid_info.available_tasks
 
-                multiplier = (len(available_tasks) / max(len(uid_info.available_tasks), 1)) / 2 + 0.75
-                score = multiplier * average_score
+                multiplier = cst.AVAILABLE_TASKS_MULTIPLIER[len(available_tasks)]
+                score = (multiplier * average_score) ** 2
 
                 uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
 
@@ -728,10 +745,6 @@ class CoreValidator:
             average_score = sum(scores) / len(scores)
 
             uid_weights[uid] = average_score * (periods_for_uid / max_periods) ** 0.5
-
-        if uid_weights == {}:
-            bt.logging.info("No scores found, nothing to set")
-            return
 
         weights_tensor = torch.zeros_like(self.metagraph.S, dtype=torch.float32)
         for uid, weight in uid_weights.items():
@@ -759,7 +772,7 @@ class CoreValidator:
         # The reason we do this is because wait_for_inclusion & wait_for_finalization
         # Cause the whole API server to crash.
         # So we have no choice but to set weights
-        bt.logging.info(f"Setting weights {NUM_TIMES_TO_SET_WEIGHTS} times without inclusion or finalization")
+        bt.logging.info(f"\n\nSetting weights {NUM_TIMES_TO_SET_WEIGHTS} times without inclusion or finalization\n\n")
         for i in range(NUM_TIMES_TO_SET_WEIGHTS):
             bt.logging.info(f"Setting weights, iteration number: {i+1}")
             success = self.subtensor.set_weights(

@@ -21,7 +21,7 @@ class Tasks(Enum):
 
 # IF YOU ARE MINER, YOU WILL PROBABLY NEED TO FIDDLE WITH THIS:
 SUPPORTED_TASKS = []
-if miner_config.image_worker_url is not None:
+if miner_config.image_worker_url:
     SUPPORTED_TASKS.extend(
         [
             Tasks.proteus_text_to_image.value,
@@ -35,19 +35,19 @@ if miner_config.image_worker_url is not None:
             Tasks.avatar.value,
         ]
     )
-if miner_config.finetune_text_worker_url is not None:
+if miner_config.finetune_text_worker_url:
     SUPPORTED_TASKS.extend(
         [
             Tasks.chat_bittensor_finetune.value,
         ]
     )
-if miner_config.mixtral_text_worker_url is not None:
+if miner_config.mixtral_text_worker_url:
     SUPPORTED_TASKS.extend(
         [
             Tasks.chat_mixtral.value,
         ]
     )
-if miner_config.sota_provider_api_key is not None:
+if miner_config.sota_provider_api_key:
     SUPPORTED_TASKS.extend(
         [
             Tasks.sota.value,

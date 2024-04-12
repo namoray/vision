@@ -10,7 +10,10 @@ def device_processing_func(input: str):
         input = "cuda:" + input
     return input
 
-
+def optional_http_address_processing_func(input: Optional[str]) -> str:
+    if input is None:
+        return None
+    return http_address_processing_func(input)
 def http_address_processing_func(input: str) -> str:
     if "http://" not in input and "https://" not in input:
         input = "http://" + input
@@ -76,17 +79,17 @@ MINER_PARAMETERS = {
     core_cst.IMAGE_WORKER_URL_PARAM: {
         "default": None,
         "message": "Image Worker URL: ",
-        "process_function": http_address_processing_func,
+        "process_function": optional_http_address_processing_func,
     },
     core_cst.MIXTRAL_TEXT_WORKER_URL_PARAM: {
         "default": None,
         "message": "Mixtral Text Worker URL: ",
-        "process_function": http_address_processing_func,
+        "process_function": optional_http_address_processing_func,
     },
     core_cst.FINETUNE_TEXT_WORKER_URL_PARAM: {
         "default": None,
         "message": "Finetune Text Worker URL: ",
-        "process_function": http_address_processing_func,
+        "process_function": optional_http_address_processing_func,
     },
 }
 

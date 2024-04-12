@@ -15,7 +15,7 @@ async def _get_clip_embeddings_from_server(body: BaseModel) -> ClipEmbeddingsRes
     text_endpoint = miner_config.image_worker_url + "clip-embeddings"
 
     try:
-        async with httpx.AsyncClient(timeout=15) as client:  # noqa
+        async with httpx.AsyncClient(timeout=5) as client:  # noqa
             response = await client.post(text_endpoint, json=body.dict())
     except Exception as e:
         bt.logging.error(f"Clip embeddings Error occurred while sending the request to the server: {e}. IS the Image server online!?")
