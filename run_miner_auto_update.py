@@ -6,7 +6,7 @@ import time
 def should_update_local(local_commit, remote_commit):
     return local_commit != remote_commit
 
-
+# For a first-time run, make sure we have miners started
 os.system("./start_miners.sh")
 time.sleep(10)
 
@@ -32,6 +32,9 @@ def run_auto_updater():
                 print("Running the autoupdate steps...")
                 # Trigger shell script. Make sure this file path starts from root
                 os.system("./autoupdate_miner_steps.sh")
+
+                # Restart the miners after a successful auto-update
+                os.system("./start_miners.sh")
                 time.sleep(20)
 
                 print("Finished running the autoupdate steps! Ready to go 😎")
