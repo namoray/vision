@@ -7,7 +7,7 @@ def should_update_local(local_commit, remote_commit):
     return local_commit != remote_commit
 
 
-subprocess.call(["./start_miners.sh"], shell=True)
+os.system("./start_miners.sh")
 time.sleep(10)
 
 
@@ -30,7 +30,7 @@ def run_auto_updater():
 
                 print("Running the autoupdate steps...")
                 # Trigger shell script. Make sure this file path starts from root
-                subprocess.call(["./autoupdate_miner_steps.sh"], shell=True)
+                os.system("./autoupdate_miner_steps.sh")
                 time.sleep(20)
 
                 print("Finished running the autoupdate steps! Ready to go 😎")
