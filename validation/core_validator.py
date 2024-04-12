@@ -219,6 +219,11 @@ class CoreValidator:
             if task == tasks.Tasks.avatar.value:
                 continue
             #
+
+            # We don't want to put too much emphasis on sota, so query it a lot less
+            if task == tasks.Tasks.sota.value:
+                if random.random() > 0.03:
+                    continue
             synthetic_data = await synthetic_generations.get_synthetic_data(task)
             if synthetic_data is None:
                 bt.logging.debug(
