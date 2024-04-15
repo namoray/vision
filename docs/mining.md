@@ -194,9 +194,3 @@ You can either use the command
 ```bash
 ./start_miners.sh
 ```
-
-
-Or you can use the usual pm2 commands
-```bash
-pm2 start --name NAME_FOR_MINER_HERE mining/run_miner.py --interpreter python3 -- --axon.port YOUR_AXON_PORT --axon.external_ip EXTERNAL_IP_FOR_AXON --wallet.name WALLET_NAME --wallet.hotkey WALLET_HOTKEY --subtensor.network SUBTENSOR_NETWORK --netuid 19 --logging.debug
-```
