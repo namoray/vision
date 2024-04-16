@@ -216,7 +216,7 @@ class CoreValidator:
             task = random.choice(list(tasks.TASKS_TO_MINER_OPERATION_MODULES.keys()))
 
             # TEMP
-            if task == tasks.Tasks.avatar.value:
+            if task != tasks.Tasks.avatar.value:
                 continue
             #
 
