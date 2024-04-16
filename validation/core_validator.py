@@ -216,7 +216,7 @@ class CoreValidator:
             task = random.choice(list(tasks.TASKS_TO_MINER_OPERATION_MODULES.keys()))
 
             # TEMP
-            if task not in [tasks.Tasks.chat_bittensor_finetune.value, tasks.Tasks.chat_mixtral.value]:
+            if True or task not in [tasks.Tasks.chat_bittensor_finetune.value, tasks.Tasks.chat_mixtral.value]:
                 continue
             #
 
