@@ -29,6 +29,7 @@ from validation.proxy import validation_utils
 from validation.proxy.db import DatabaseManager
 from validation.proxy import synthetic_generations
 import json
+from json.decoder import JSONDecodeError
 import traceback
 
 db_manager = DatabaseManager()
@@ -598,8 +599,8 @@ class CoreValidator:
                     if isinstance(text, str):
                         try:
                             loaded_jsons = _load_sse_jsons(text)
-                        except IndexError as e:
-                            bt.logging.warning(f"Error {e} when trying to load text {text}")
+                        except (IndexError, JSONDecodeError) as e:
+                            bt.logging.warning(f"Error {e} when trying to load text: {text}")
                             break
 
                         text_jsons.extend(loaded_jsons)

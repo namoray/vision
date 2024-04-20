@@ -45,6 +45,8 @@ class ChatOperation(abstract_operation.Operation):
             url = miner_config.mixtral_text_worker_url
         elif synapse.model == utility_models.ChatModels.bittensor_finetune.value:
             url = miner_config.finetune_text_worker_url
+        elif synapse.model == utility_models.ChatModels.llama_3.value:
+            url = miner_config.llama_3_text_worker_url
         else:
             raise NotImplementedError(f"Model {synapse.model} not implemented")
         text_generator = await chat_logic.chat_logic(
