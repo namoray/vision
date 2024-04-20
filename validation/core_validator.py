@@ -216,8 +216,8 @@ class CoreValidator:
             # TODO: mimic taovision when we're live
             task = random.choice(list(tasks.TASKS_TO_MINER_OPERATION_MODULES.keys()))
 
-            # TEMP
-            if task not in [tasks.Tasks.avatar.value, tasks.Tasks.chat_llama_3.value]:
+            # TODO: TEMP
+            if task not in [tasks.Tasks.chat_llama_3.value]:
                 continue
             #
 
