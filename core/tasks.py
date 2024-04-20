@@ -7,6 +7,7 @@ from config.miner_config import config as miner_config
 class Tasks(Enum):
     chat_bittensor_finetune = "chat-bittensor-finetune"
     chat_mixtral = "chat-mixtral"
+    chat_llama_3 = "chat-llama-3"
     proteus_text_to_image = "proteus-text-to-image"
     playground_text_to_image = "playground-text-to-image"
     dreamshaper_text_to_image = "dreamshaper-text-to-image"
@@ -47,6 +48,12 @@ if miner_config.mixtral_text_worker_url:
             Tasks.chat_mixtral.value,
         ]
     )
+if miner_config.llama_3_text_worker_url:
+    SUPPORTED_TASKS.extend(
+        [
+            Tasks.chat_llama_3.value,
+        ]
+    )
 if miner_config.sota_provider_api_key:
     SUPPORTED_TASKS.extend(
         [
@@ -58,6 +65,7 @@ if miner_config.sota_provider_api_key:
 TASKS_TO_SYNAPSE = {
     Tasks.chat_bittensor_finetune.value: synapses.Chat,
     Tasks.chat_mixtral.value: synapses.Chat,
+    Tasks.chat_llama_3.value: synapses.Chat,
     Tasks.proteus_text_to_image.value: synapses.TextToImage,
     Tasks.playground_text_to_image.value: synapses.TextToImage,
     Tasks.dreamshaper_text_to_image.value: synapses.TextToImage,
@@ -73,6 +81,7 @@ TASKS_TO_SYNAPSE = {
 TASKS_TO_MINER_OPERATION_MODULES = {
     Tasks.chat_bittensor_finetune.value: operations.chat_operation,
     Tasks.chat_mixtral.value: operations.chat_operation,
+    Tasks.chat_llama_3.value: operations.chat_operation,
     Tasks.proteus_text_to_image.value: operations.text_to_image_operation,
     Tasks.playground_text_to_image.value: operations.text_to_image_operation,
     Tasks.dreamshaper_text_to_image.value: operations.text_to_image_operation,

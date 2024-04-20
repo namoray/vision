@@ -41,6 +41,9 @@ class Config(BaseModel):
     mixtral_text_worker_url: Optional[str] = os.getenv(
         core_cst.MIXTRAL_TEXT_WORKER_URL_PARAM, None
     )
+    llama_3_text_worker_url: Optional[str] = os.getenv(
+        core_cst.LLAMA_3_TEXT_WORKER_URL_PARAM, None
+    )
 
     sota_provider_api_key: str = os.getenv(core_cst.SOTA_PROVIDER_API_KEY_PARAM, None)
 
