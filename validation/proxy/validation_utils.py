@@ -200,6 +200,7 @@ def store_and_print_scores(
 tasks_to_scoring_function = {
     Tasks.chat_bittensor_finetune.value: speed_scoring_functions.speed_scoring_chat,
     Tasks.chat_mixtral.value: speed_scoring_functions.speed_scoring_chat,
+    Tasks.chat_llama_3.value: speed_scoring_functions.speed_scoring_chat,
     Tasks.proteus_text_to_image.value: speed_scoring_functions.speed_scoring_images,
     Tasks.playground_text_to_image.value: speed_scoring_functions.speed_scoring_images,
     Tasks.dreamshaper_text_to_image.value: speed_scoring_functions.speed_scoring_images,
