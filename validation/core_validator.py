@@ -54,6 +54,7 @@ async def _store_result_in_sql_lite_db(
 
 
 def _load_sse_jsons(chunk: str) -> List[Dict[str, Any]]:
+    print(chunk)
     jsons = []
     received_event_chunks = chunk.split("\n\n")
     for event in received_event_chunks:
