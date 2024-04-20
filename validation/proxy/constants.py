@@ -18,13 +18,14 @@ NETWORK = "finney"
 MAX_RESULTS_TO_SCORE_FOR_TASK = 50
 MINIMUM_TASKS_TO_START_SCORING = 40
 
+# TODO: Make these more granular, based on the prediction of the repsonse time perhaps?
 OPERATION_TIMEOUTS: Dict[str, float] = {
     "AvailableTasksOperation": 30,
     "ClipEmbeddings": 6,
-    "TextToImage": 8,
-    "ImageToImage": 8,
+    "TextToImage": 15,
+    "ImageToImage": 15,
     "Upscale": 15,
-    "Inpaint": 12,
+    "Inpaint": 20,
     "Scribble": 20,
     "Avatar": 50,
     "Sota": 180,
