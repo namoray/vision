@@ -30,7 +30,6 @@ OPERATION_TIMEOUTS: Dict[str, float] = {
     "Avatar": 50,
     "Sota": 180,
     "Chat": 60,
-    # "Segment": 15,
 }
 
 # FOR PHASE 1 - where synthetic only validators may have a distribution different to organic ones
