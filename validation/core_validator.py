@@ -211,13 +211,12 @@ class CoreValidator:
 
         This function does not return any value.
         """
-        return
         while True:
             # TODO: mimic taovision when we're live
             task = random.choice(list(tasks.TASKS_TO_MINER_OPERATION_MODULES.keys()))
 
             # TEMP
-            if task == tasks.Tasks.avatar.value:
+            if task not in [tasks.Tasks.avatar.value, tasks.Tasks.chat_llama_3.value]:
                 continue
             #
 
