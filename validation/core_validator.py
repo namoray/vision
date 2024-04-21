@@ -217,8 +217,8 @@ class CoreValidator:
             task = random.choice(list(tasks.TASKS_TO_MINER_OPERATION_MODULES.keys()))
 
             # TODO: TEMP
-            if task not in [tasks.Tasks.chat_llama_3.value]:
-                continue
+            # if task not in [tasks.Tasks.chat_llama_3.value]:
+            #     continue
             #
 
             # We don't want to put too much emphasis on sota, so query it a lot less
