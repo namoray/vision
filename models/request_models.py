@@ -45,17 +45,17 @@ ALLOWED_PARAMS_FOR_ENGINE = {
         "height": {
             "checker": lambda h: 512 <= h <= 1344 and h % 64 == 0,
             "error_message": "should be in between 512 and 1344 (inclusive) and multiple of 64",
-            "width": {
-                "checker": lambda w: 512 <= w <= 1344 and w % 64 == 0,
-                "error_message": "should be in between 512 and 1344 (inclusive) and multiple of 64",
-                "generator": lambda: random.choice([i for i in range(512, 1344 + 64, 64)]),
-            },
-            "cfg_scale": {"checker": lambda c: 1 <= c <= 10, "error_message": "should be between 1 and 10"},
-            "image_strength": {
-                "checker": lambda i: 0.0 <= i <= 0.75,
-                "error_message": "should be between 0.0 and 0.75",
-                "generator": lambda: random.random() * 0.75,
-            },
+        },
+        "width": {
+            "checker": lambda w: 512 <= w <= 1344 and w % 64 == 0,
+            "error_message": "should be in between 512 and 1344 (inclusive) and multiple of 64",
+            "generator": lambda: random.choice([i for i in range(512, 1344 + 64, 64)]),
+        },
+        "cfg_scale": {"checker": lambda c: 1 <= c <= 10, "error_message": "should be between 1 and 10"},
+        "image_strength": {
+            "checker": lambda i: 0.0 <= i <= 0.75,
+            "error_message": "should be between 0.0 and 0.75",
+            "generator": lambda: random.random() * 0.75,
         },
     },
 }
@@ -273,11 +273,7 @@ class InpaintRequest(BaseModel):
 class ChatRequest(BaseModel):
     messages: list[utility_models.Message] = Field(...)
     temperature: float = Field(
-        default=...,
-        title="Temperature",
-        description="Temperature for text generation.",
-        ge=0.1,
-        le=1.0
+        default=..., title="Temperature", description="Temperature for text generation.", ge=0.1, le=1.0
     )
 
     model: utility_models.ChatModels = Field(
