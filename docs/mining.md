@@ -55,7 +55,7 @@ REVISION gptq-8bit-128g-actorder_True
 
 Finetune
 ```
-MODEL lgodwangl/new_01m
+MODEL tau-vision/sn6-finetune
 HALF_PRECISION false
 ```
 
