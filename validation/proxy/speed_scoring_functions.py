@@ -169,14 +169,14 @@ async def speed_scoring_chat(result: utility_models.QueryResult, synapse: Dict[s
         return speed_modifier * work_bonus
 
     if task == Tasks.chat_mixtral.value:
-        lower_bound_time = 1 / 70  # equivalent to ~ 24 tokens per second
+        lower_bound_time = 1 / 70  # equivalent to ~ 17 tokens per second
         upper_thershold_time = 1 / 30  # equivalen to ~ 15 tokens per second
 
         speed_modifier = _calculate_speed_modifier(lower_bound_time, lower_bound_time, upper_thershold_time)
         work_bonus = _calculate_work_bonus_text(number_of_characters, CHAT_OVERHEAD, lower_bound_time)
 
     elif task == Tasks.chat_llama_3.value:
-        lower_bound_time = 1 / 70  # equivalent to ~ 27 tokens per second
+        lower_bound_time = 1 / 70  # equivalent to ~ 17 tokens per second
         upper_thershold_time = 1 / 40  # equivalen to ~ 10 tokens per second
 
         speed_modifier = _calculate_speed_modifier(lower_bound_time, lower_bound_time, upper_thershold_time)
