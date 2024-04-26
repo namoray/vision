@@ -139,7 +139,7 @@ async def speed_scoring_images(result: utility_models.QueryResult, synapse: Dict
 
 ### Chat
 
-CHAT_OVERHEAD = 0.6
+CHAT_OVERHEAD = 1
 
 
 async def speed_scoring_chat(result: utility_models.QueryResult, synapse: Dict[str, Any], task: str) -> float:
