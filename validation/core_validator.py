@@ -544,7 +544,6 @@ class CoreValidator:
         return main_query_result
 
     def _get_available_axons(self, task_name: str) -> List[int]:
-        return [69, 70]
         return list(self.tasks_to_available_axon_uids.get(task_name, []))
 
     def _get_formatted_payload(self, content: str, first_message: bool, add_finish_reason: bool = False) -> str:
