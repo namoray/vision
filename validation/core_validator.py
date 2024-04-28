@@ -216,7 +216,8 @@ class CoreValidator:
             # TODO: mimic taovision when we're live
             task = random.choice(list(tasks.TASKS_TO_MINER_OPERATION_MODULES.keys()))
 
-            if task != tasks.Tasks.avatar.value:
+            # TEMP 
+            if task == tasks.Tasks.avatar.value:
                 continue
 
             # We don't want to put too much emphasis on sota, so query it a lot less
