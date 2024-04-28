@@ -216,11 +216,6 @@ class CoreValidator:
             # TODO: mimic taovision when we're live
             task = random.choice(list(tasks.TASKS_TO_MINER_OPERATION_MODULES.keys()))
 
-            # TODO: TEMP
-            if task in [tasks.Tasks.avatar.value]:
-                continue
-            
-
             # We don't want to put too much emphasis on sota, so query it a lot less
             if task == tasks.Tasks.sota.value:
                 if random.random() > 0.03:
@@ -661,6 +656,7 @@ class CoreValidator:
 
             internal_server_errors += 1
             failed_axon_uids.append(axon_uid)
+            # If we've failed too many, assume the query is bad, not the miners
             if internal_server_errors >= cst.MAX_INTERNAL_SERVER_ERRORS:
                 bt.logging.debug("Too many internal server errors, something is wrong with the request :/")
                 return utility_models.QueryResult(
@@ -695,7 +691,6 @@ class CoreValidator:
     ) -> Optional[BaseModel]:
         if resulting_synapse and resulting_synapse.dendrite.status_code == 200 and resulting_synapse != initial_synapse:
             formatted_response = self._extract_response(resulting_synapse, initial_synapse)
-
             return formatted_response
         else:
             return None
@@ -705,12 +700,16 @@ class CoreValidator:
     ) -> Optional[BaseModel]:
         try:
             formatted_response = outgoing_model(**resulting_synapse.dict())
-            # deserialized_result = resulting_synapse.deserialize()
-            # if deserialized_result is None:
-            #     formatted_response = None
+
+            # If we're expecting a result (i.e. not nsfw), then try to deserialize
+            if hasattr(formatted_response, "is_nsfw") and not formatted_response.is_nsfw:
+                deserialized_result = resulting_synapse.deserialize()
+                if deserialized_result is None:
+                    formatted_response = None
+
             return formatted_response
         except ValidationError as e:
-            bt.logging.debug(f"FAiled to deserialize for some reason: {e}")
+            bt.logging.debug(f"Failed to deserialize for some reason: {e}")
             return None
 
     def set_weights(self):

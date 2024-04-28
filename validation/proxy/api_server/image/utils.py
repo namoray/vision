@@ -7,7 +7,7 @@ from models import utility_models
 
 class NSFWContentException(fastapi.HTTPException):
     def __init__(self, detail: str = "NSFW content detected"):
-        super().__init__(status_code=fastapi.status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail)
+        super().__init__(status_code=fastapi.status.HTTP_403_FORBIDDEN, detail=detail)
 
 
 def _do_nsfw_checks(formatted_response: BaseModel):
