@@ -647,6 +647,7 @@ class CoreValidator:
             resulting_synapse, response_time = await self.query_individual_axon(synapse, axon_uid)
 
             formatted_response = self._get_formatted_response(resulting_synapse, outgoing_model)
+            bt.logging.warning(f"Formatted response: {formatted_response}")
             if formatted_response is not None:
                 bt.logging.info(f"✅ Successfully queried axon: {axon_uid} for task: {task}")
                 return utility_models.QueryResult(
@@ -695,7 +696,6 @@ class CoreValidator:
     ) -> Optional[BaseModel]:
         if resulting_synapse and resulting_synapse.dendrite.status_code == 200 and resulting_synapse != initial_synapse:
             formatted_response = self._extract_response(resulting_synapse, initial_synapse)
-
             return formatted_response
         else:
             return None
@@ -704,13 +704,14 @@ class CoreValidator:
         self, resulting_synapse: base_models.BaseSynapse, outgoing_model: BaseModel
     ) -> Optional[BaseModel]:
         try:
+            bt.logging.warning(resulting_synapse.dict())
             formatted_response = outgoing_model(**resulting_synapse.dict())
             # deserialized_result = resulting_synapse.deserialize()
             # if deserialized_result is None:
             #     formatted_response = None
             return formatted_response
         except ValidationError as e:
-            bt.logging.debug(f"FAiled to deserialize for some reason: {e}")
+            bt.logging.debug(f"Failed to deserialize for some reason: {e}")
             return None
 
     def set_weights(self):
