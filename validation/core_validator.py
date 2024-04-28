@@ -220,7 +220,6 @@ class CoreValidator:
             # TODO: TEMP
             if task in [tasks.Tasks.avatar.value]:
                 continue
-            
 
             # We don't want to put too much emphasis on sota, so query it a lot less
             if task == tasks.Tasks.sota.value:
@@ -708,9 +707,13 @@ class CoreValidator:
         try:
             bt.logging.warning(resulting_synapse.dict())
             formatted_response = outgoing_model(**resulting_synapse.dict())
-            # deserialized_result = resulting_synapse.deserialize()
-            # if deserialized_result is None:
-            #     formatted_response = None
+
+            # If we're expecting a result (i.e. not nsfw), then try to deserialize
+            if hasattr(formatted_response, "is_nsfw") and not formatted_response.is_nsfw:
+                deserialized_result = resulting_synapse.deserialize()
+                if deserialized_result is None:
+                    formatted_response = None
+
             return formatted_response
         except ValidationError as e:
             bt.logging.debug(f"Failed to deserialize for some reason: {e}")
