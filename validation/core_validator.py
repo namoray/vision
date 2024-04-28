@@ -647,7 +647,6 @@ class CoreValidator:
             resulting_synapse, response_time = await self.query_individual_axon(synapse, axon_uid)
 
             formatted_response = self._get_formatted_response(resulting_synapse, outgoing_model)
-            bt.logging.warning(f"Formatted response: {formatted_response}")
             if formatted_response is not None:
                 bt.logging.info(f"✅ Successfully queried axon: {axon_uid} for task: {task}")
                 return utility_models.QueryResult(
@@ -662,6 +661,7 @@ class CoreValidator:
 
             internal_server_errors += 1
             failed_axon_uids.append(axon_uid)
+            # If we've failed too many, assume the query is bad, not the miners
             if internal_server_errors >= cst.MAX_INTERNAL_SERVER_ERRORS:
                 bt.logging.debug("Too many internal server errors, something is wrong with the request :/")
                 return utility_models.QueryResult(
@@ -704,7 +704,6 @@ class CoreValidator:
         self, resulting_synapse: base_models.BaseSynapse, outgoing_model: BaseModel
     ) -> Optional[BaseModel]:
         try:
-            bt.logging.warning(resulting_synapse.dict())
             formatted_response = outgoing_model(**resulting_synapse.dict())
 
             # If we're expecting a result (i.e. not nsfw), then try to deserialize
