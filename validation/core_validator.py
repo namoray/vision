@@ -212,7 +212,6 @@ class CoreValidator:
 
         This function does not return any value.
         """
-        return
         while True:
             # TODO: mimic taovision when we're live
             task = random.choice(list(tasks.TASKS_TO_MINER_OPERATION_MODULES.keys()))
