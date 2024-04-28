@@ -18,11 +18,12 @@ A miner consists of serveral parts, fitting into two categories:
 
 The proxy server is the server which has your hotkey, and spins up the axon (should probably be on a CPU close to your GPU worker servers). The worker servers are the GPU workers which perform the tasks!
 
-I would advise starting with the worker servers. The simplest way to get started is to spin up three worker servers:
+I would advise starting with the worker servers. The simplest way to get started is to spin up four worker servers:
 
 - One for the finetuned chat model 
 - One for the mixtral chat model
 - One for the image generation stuff
+- One for the llama3 chat model
 
 # Worker server setup
 I recommend using bare metal where possible. The documentation for bare metal can be found in here https://github.com/namoray/vision-workers
