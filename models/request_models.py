@@ -186,7 +186,7 @@ class AvatarRequest(BaseModel):
     control_strength: float = Field(0.5, description="The strength of the init image")
     height: int = Field(1024, description="Height of the generated image")
     width: int = Field(1024, description="Width of the generated image")
-    steps: int = Field(8, description="Number of steps in the image generation process")
+    steps: int = Field(15, description="Number of steps in the image generation process")
 
 
 class InpaintRequest(BaseModel):

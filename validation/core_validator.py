@@ -401,7 +401,7 @@ class CoreValidator:
                 self.tasks_to_available_axon_uids[task_name].add(uid)
                 tasks_for_uid.append(task_name)
 
-            self.uid_to_uid_info[uid].available_tasks = tasks_for_uid
+            self.uid_to_uid_info[uid].available_tasks = list(set(tasks_for_uid))
             bt.logging.debug(f"{uid} has available tasks: {tasks_for_uid}")
         bt.logging.info("Done fetching available tasks!")
 
