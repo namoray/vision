@@ -4,5 +4,5 @@
 # THIS FILE ITSELF MAY CHANGE FROM UPDATE TO UPDATE, SO WE CAN DYNAMICALLY FIX ANY ISSUES
 
 
-./launch_validators.sh
-# echo "Nothing to do!"
+# ./launch_validators.sh
+echo "Nothing to do!"

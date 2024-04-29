@@ -91,6 +91,11 @@ MINER_PARAMETERS = {
         "message": "Finetune Text Worker URL: ",
         "process_function": optional_http_address_processing_func,
     },
+    core_cst.LLAMA_3_TEXT_WORKER_URL_PARAM: {
+        "default": None,
+        "message": "Llama 3 Text Worker URL: ",
+        "process_function": optional_http_address_processing_func,
+    }
 }
 
 
