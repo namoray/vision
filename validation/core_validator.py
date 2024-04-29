@@ -216,7 +216,6 @@ class CoreValidator:
             # TODO: mimic taovision when we're live
             task = random.choice(list(tasks.TASKS_TO_MINER_OPERATION_MODULES.keys()))
 
-            # TEMP 
             if task == tasks.Tasks.avatar.value:
                 continue
 
@@ -401,7 +400,7 @@ class CoreValidator:
                 self.tasks_to_available_axon_uids[task_name].add(uid)
                 tasks_for_uid.append(task_name)
 
-            self.uid_to_uid_info[uid].available_tasks = tasks_for_uid
+            self.uid_to_uid_info[uid].available_tasks = list(set(tasks_for_uid))
             bt.logging.debug(f"{uid} has available tasks: {tasks_for_uid}")
         bt.logging.info("Done fetching available tasks!")
 
@@ -734,7 +733,13 @@ class CoreValidator:
                 average_score = uid_info.total_score / max(uid_info.request_count, 1)
                 available_tasks = uid_info.available_tasks
 
-                multiplier = cst.AVAILABLE_TASKS_MULTIPLIER[len(available_tasks)]
+                try:
+                    multiplier = cst.AVAILABLE_TASKS_MULTIPLIER[len(available_tasks)]
+                except KeyError:
+                    bt.logging.warning(
+                        f"Multiplier for {available_tasks} available_tasks for uid: {uid_info.uid}. Weird number, so I'll use 1"
+                    )
+                    multiplier = 1
                 score = (multiplier * average_score) ** 2
 
                 uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]
