@@ -19,6 +19,7 @@ class ChatModels(str, enum.Enum):
 
     bittensor_finetune = "bittensor-finetune"
     mixtral = "mixtral-8x7b"
+    llama_3 = "llama-3"
 
 
 class Role(str, enum.Enum):

@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from loguru import logger
+import bittensor as bt
 import json
 from typing import List
 from models import utility_models
@@ -12,7 +12,7 @@ def _calculate_speed_modifier(normalised_response_time: float, lower_bound: floa
 
     penalty = adjusted_response_time / (upper_bound - lower_bound)
 
-    logger.info(
+    bt.logging.info(
         f"Normalised response time: {normalised_response_time}; Lower bound: {lower_bound}; Upper bound: {upper_bound}; Penalty: {penalty}"
     )
     return max(1 - penalty**2, 0)
@@ -41,9 +41,7 @@ SOTA_MAX_ALLOWED_TIME = 120
 
 
 async def speed_scoring_sota(result: utility_models.QueryResult, synapse: Dict[str, Any], task: str):
-    speed_modifier = _calculate_speed_modifier(
-        SOTA_LOWER_BOUND, SOTA_LOWER_BOUND, SOTA_MAX_ALLOWED_TIME
-    )
+    speed_modifier = _calculate_speed_modifier(SOTA_LOWER_BOUND, SOTA_LOWER_BOUND, SOTA_MAX_ALLOWED_TIME)
     work_bonus = SOTA_LOWER_BOUND
     return work_bonus * speed_modifier
 
@@ -135,13 +133,13 @@ async def speed_scoring_images(result: utility_models.QueryResult, synapse: Dict
         work_bonus = _calculate_work_bonus_images(steps, AVATAR_OVERHEAD, lower_bound_time)
         return speed_modifier * work_bonus
 
-    logger.error(f"Task {task} not found")
+    bt.logging.error(f"Task {task} not found")
     return 1
 
 
 ### Chat
 
-CHAT_OVERHEAD = 0.6
+CHAT_OVERHEAD = 1
 
 
 async def speed_scoring_chat(result: utility_models.QueryResult, synapse: Dict[str, Any], task: str) -> float:
@@ -171,10 +169,20 @@ async def speed_scoring_chat(result: utility_models.QueryResult, synapse: Dict[s
         return speed_modifier * work_bonus
 
     if task == Tasks.chat_mixtral.value:
-        lower_bound_time = 1 / 70  # equivalent to ~ 24 tokens per second
+        lower_bound_time = 1 / 70  # equivalent to ~ 17 tokens per second
         upper_thershold_time = 1 / 30  # equivalen to ~ 15 tokens per second
 
         speed_modifier = _calculate_speed_modifier(lower_bound_time, lower_bound_time, upper_thershold_time)
         work_bonus = _calculate_work_bonus_text(number_of_characters, CHAT_OVERHEAD, lower_bound_time)
 
-        return speed_modifier * work_bonus
+    elif task == Tasks.chat_llama_3.value:
+        lower_bound_time = 1 / 70  # equivalent to ~ 17 tokens per second
+        upper_thershold_time = 1 / 40  # equivalen to ~ 10 tokens per second
+
+        speed_modifier = _calculate_speed_modifier(lower_bound_time, lower_bound_time, upper_thershold_time)
+        work_bonus = _calculate_work_bonus_text(number_of_characters, CHAT_OVERHEAD, lower_bound_time)
+    else:
+        bt.logging.error(f"Task {task} not found fo scoring speed chat function")
+        return None
+
+    return speed_modifier * work_bonus

@@ -29,11 +29,12 @@ from validation.proxy import validation_utils
 from validation.proxy.db import DatabaseManager
 from validation.proxy import synthetic_generations
 import json
+from json.decoder import JSONDecodeError
 import traceback
 
 db_manager = DatabaseManager()
 
-VERSION_KEY = 20_004
+VERSION_KEY = 20_005
 
 
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
@@ -123,7 +124,7 @@ class CoreValidator:
 
     async def periodically_resync_and_set_weights(self) -> None:
         # TODO: CHANGE AFTER DEBUGING
-        cycle_length_initial = 0
+        cycle_length_initial = 1
         cycle_length_in_loop = 1
         time_between_resyncing = 60 * 30  # 30 mins
 
@@ -215,10 +216,8 @@ class CoreValidator:
             # TODO: mimic taovision when we're live
             task = random.choice(list(tasks.TASKS_TO_MINER_OPERATION_MODULES.keys()))
 
-            # TEMP
             if task == tasks.Tasks.avatar.value:
                 continue
-            #
 
             # We don't want to put too much emphasis on sota, so query it a lot less
             if task == tasks.Tasks.sota.value:
@@ -401,7 +400,7 @@ class CoreValidator:
                 self.tasks_to_available_axon_uids[task_name].add(uid)
                 tasks_for_uid.append(task_name)
 
-            self.uid_to_uid_info[uid].available_tasks = tasks_for_uid
+            self.uid_to_uid_info[uid].available_tasks = list(set(tasks_for_uid))
             bt.logging.debug(f"{uid} has available tasks: {tasks_for_uid}")
         bt.logging.info("Done fetching available tasks!")
 
@@ -597,8 +596,8 @@ class CoreValidator:
                     if isinstance(text, str):
                         try:
                             loaded_jsons = _load_sse_jsons(text)
-                        except IndexError as e:
-                            bt.logging.warning(f"Error {e} when trying to load text {text}")
+                        except (IndexError, JSONDecodeError) as e:
+                            bt.logging.warning(f"Error {e} when trying to load text: {text}")
                             break
 
                         text_jsons.extend(loaded_jsons)
@@ -660,6 +659,7 @@ class CoreValidator:
 
             internal_server_errors += 1
             failed_axon_uids.append(axon_uid)
+            # If we've failed too many, assume the query is bad, not the miners
             if internal_server_errors >= cst.MAX_INTERNAL_SERVER_ERRORS:
                 bt.logging.debug("Too many internal server errors, something is wrong with the request :/")
                 return utility_models.QueryResult(
@@ -694,7 +694,6 @@ class CoreValidator:
     ) -> Optional[BaseModel]:
         if resulting_synapse and resulting_synapse.dendrite.status_code == 200 and resulting_synapse != initial_synapse:
             formatted_response = self._extract_response(resulting_synapse, initial_synapse)
-
             return formatted_response
         else:
             return None
@@ -704,12 +703,16 @@ class CoreValidator:
     ) -> Optional[BaseModel]:
         try:
             formatted_response = outgoing_model(**resulting_synapse.dict())
-            # deserialized_result = resulting_synapse.deserialize()
-            # if deserialized_result is None:
-            #     formatted_response = None
+
+            # If we're expecting a result (i.e. not nsfw), then try to deserialize
+            if hasattr(formatted_response, "is_nsfw") and not formatted_response.is_nsfw:
+                deserialized_result = resulting_synapse.deserialize()
+                if deserialized_result is None:
+                    formatted_response = None
+
             return formatted_response
         except ValidationError as e:
-            bt.logging.debug(f"FAiled to deserialize for some reason: {e}")
+            bt.logging.debug(f"Failed to deserialize for some reason: {e}")
             return None
 
     def set_weights(self):
@@ -730,7 +733,13 @@ class CoreValidator:
                 average_score = uid_info.total_score / max(uid_info.request_count, 1)
                 available_tasks = uid_info.available_tasks
 
-                multiplier = cst.AVAILABLE_TASKS_MULTIPLIER[len(available_tasks)]
+                try:
+                    multiplier = cst.AVAILABLE_TASKS_MULTIPLIER[len(available_tasks)]
+                except KeyError:
+                    bt.logging.warning(
+                        f"Multiplier for {available_tasks} available_tasks for uid: {uid_info.uid}. Weird number, so I'll use 1"
+                    )
+                    multiplier = 1
                 score = (multiplier * average_score) ** 2
 
                 uid_scores[uid_info.uid] = uid_scores.get(uid_info.uid, []) + [score]

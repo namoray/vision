@@ -7,6 +7,7 @@ Welcome to S19 Mining 🔥
 
 - [Worker server setup](#worker-server-setup)
 - [Proxy server setup](#proxy-server-setup)
+- [LLM server configs](#model-configs)
 
 
 # Overview
@@ -17,11 +18,12 @@ A miner consists of serveral parts, fitting into two categories:
 
 The proxy server is the server which has your hotkey, and spins up the axon (should probably be on a CPU close to your GPU worker servers). The worker servers are the GPU workers which perform the tasks!
 
-I would advise starting with the worker servers. The simplest way to get started is to spin up three worker servers:
+I would advise starting with the worker servers. The simplest way to get started is to spin up four worker servers:
 
 - One for the finetuned chat model 
 - One for the mixtral chat model
 - One for the image generation stuff
+- One for the llama3 chat model
 
 # Worker server setup
 I recommend using bare metal where possible. The documentation for bare metal can be found in here https://github.com/namoray/vision-workers
@@ -41,16 +43,29 @@ FOR MORE INFO ON BARE METAL SETUP; READ [HERE](https://github.com/namoray/vision
 Create a new template
 ![Create template](images/create-template.png)
 
-- **Fill out the template like so**
+- **Fill out the template like this, but look below for all the different ennvironment variables**
 ![Mixtral template](images/mixtral-template.png)
 
+### Model configs
+Mixtral
 ```
 MODEL TheBloke/Nous-Hermes-2-Mixtral-8x7B-DPO-GPTQ
 HALF_PRECISION true
 REVISION gptq-8bit-128g-actorder_True
 ```
 
+Finetune
+```
+MODEL tau-vision/sn6-finetune
+HALF_PRECISION false
+```
 
+Llama-3
+```
+MODEL casperhansen/llama-3-70b-instruct-awq
+HALF_PRECISION true
+TOKENIZER tau-vision/llama-3-tokenizer-fix
+```
 
 It's very important that port 6919 is exposed here, as well as TCP port 22 ( so you can ssh in if you need to)
 
@@ -62,13 +77,6 @@ NOTE DONT USE THE TEMPLATE BELOW, ITS JUST AN EXAMPLE :D
 ![With template selected](images/select-template.png)
 
 
-- Follow the same steps for Finetune (slightly different template)
-
-![Template details](images/finetune-template.png)
-```
-MODEL lgodwangl/new_01m
-HALF_PRECISION false
-```
 
 ## Image worker
 Very similar steps, just a slightly different template! 
@@ -193,10 +201,4 @@ nohup python run_miner_auto_update.py </dev/null &>miner_autoupdate.log &
 You can either use the command
 ```bash
 ./start_miners.sh
-```
-
-
-Or you can use the usual pm2 commands
-```bash
-pm2 start --name NAME_FOR_MINER_HERE mining/run_miner.py --interpreter python3 -- --axon.port YOUR_AXON_PORT --axon.external_ip EXTERNAL_IP_FOR_AXON --wallet.name WALLET_NAME --wallet.hotkey WALLET_HOTKEY --subtensor.network SUBTENSOR_NETWORK --netuid 19 --logging.debug
 ```
