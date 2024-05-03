@@ -25,8 +25,11 @@ async def chat(
         task = tasks.Tasks.chat_bittensor_finetune.value
     elif synapse.model == utility_models.ChatModels.mixtral.value:
         task = tasks.Tasks.chat_mixtral.value
+    elif synapse.model == utility_models.ChatModels.llama_3.value:
+        task = tasks.Tasks.chat_llama_3.value
     else:
         raise HTTPException(status_code=400, detail="Invalid model provided")
+        return
 
     text_generator = await core_validator.execute_query(
         synapse, outgoing_model=base_models.ChatOutgoing, stream=True, task=task, synthetic_query=False
