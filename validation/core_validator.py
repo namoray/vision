@@ -123,7 +123,6 @@ class CoreValidator:
         await asyncio.sleep(time_between_resyncing)
 
     async def periodically_resync_and_set_weights(self) -> None:
-        # TODO: CHANGE AFTER DEBUGING
         cycle_length_initial = 1
         cycle_length_in_loop = 1
         time_between_resyncing = 60 * 30  # 30 mins
@@ -336,7 +335,7 @@ class CoreValidator:
                 uid_info.add_score(score / max_expected_score)
             i += 1
 
-            ## Renabled soon, this is to enable beautiful stats for the network
+            ## Re-enabled soon, this is to enable beautiful stats for the network
 
             # task_uuid = str(uuid.uuid4())
             # timestamp = time.time()
@@ -790,7 +789,7 @@ class CoreValidator:
                 )
                 for i in range(NUM_RETRIES_TO_SET_WEIGHTS):
                     bt.logging.info(f"Setting weights, iteration number: {i+1}")
-                    success = self.subtensor.set_weights(
+                    latest_is_success = self.subtensor.set_weights(
                         wallet=self.wallet,
                         netuid=netuid,
                         uids=processed_weight_uids,
@@ -799,11 +798,14 @@ class CoreValidator:
                         wait_for_finalization=False,
                         wait_for_inclusion=False,
                     )
+                    success = latest_is_success or success
 
                     if success:
                         bt.logging.info("✅ Done setting weights!")
-                        break
                     time.sleep(30)
+
+            if success:
+                break
             time.sleep(60 * 10)
 
 
