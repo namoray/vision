@@ -777,26 +777,34 @@ class CoreValidator:
             metagraph=self.metagraph,
         )
 
-        NUM_TIMES_TO_SET_WEIGHTS = 3
+        NUM_WEIGHT_SETTING_BLOCKS = 3
+        NUM_RETRIES_TO_SET_WEIGHTS = 3
         # The reason we do this is because wait_for_inclusion & wait_for_finalization
         # Cause the whole API server to crash.
-        # So we have no choice but to set weights
-        bt.logging.info(f"\n\nSetting weights {NUM_TIMES_TO_SET_WEIGHTS} times without inclusion or finalization\n\n")
-        for i in range(NUM_TIMES_TO_SET_WEIGHTS):
-            bt.logging.info(f"Setting weights, iteration number: {i+1}")
-            success = self.subtensor.set_weights(
-                wallet=self.wallet,
-                netuid=netuid,
-                uids=processed_weight_uids,
-                weights=processed_weights,
-                version_key=VERSION_KEY,
-                wait_for_finalization=False,
-                wait_for_inclusion=False,
-            )
+        # So we have no choice but to try to set weights each time
+        success = False
+        for _ in range(NUM_WEIGHT_SETTING_BLOCKS):
+            if not success:
+                bt.logging.info(
+                    f"\n\nSetting weights {NUM_RETRIES_TO_SET_WEIGHTS} times without inclusion or finalization\n\n"
+                )
+                for i in range(NUM_RETRIES_TO_SET_WEIGHTS):
+                    bt.logging.info(f"Setting weights, iteration number: {i+1}")
+                    success = self.subtensor.set_weights(
+                        wallet=self.wallet,
+                        netuid=netuid,
+                        uids=processed_weight_uids,
+                        weights=processed_weights,
+                        version_key=VERSION_KEY,
+                        wait_for_finalization=False,
+                        wait_for_inclusion=False,
+                    )
 
-            if success:
-                bt.logging.info("✅ Done setting weights!")
-            time.sleep(30)
+                    if success:
+                        bt.logging.info("✅ Done setting weights!")
+                        break
+                    time.sleep(30)
+            time.sleep(60 * 10)
 
 
 core_validator = CoreValidator()
