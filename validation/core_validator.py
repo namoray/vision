@@ -116,17 +116,18 @@ class CoreValidator:
         self.score_results_task = asyncio.create_task(self.score_results())
         self.score_results_task.add_done_callback(validation_utils.log_task_exception)
 
-    async def _resync_metagraph_and_sleep(self, time_between_resyncing: float, set_weights: bool) -> None:
+        self.periodically_resync_task = asyncio.create_task(self.periodically_set_weights())
+        self.periodically_resync_task.add_done_callback(validation_utils.log_task_exception)
+
+    async def _resync_metagraph_and_sleep(self, time_between_resyncing: float) -> None:
         await self.resync_metagraph()
         await asyncio.sleep(time_between_resyncing)
 
     async def periodically_resync(self) -> None:
-
         while True:
-            await self._resync_metagraph_and_sleep(TIME_BETWEEN_RESYNCING, set_weights=False)
+            await self._resync_metagraph_and_sleep(TIME_BETWEEN_RESYNCING)
 
     async def periodically_set_weights(self) -> None:
-
         await asyncio.sleep(TIME_BETWEEN_RESYNCING + 60 * 10)
         while True:
             await asyncio.to_thread(self.set_weights)
@@ -712,7 +713,6 @@ class CoreValidator:
         except ValidationError as e:
             bt.logging.debug(f"Failed to deserialize for some reason: {e}")
             return None
-
 
     def _get_weights_tensor(self) -> torch.Tensor:
         uid_scores: Dict[int, List[float]] = {}
