@@ -36,7 +36,7 @@ db_manager = DatabaseManager()
 
 VERSION_KEY = 20_005
 
-
+TIME_BETWEEN_RESYNCING = 60 * 45
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
 _UPPER_FOLLOWING_REGEXP = re.compile("([a-z0-9])([A-Z])")
 MAX_PERIODS_TO_LOOK_FOR_SCORE = 16
@@ -107,7 +107,7 @@ class CoreValidator:
         return base_config
 
     def start_continuous_tasks(self):
-        self.resync_task = asyncio.create_task(self.periodically_resync_and_set_weights())
+        self.resync_task = asyncio.create_task(self.periodically_resync())
         self.resync_task.add_done_callback(validation_utils.log_task_exception)
 
         self.score_task = asyncio.create_task(self.synthetically_score())
@@ -118,24 +118,21 @@ class CoreValidator:
 
     async def _resync_metagraph_and_sleep(self, time_between_resyncing: float, set_weights: bool) -> None:
         await self.resync_metagraph()
-        if set_weights:
-            await asyncio.to_thread(self.set_weights)
         await asyncio.sleep(time_between_resyncing)
 
-    async def periodically_resync_and_set_weights(self) -> None:
-        cycle_length_initial = 1
-        cycle_length_in_loop = 1
-        time_between_resyncing = 60 * 30  # 30 mins
-
-        # Initial cycles to make sure restarts don't impact scores too heavily
-        for _ in range(cycle_length_initial):
-            await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights=False)
+    async def periodically_resync(self) -> None:
 
         while True:
-            for _ in range(cycle_length_in_loop):
-                await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights=False)
+            await self._resync_metagraph_and_sleep(TIME_BETWEEN_RESYNCING, set_weights=False)
 
-            await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights=True)
+    async def periodically_set_weights(self) -> None:
+
+        await asyncio.sleep(TIME_BETWEEN_RESYNCING + 60 * 10)
+        while True:
+            await asyncio.to_thread(self.set_weights)
+            await asyncio.sleep(60 * 5)  # smaller sleep as first often fails
+            await asyncio.to_thread(self.set_weights)
+            await asyncio.sleep(60 * 20)
 
     async def _store_synthetic_result(self, sota_request: utility_models.SotaCheckingRequest) -> None:
         """
@@ -237,15 +234,17 @@ class CoreValidator:
 
             time_before_query = time.time()
 
-            asyncio.create_task(
-                self.execute_query(
-                    synapse=synthetic_synapse,
-                    outgoing_model=outgoing_model,
-                    synthetic_query=True,
-                    task=task,
-                    stream=stream,
+            # Query more miners for the same task
+            for _ in range(3):
+                asyncio.create_task(
+                    self.execute_query(
+                        synapse=synthetic_synapse,
+                        outgoing_model=outgoing_model,
+                        synthetic_query=True,
+                        task=task,
+                        stream=stream,
+                    )
                 )
-            )
 
             time_to_execute_query = time.time() - time_before_query
             await asyncio.sleep(
@@ -714,9 +713,8 @@ class CoreValidator:
             bt.logging.debug(f"Failed to deserialize for some reason: {e}")
             return None
 
-    def set_weights(self):
-        bt.logging.info("Setting weights!")
 
+    def _get_weights_tensor(self) -> torch.Tensor:
         uid_scores: Dict[int, List[float]] = {}
         scoring_periods_uid_was_in: Dict[int, int] = {}
 
@@ -758,6 +756,13 @@ class CoreValidator:
         for uid, weight in uid_weights.items():
             weights_tensor[uid] = weight
 
+        return weights_tensor
+
+    def set_weights(self):
+        bt.logging.info("Setting weights!")
+
+        weights_tensor = self._get_weights_tensor()
+
         try:
             netuid = self.config.netuid
             if netuid is None:
@@ -776,37 +781,18 @@ class CoreValidator:
             metagraph=self.metagraph,
         )
 
-        NUM_WEIGHT_SETTING_BLOCKS = 3
-        NUM_RETRIES_TO_SET_WEIGHTS = 3
-        # The reason we do this is because wait_for_inclusion & wait_for_finalization
-        # Cause the whole API server to crash.
-        # So we have no choice but to try to set weights each time
-        success = False
-        for _ in range(NUM_WEIGHT_SETTING_BLOCKS):
-            if not success:
-                bt.logging.info(
-                    f"\n\nSetting weights {NUM_RETRIES_TO_SET_WEIGHTS} times without inclusion or finalization\n\n"
-                )
-                for i in range(NUM_RETRIES_TO_SET_WEIGHTS):
-                    bt.logging.info(f"Setting weights, iteration number: {i+1}")
-                    latest_is_success = self.subtensor.set_weights(
-                        wallet=self.wallet,
-                        netuid=netuid,
-                        uids=processed_weight_uids,
-                        weights=processed_weights,
-                        version_key=VERSION_KEY,
-                        wait_for_finalization=False,
-                        wait_for_inclusion=False,
-                    )
-                    success = latest_is_success or success
+        success = self.subtensor.set_weights(
+            wallet=self.wallet,
+            netuid=netuid,
+            uids=processed_weight_uids,
+            weights=processed_weights,
+            version_key=VERSION_KEY,
+            wait_for_finalization=False,
+            wait_for_inclusion=False,
+        )
 
-                    if success:
-                        bt.logging.info("✅ Done setting weights!")
-                    time.sleep(30)
-
-            if success:
-                break
-            time.sleep(60 * 10)
+        if success:
+            bt.logging.info("✅ Done setting weights!")
 
 
 core_validator = CoreValidator()
