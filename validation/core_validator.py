@@ -131,9 +131,7 @@ class CoreValidator:
         await asyncio.sleep(TIME_BETWEEN_RESYNCING + 60 * 10)
         while True:
             await asyncio.to_thread(self.set_weights)
-            await asyncio.sleep(60 * 5)  # smaller sleep as first often fails
-            await asyncio.to_thread(self.set_weights)
-            await asyncio.sleep(60 * 20)
+            await asyncio.sleep(60 * 30)
 
     async def _store_synthetic_result(self, sota_request: utility_models.SotaCheckingRequest) -> None:
         """
