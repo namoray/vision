@@ -34,7 +34,7 @@ import traceback
 
 db_manager = DatabaseManager()
 
-VERSION_KEY = 20_005
+VERSION_KEY = 20_006
 
 
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
@@ -123,7 +123,7 @@ class CoreValidator:
         await asyncio.sleep(time_between_resyncing)
 
     async def periodically_resync_and_set_weights(self) -> None:
-        # TODO: CHANGE AFTER DEBUGING
+        # TODO: CHANGE AFTER DEBUGGING
         cycle_length_initial = 1
         cycle_length_in_loop = 1
         time_between_resyncing = 60 * 30  # 30 mins
@@ -223,6 +223,7 @@ class CoreValidator:
             if task == tasks.Tasks.sota.value:
                 if random.random() > 0.03:
                     continue
+
             synthetic_data = await synthetic_generations.get_synthetic_data(task)
             if synthetic_data is None:
                 bt.logging.debug(
@@ -238,15 +239,19 @@ class CoreValidator:
 
             time_before_query = time.time()
 
-            asyncio.create_task(
-                self.execute_query(
-                    synapse=synthetic_synapse,
-                    outgoing_model=outgoing_model,
-                    synthetic_query=True,
-                    task=task,
-                    stream=stream,
+            miners_to_send_query_to = random.randint(1, 5)
+            for _ in range(miners_to_send_query_to):
+                if hasattr(synthetic_synapse, "seed"):
+                    synthetic_synapse.seed = random.randint(1, 10000000)
+                asyncio.create_task(
+                    self.execute_query(
+                        synapse=synthetic_synapse,
+                        outgoing_model=outgoing_model,
+                        synthetic_query=True,
+                        task=task,
+                        stream=stream,
+                    )
                 )
-            )
 
             time_to_execute_query = time.time() - time_before_query
             await asyncio.sleep(
@@ -336,7 +341,7 @@ class CoreValidator:
                 uid_info.add_score(score / max_expected_score)
             i += 1
 
-            ## Renabled soon, this is to enable beautiful stats for the network
+            ## Re-enabled soon, this is to enable beautiful stats for the network
 
             # task_uuid = str(uuid.uuid4())
             # timestamp = time.time()
