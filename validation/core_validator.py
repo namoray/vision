@@ -14,6 +14,7 @@ from typing import Tuple
 from core import tasks
 import bittensor as bt
 import httpx
+import concurrent
 import torch
 from pydantic import BaseModel
 from pydantic import ValidationError
@@ -100,6 +101,9 @@ class CoreValidator:
 
         self.results_store: Dict[str, utility_models.QueryResult] = {}
 
+        self.loop = asyncio.get_event_loop()
+        self.thread_executor = concurrent.futures.ThreadPoolExecutor()
+
     def prepare_config_and_logging(self) -> bt.config:
         base_config = configuration.get_validator_cli_config()
 
@@ -116,10 +120,13 @@ class CoreValidator:
         self.score_results_task = asyncio.create_task(self.score_results())
         self.score_results_task.add_done_callback(validation_utils.log_task_exception)
 
+    async def run_sync_in_async(self, fn):
+        return await self.loop.run_in_executor(self.thread_executor, fn)
+
     async def _resync_metagraph_and_sleep(self, time_between_resyncing: float, set_weights: bool) -> None:
         await self.resync_metagraph()
         if set_weights:
-            await asyncio.to_thread(self.set_weights)
+            await self.run_sync_in_async(self.set_weights)
         await asyncio.sleep(time_between_resyncing)
 
     async def periodically_resync_and_set_weights(self) -> None:
