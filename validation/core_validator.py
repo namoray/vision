@@ -126,7 +126,7 @@ class CoreValidator:
         # TODO: CHANGE AFTER DEBUGGING
         cycle_length_initial = 1
         cycle_length_in_loop = 1
-        time_between_resyncing = 60 * 45 # 30 mins
+        time_between_resyncing = 60 * 45  # 30 mins
 
         # Initial cycles to make sure restarts don't impact scores too heavily
         for _ in range(cycle_length_initial):
@@ -480,7 +480,7 @@ class CoreValidator:
             axons=self.uid_to_uid_info[axon_uid].axon,
             synapse=synapse,
             connect_timeout=0.3,
-            response_timeout=2,  # if X seconds without any data, its boinked
+            response_timeout=5,  # if X seconds without any data, its boinked
             deserialize=deserialize,
             log_requests_and_responses=log_requests_and_responses,
             streaming=True,
