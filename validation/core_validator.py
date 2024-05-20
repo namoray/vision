@@ -34,7 +34,7 @@ import traceback
 
 db_manager = DatabaseManager()
 
-VERSION_KEY = 20_005
+VERSION_KEY = 20_006
 
 
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
@@ -118,15 +118,15 @@ class CoreValidator:
 
     async def _resync_metagraph_and_sleep(self, time_between_resyncing: float, set_weights: bool) -> None:
         await self.resync_metagraph()
+        await asyncio.sleep(time_between_resyncing)
         if set_weights:
             await asyncio.to_thread(self.set_weights)
-        await asyncio.sleep(time_between_resyncing)
 
     async def periodically_resync_and_set_weights(self) -> None:
-        # TODO: CHANGE AFTER DEBUGING
+        # TODO: CHANGE AFTER DEBUGGING
         cycle_length_initial = 1
         cycle_length_in_loop = 1
-        time_between_resyncing = 60 * 30  # 30 mins
+        time_between_resyncing = 60 * 45  # 30 mins
 
         # Initial cycles to make sure restarts don't impact scores too heavily
         for _ in range(cycle_length_initial):
@@ -134,7 +134,7 @@ class CoreValidator:
 
         while True:
             for _ in range(cycle_length_in_loop):
-                await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights=False)
+                await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights=True)
 
             await self._resync_metagraph_and_sleep(time_between_resyncing, set_weights=True)
 
@@ -223,6 +223,7 @@ class CoreValidator:
             if task == tasks.Tasks.sota.value:
                 if random.random() > 0.03:
                     continue
+
             synthetic_data = await synthetic_generations.get_synthetic_data(task)
             if synthetic_data is None:
                 bt.logging.debug(
@@ -238,15 +239,19 @@ class CoreValidator:
 
             time_before_query = time.time()
 
-            asyncio.create_task(
-                self.execute_query(
-                    synapse=synthetic_synapse,
-                    outgoing_model=outgoing_model,
-                    synthetic_query=True,
-                    task=task,
-                    stream=stream,
+            miners_to_send_query_to = random.randint(1, 5)
+            for _ in range(miners_to_send_query_to):
+                if hasattr(synthetic_synapse, "seed"):
+                    synthetic_synapse.seed = random.randint(1, 10000000)
+                asyncio.create_task(
+                    self.execute_query(
+                        synapse=synthetic_synapse,
+                        outgoing_model=outgoing_model,
+                        synthetic_query=True,
+                        task=task,
+                        stream=stream,
+                    )
                 )
-            )
 
             time_to_execute_query = time.time() - time_before_query
             await asyncio.sleep(
@@ -336,7 +341,7 @@ class CoreValidator:
                 uid_info.add_score(score / max_expected_score)
             i += 1
 
-            ## Renabled soon, this is to enable beautiful stats for the network
+            ## Re-enabled soon, this is to enable beautiful stats for the network
 
             # task_uuid = str(uuid.uuid4())
             # timestamp = time.time()
@@ -475,7 +480,7 @@ class CoreValidator:
             axons=self.uid_to_uid_info[axon_uid].axon,
             synapse=synapse,
             connect_timeout=0.3,
-            response_timeout=2,  # if X seconds without any data, its boinked
+            response_timeout=5,  # if X seconds without any data, its boinked
             deserialize=deserialize,
             log_requests_and_responses=log_requests_and_responses,
             streaming=True,
