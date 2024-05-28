@@ -11,9 +11,8 @@ async def stream_text_from_server(body: base_models.ChatIncoming, url: str):
     text_endpoint = url + POST_ENDPOINT
     async with httpx.AsyncClient() as client:  # noqa
         async with client.stream("POST", text_endpoint, json=body.dict()) as resp:
-            async for chunk in resp.aiter_bytes():
+            async for chunk in resp.aiter_lines():
                 try:
-                    chunk = chunk.decode()
                     received_event_chunks = chunk.split("\n\n")
                     for event in received_event_chunks:
                         if event == "":
@@ -28,7 +27,9 @@ async def stream_text_from_server(body: base_models.ChatIncoming, url: str):
 
                         yield f"data: {data}\n\n"
                 except Exception as e:
-                    bt.logging.error(f"Error in streaming text from the server: {e}. Original chunk: {chunk}")
+                    bt.logging.error(
+                        f"Error in streaming text from the server: {e}. Original chunk: {chunk}"
+                    )
 
 
 async def chat_logic(body: base_models.ChatIncoming, url: str) -> AsyncGenerator:
