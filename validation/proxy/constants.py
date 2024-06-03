@@ -18,7 +18,7 @@ NETWORK = "finney"
 MAX_RESULTS_TO_SCORE_FOR_TASK = 50
 MINIMUM_TASKS_TO_START_SCORING = 40
 
-# TODO: Make these more granular, based on the prediction of the repsonse time perhaps?
+# TODO: Make these more granular, based on the prediction of the response time perhaps?
 OPERATION_TIMEOUTS: Dict[str, float] = {
     "AvailableTasksOperation": 30,
     "ClipEmbeddings": 6,
@@ -62,4 +62,4 @@ FAILED_RESPONSE_SCORE = 0.25
 
 CHANCE_TO_CHECK_OUTPUT_WHEN_IMAGES_FROM_MINERS_WERE_SIMILAR = 0.02
 
-MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING = 5
+MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING = 2
