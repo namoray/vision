@@ -20,7 +20,6 @@ The proxy server is the server which has your hotkey, and spins up the axon (sho
 
 I would advise starting with the worker servers. The simplest way to get started is to spin up four worker servers:
 
-- One for the finetuned chat model 
 - One for the mixtral chat model
 - One for the image generation stuff
 - One for the llama3 chat model
@@ -54,11 +53,6 @@ HALF_PRECISION true
 REVISION gptq-8bit-128g-actorder_True
 ```
 
-Finetune
-```
-MODEL tau-vision/sn6-finetune
-HALF_PRECISION false
-```
 
 Llama-3
 ```

@@ -1,8 +1,6 @@
-import os
 from typing import Dict, Any, Optional
 from core import constants as core_cst
 from rich.prompt import Prompt
-import rich
 
 
 def device_processing_func(input: str):
@@ -10,10 +8,13 @@ def device_processing_func(input: str):
         input = "cuda:" + input
     return input
 
+
 def optional_http_address_processing_func(input: Optional[str]) -> str:
     if input is None:
         return None
     return http_address_processing_func(input)
+
+
 def http_address_processing_func(input: str) -> str:
     if "http://" not in input and "https://" not in input:
         input = "http://" + input
@@ -70,10 +71,6 @@ VALIDATOR_PARAMETERS = {
 }
 
 MINER_PARAMETERS = {
-    core_cst.SOTA_PROVIDER_API_KEY_PARAM: {
-        "default": None,
-        "message": "Optional SOTA Provider API Key: ",
-    },
     core_cst.AXON_PORT_PARAM: {"default": 8091, "message": "Axon Port: "},
     core_cst.AXON_EXTERNAL_IP_PARAM: {"default": None, "message": "Axon External IP: "},
     core_cst.IMAGE_WORKER_URL_PARAM: {
@@ -86,21 +83,25 @@ MINER_PARAMETERS = {
         "message": "Mixtral Text Worker URL: ",
         "process_function": optional_http_address_processing_func,
     },
-    core_cst.FINETUNE_TEXT_WORKER_URL_PARAM: {
-        "default": None,
-        "message": "Finetune Text Worker URL: ",
-        "process_function": optional_http_address_processing_func,
-    },
     core_cst.LLAMA_3_TEXT_WORKER_URL_PARAM: {
         "default": None,
         "message": "Llama 3 Text Worker URL: ",
         "process_function": optional_http_address_processing_func,
-    }
+    },
 }
 
 
 gpu_assigned_dict = {}
 config = {}
+
+
+TASK_CONFIG_JSON = "task_config.json"
+CONCURRENCY_CONFIG_JSON = "task_concurrency_config.json"
+
+
+def _make_empty_json(filename: str) -> None:
+    with open(filename, "w") as f:
+        f.write("{}")
 
 
 def handle_parameters(parameters: Dict[str, Any], hotkey: str):
@@ -146,6 +147,14 @@ def get_config():
             handle_parameters(VALIDATOR_PARAMETERS, hotkey)
         else:
             handle_parameters(MINER_PARAMETERS, hotkey)
+
+            config_json_name = "." + hotkey + "." + TASK_CONFIG_JSON
+            concurrency_config_json_name = "." + hotkey + "." + CONCURRENCY_CONFIG_JSON
+            print(
+                f"Please remember to edit your config jsons!\n {config_json_name} and  {concurrency_config_json_name}"
+            )
+            _make_empty_json(config_json_name)
+            _make_empty_json(concurrency_config_json_name)
 
         with open(f".{hotkey}.env", "w") as f:
             f.write(f"{core_cst.HOTKEY_PARAM}=" + hotkey + "\n")

@@ -1,10 +1,11 @@
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from typing import Optional
-from core import constants as core_cst
+from typing import Dict, Optional
+from core import Task, constants as core_cst
 import os
 import bittensor as bt
 import argparse
+from core import utils
 
 
 def _get_env_file_from_cli_config() -> str:
@@ -30,27 +31,20 @@ class Config(BaseModel):
     wallet_name: str = os.getenv(core_cst.WALLET_NAME_PARAM, "default")
 
     subtensor_network: str = os.getenv(core_cst.SUBTENSOR_NETWORK_PARAM, "finney")
-    subtensor_chainendpoint: Optional[str] = os.getenv(
-        core_cst.SUBTENSOR_CHAINENDPOINT_PARAM, None
-    )
+    subtensor_chainendpoint: Optional[str] = os.getenv(core_cst.SUBTENSOR_CHAINENDPOINT_PARAM, None)
 
     image_worker_url: Optional[str] = os.getenv(core_cst.IMAGE_WORKER_URL_PARAM, None)
-    finetune_text_worker_url: Optional[str] = os.getenv(
-        core_cst.FINETUNE_TEXT_WORKER_URL_PARAM, None
-    )
-    mixtral_text_worker_url: Optional[str] = os.getenv(
-        core_cst.MIXTRAL_TEXT_WORKER_URL_PARAM, None
-    )
-    llama_3_text_worker_url: Optional[str] = os.getenv(
-        core_cst.LLAMA_3_TEXT_WORKER_URL_PARAM, None
-    )
-
-    sota_provider_api_key: str = os.getenv(core_cst.SOTA_PROVIDER_API_KEY_PARAM, None)
+    mixtral_text_worker_url: Optional[str] = os.getenv(core_cst.MIXTRAL_TEXT_WORKER_URL_PARAM, None)
+    llama_3_text_worker_url: Optional[str] = os.getenv(core_cst.LLAMA_3_TEXT_WORKER_URL_PARAM, None)
 
     axon_port: str = os.getenv(core_cst.AXON_PORT_PARAM, 8012)
     axon_external_ip: str = os.getenv(core_cst.AXON_EXTERNAL_IP_PARAM, "127.0.0.1")
 
     debug_miner: bool = os.getenv(core_cst.DEBUG_MINER_PARAM, False)
+
+    capacity_config: Dict[Task, Dict[str, float]] = utils.load_capacities(hotkey_name)
+    concurrency_groups: Dict[Task, int] = utils.load_concurrency_groups(hotkey_name)
+
 
 
 config = Config()

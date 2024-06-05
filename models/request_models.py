@@ -80,7 +80,7 @@ class TextToImageRequest(BaseModel):
         schema_extra = {
             "examples": [
                 {
-                    "text_prompts": [{"text": "Shiba inu"}],
+                    "text_prompts": [{"text": "A dog parachuting over the ocean"}],
                     "height": 1280,
                     "width": 1280,
                     "engine": "proteus",

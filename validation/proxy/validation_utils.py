@@ -7,7 +7,6 @@ from typing import Dict
 from typing import Type
 from typing import Union, Any
 from rich.console import Console
-from rich.table import Table
 import bittensor as bt
 import fastapi
 import httpx
@@ -16,14 +15,11 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 import random
 from core import constants as core_cst, utils as core_utils
-from validation.proxy import constants as cst
 from models import utility_models, base_models
 import numpy as np
 from PIL import Image
-import sqlite3
-from validation.proxy import speed_scoring_functions
-import os
-from core.tasks import Tasks
+from validation.proxy import old_speed_scoring_functions
+from core.tasks import Task
 
 console = Console()
 
@@ -125,95 +121,21 @@ def alter_clip_body(
     return body
 
 
-def store_and_print_scores(
-    axon_scores: Dict[int, float],
-    result1: utility_models.QueryResult,
-    result2: utility_models.QueryResult,
-    synapse: bt.Synapse,
-    checked_with_server: bool,
-    uid_to_uid_info: Dict[int, utility_models.UIDinfo],
-):
-    if os.path.isfile(core_cst.VALIDATOR_DB):
-        conn = sqlite3.connect(core_cst.VALIDATOR_DB)
-        cursor = conn.cursor()
-    else:
-        conn = None
-        cursor = None
-
-    timestamp = round(time.time(), 2)
-
-    table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("uid", style="dim")
-    table.add_column("Response Time", style="dim")
-    table.add_column("Score", style="dim")
-    table.add_column("Synapse", justify="left", style="dim")
-    table.add_column("Valid response", justify="left", style="dim")
-    table.add_column("Quickest Response", justify="left", style="dim")
-    table.add_column("Checked with server", justify="left", style="dim")
-
-    for uid, score in axon_scores.items():
-        if uid == result1.axon_uid:
-            response_time = "N/A" if result1.response_time is None else str(round(result1.response_time, 2))
-        elif uid == result2.axon_uid:
-            response_time = "N/A" if result2.response_time is None else str(round(result2.response_time, 2))
-        else:
-            response_time = "N/A"
-
-        valid_response = score > cst.FAILED_RESPONSE_SCORE
-        quickest_response = score >= (1 + cst.BONUS_FOR_WINNING_MINER)
-
-        if cursor is not None:
-            hotkey = uid_to_uid_info[uid].hotkey
-
-            row_data = (
-                uid,
-                hotkey,
-                float(response_time) if response_time != "N/A" else None,
-                round(score, 2),
-                synapse.__class__.__name__,
-                valid_response,
-                quickest_response,
-                checked_with_server,
-                timestamp,
-            )
-            cursor.execute(
-                "INSERT INTO scores (axon_uid, hotkey, response_time, score, synapse, valid_response, quickest_response, checked_with_server, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                row_data,
-            )
-        table.add_row(
-            str(uid),
-            response_time,
-            str(round(score, 2)),
-            synapse.__class__.__name__,
-            str(valid_response),
-            str(quickest_response),
-            str(checked_with_server),
-        )
-
-    console.print(table)
-
-    if conn is not None:
-        conn.commit()
-        conn.close()
-
-
 tasks_to_scoring_function = {
-    Tasks.chat_bittensor_finetune.value: speed_scoring_functions.speed_scoring_chat,
-    Tasks.chat_mixtral.value: speed_scoring_functions.speed_scoring_chat,
-    Tasks.chat_llama_3.value: speed_scoring_functions.speed_scoring_chat,
-    Tasks.proteus_text_to_image.value: speed_scoring_functions.speed_scoring_images,
-    Tasks.playground_text_to_image.value: speed_scoring_functions.speed_scoring_images,
-    Tasks.dreamshaper_text_to_image.value: speed_scoring_functions.speed_scoring_images,
-    Tasks.proteus_image_to_image.value: speed_scoring_functions.speed_scoring_images,
-    Tasks.playground_image_to_image.value: speed_scoring_functions.speed_scoring_images,
-    Tasks.dreamshaper_image_to_image.value: speed_scoring_functions.speed_scoring_images,
-    Tasks.jugger_inpainting.value: speed_scoring_functions.speed_scoring_images,
-    Tasks.avatar.value: speed_scoring_functions.speed_scoring_images,
-    Tasks.clip_image_embeddings.value: speed_scoring_functions.speed_scoring_clip,
-    Tasks.sota.value: speed_scoring_functions.speed_scoring_sota,
+    Task.chat_mixtral.value: old_speed_scoring_functions.speed_scoring_chat,
+    Task.chat_llama_3.value: old_speed_scoring_functions.speed_scoring_chat,
+    Task.proteus_text_to_image.value: old_speed_scoring_functions.speed_scoring_images,
+    Task.playground_text_to_image.value: old_speed_scoring_functions.speed_scoring_images,
+    Task.dreamshaper_text_to_image.value: old_speed_scoring_functions.speed_scoring_images,
+    Task.proteus_image_to_image.value: old_speed_scoring_functions.speed_scoring_images,
+    Task.playground_image_to_image.value: old_speed_scoring_functions.speed_scoring_images,
+    Task.dreamshaper_image_to_image.value: old_speed_scoring_functions.speed_scoring_images,
+    Task.jugger_inpainting.value: old_speed_scoring_functions.speed_scoring_images,
+    Task.avatar.value: old_speed_scoring_functions.speed_scoring_images,
+    Task.clip_image_embeddings.value: old_speed_scoring_functions.speed_scoring_clip,
 }
 
 
 async def get_expected_score(result: utility_models.QueryResult, synapse: Dict[str, Any], task: str) -> float:
-    expected_score =  await tasks_to_scoring_function[task](result, synapse, task)
+    expected_score = await tasks_to_scoring_function[task](result, synapse, task)
     return max(expected_score, 1)

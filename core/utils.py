@@ -1,19 +1,33 @@
 import base64
+from typing import Dict
 import numpy as np
 from PIL import Image
 import cv2
 import random
 from io import BytesIO
 
-import base64
-
-import cv2
-import numpy as np
-from PIL import Image
 import io
 import binascii
+import json
+import os
+from core import constants as cst
 
 
+# Would people want this to be in a DB instead which is read on every request, but then more configurable?
+def load_concurrency_groups(hotkey: str) -> Dict[str, float]:
+    if not os.path.exists("." + hotkey + "." + cst.TASK_CONCURRENCY_CONFIG_JSON):
+        return {}
+    with open("." + hotkey + "." + cst.TASK_CONCURRENCY_CONFIG_JSON) as f:
+        return json.load(f)
+
+
+def load_capacities(hotkey: str) -> Dict[str, Dict[str, float]]:
+    if not os.path.exists("." + hotkey + "." + cst.TASK_CONFIG_JSON):
+        return {}
+    with open("." + hotkey + "." + cst.TASK_CONFIG_JSON) as f:
+        capacities_with_concurrencies = json.load(f)
+
+    return capacities_with_concurrencies
 
 
 def generate_mask_with_circle(image_b64: str) -> np.ndarray:
@@ -40,6 +54,7 @@ def generate_mask_with_circle(image_b64: str) -> np.ndarray:
     mask_img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return mask_img_str
 
+
 def pil_to_base64(image: Image, format: str = "JPEG") -> str:
     buffered = io.BytesIO()
     image.save(buffered, format=format)
@@ -54,4 +69,3 @@ def base64_to_pil(image_b64: str) -> Image.Image:
         return image
     except binascii.Error:
         return None
-    

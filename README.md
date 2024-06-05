@@ -22,3 +22,4 @@ Subnet 19 is a Bittensor subnetwork, focused around inference at scale, supporti
 ### [Validators](docs/validating.md)
 
 
+P.S. to start a vali and miner on the same machine, and to only talk to eachother, use external_ip 0.0.0.0
