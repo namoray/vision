@@ -152,9 +152,18 @@ vision create-config
 ### Creating the database
 Used to store scoring logs
 
+runpod or similar:
 ```bash
 curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64
 chmod +x /usr/local/bin/dbmate
+
+dbmate --url "sqlite:validator_database.db" up
+```
+
+VM / BM:
+```bash
+sudo curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64
+sudo chmod +x /usr/local/bin/dbmate
 
 dbmate --url "sqlite:validator_database.db" up
 ```
