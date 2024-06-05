@@ -4,7 +4,6 @@ from typing import Any, AsyncGenerator, List, Union
 
 import aiohttp
 import bittensor
-from config.validator_config import config as validator_config
 
 
 class dendrite(bittensor.dendrite):
@@ -27,17 +26,14 @@ class dendrite(bittensor.dendrite):
         Returns:
             str: A string representing the complete HTTP URL for the request.
         """
-        if (
-            validator_config.subtensor_network is not None
-            and validator_config.subtensor_network.strip().lower() == "test-dsabled"
-        ):
-            endpoint = (
-                f"0.0.0.0:{str(target_axon.port)}"
-                if target_axon.ip == str(self.external_ip)
-                else f"{target_axon.ip}:{str(target_axon.port)}"
-            )
-        else:
-            endpoint = f"{target_axon.ip}:{str(target_axon.port)}"
+        endpoint = f"{target_axon.ip}:{str(target_axon.port)}"
+
+        # TODO: COMMENT OUT FOR MAINNET
+        endpoint = (
+            f"0.0.0.0:{str(target_axon.port)}"
+            if target_axon.ip == str(self.external_ip)
+            else f"{target_axon.ip}:{str(target_axon.port)}"
+        )
 
         return f"http://{endpoint}/{request_name}"
 
@@ -242,11 +238,11 @@ class dendrite(bittensor.dendrite):
             # Log synapse event history
             # self.synapse_history.append(bittensor.Synapse.from_headers(synapse.to_headers()))
 
-            # OVERRIDE: DISABLE THIS AS I DON'T WANT TO YIELD THE SYNAPSE, I DONT NEED IT
+            # OVERRIDE: DISABLE THIS AS I DONT NEED IT
             # if deserialize:
             #     yield synapse.deserialize()
             # else:
-            #     yield synapse
+            # yield synapse
 
     async def call(
         self,

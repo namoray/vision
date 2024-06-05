@@ -1,95 +1,100 @@
-from enum import Enum
-from models import synapses
+"""Would prefer to make this just one dataclass"""
+
+from core import Task
+from models import synapses, utility_models
 from mining.proxy import operations
-from config.miner_config import config as miner_config
+from typing import Any, Dict, Optional
+import bittensor as bt
 
-
-class Tasks(Enum):
-    chat_bittensor_finetune = "chat-bittensor-finetune"
-    chat_mixtral = "chat-mixtral"
-    chat_llama_3 = "chat-llama-3"
-    proteus_text_to_image = "proteus-text-to-image"
-    playground_text_to_image = "playground-text-to-image"
-    dreamshaper_text_to_image = "dreamshaper-text-to-image"
-    proteus_image_to_image = "proteus-image-to-image"
-    playground_image_to_image = "playground-image-to-image"
-    dreamshaper_image_to_image = "dreamshaper-image-to-image"
-    jugger_inpainting = "inpaint"
-    clip_image_embeddings = "clip-image-embeddings"
-    avatar = "avatar"
-    sota = "sota"
-
-
-# IF YOU ARE MINER, YOU WILL PROBABLY NEED TO FIDDLE WITH THIS:
-SUPPORTED_TASKS = []
-if miner_config.image_worker_url:
-    SUPPORTED_TASKS.extend(
-        [
-            Tasks.proteus_text_to_image.value,
-            Tasks.playground_text_to_image.value,
-            Tasks.dreamshaper_text_to_image.value,
-            Tasks.proteus_image_to_image.value,
-            Tasks.playground_image_to_image.value,
-            Tasks.dreamshaper_image_to_image.value,
-            Tasks.jugger_inpainting.value,
-            Tasks.clip_image_embeddings.value,
-            Tasks.avatar.value,
-        ]
-    )
-if miner_config.finetune_text_worker_url:
-    SUPPORTED_TASKS.extend(
-        [
-            Tasks.chat_bittensor_finetune.value,
-        ]
-    )
-if miner_config.mixtral_text_worker_url:
-    SUPPORTED_TASKS.extend(
-        [
-            Tasks.chat_mixtral.value,
-        ]
-    )
-if miner_config.llama_3_text_worker_url:
-    SUPPORTED_TASKS.extend(
-        [
-            Tasks.chat_llama_3.value,
-        ]
-    )
-if miner_config.sota_provider_api_key:
-    SUPPORTED_TASKS.extend(
-        [
-            Tasks.sota.value,
-        ]
-    )
-
-
-TASKS_TO_SYNAPSE = {
-    Tasks.chat_bittensor_finetune.value: synapses.Chat,
-    Tasks.chat_mixtral.value: synapses.Chat,
-    Tasks.chat_llama_3.value: synapses.Chat,
-    Tasks.proteus_text_to_image.value: synapses.TextToImage,
-    Tasks.playground_text_to_image.value: synapses.TextToImage,
-    Tasks.dreamshaper_text_to_image.value: synapses.TextToImage,
-    Tasks.proteus_image_to_image.value: synapses.ImageToImage,
-    Tasks.playground_image_to_image.value: synapses.ImageToImage,
-    Tasks.dreamshaper_image_to_image.value: synapses.ImageToImage,
-    Tasks.jugger_inpainting.value: synapses.Inpaint,
-    Tasks.clip_image_embeddings.value: synapses.ClipEmbeddings,
-    Tasks.sota.value: synapses.Sota,
-    Tasks.avatar.value: synapses.Avatar,
+# I don't love this being here. How else should I do it though?
+# I don't want to rely on any extra third party service for fetching this info...
+TASK_TO_MAX_CAPACITY: Dict[Task, int] = {
+    Task.chat_mixtral: 10000,
+    Task.chat_llama_3: 10000,
+    Task.proteus_text_to_image: 10000,
+    Task.playground_text_to_image: 10000,
+    Task.dreamshaper_text_to_image: 10000,
+    Task.proteus_image_to_image: 10000,
+    Task.playground_image_to_image: 10000,
+    Task.dreamshaper_image_to_image: 10000,
+    Task.jugger_inpainting: 10000,
+    Task.clip_image_embeddings: 10000,
+    Task.avatar: 10000,
 }
 
-TASKS_TO_MINER_OPERATION_MODULES = {
-    Tasks.chat_bittensor_finetune.value: operations.chat_operation,
-    Tasks.chat_mixtral.value: operations.chat_operation,
-    Tasks.chat_llama_3.value: operations.chat_operation,
-    Tasks.proteus_text_to_image.value: operations.text_to_image_operation,
-    Tasks.playground_text_to_image.value: operations.text_to_image_operation,
-    Tasks.dreamshaper_text_to_image.value: operations.text_to_image_operation,
-    Tasks.proteus_image_to_image.value: operations.image_to_image_operation,
-    Tasks.playground_image_to_image.value: operations.image_to_image_operation,
-    Tasks.dreamshaper_image_to_image.value: operations.image_to_image_operation,
-    Tasks.jugger_inpainting.value: operations.inpaint_operation,
-    Tasks.clip_image_embeddings.value: operations.clip_embeddings_operation,
-    Tasks.sota.value: operations.sota_operation,
-    Tasks.avatar.value: operations.avatar_operation,
+TASK_IS_STREAM: Dict[Task, bool] = {
+    Task.chat_mixtral: True,
+    Task.chat_llama_3: True,
+    Task.proteus_text_to_image: False,
+    Task.playground_text_to_image: False,
+    Task.dreamshaper_text_to_image: False,
+    Task.proteus_image_to_image: False,
+    Task.playground_image_to_image: False,
+    Task.dreamshaper_image_to_image: False,
+    Task.jugger_inpainting: False,
+    Task.clip_image_embeddings: False,
+    Task.avatar: False,
 }
+TASKS_TO_SYNAPSE: Dict[Task, bt.Synapse] = {
+    Task.chat_mixtral: synapses.Chat,
+    Task.chat_llama_3: synapses.Chat,
+    Task.proteus_text_to_image: synapses.TextToImage,
+    Task.playground_text_to_image: synapses.TextToImage,
+    Task.dreamshaper_text_to_image: synapses.TextToImage,
+    Task.proteus_image_to_image: synapses.ImageToImage,
+    Task.playground_image_to_image: synapses.ImageToImage,
+    Task.dreamshaper_image_to_image: synapses.ImageToImage,
+    Task.jugger_inpainting: synapses.Inpaint,
+    Task.clip_image_embeddings: synapses.ClipEmbeddings,
+    Task.avatar: synapses.Avatar,
+}
+
+TASKS_TO_MINER_OPERATION_MODULES: Dict[Task, Any] = {
+    Task.chat_mixtral: operations.chat_operation,
+    Task.chat_llama_3: operations.chat_operation,
+    Task.proteus_text_to_image: operations.text_to_image_operation,
+    Task.playground_text_to_image: operations.text_to_image_operation,
+    Task.dreamshaper_text_to_image: operations.text_to_image_operation,
+    Task.proteus_image_to_image: operations.image_to_image_operation,
+    Task.playground_image_to_image: operations.image_to_image_operation,
+    Task.dreamshaper_image_to_image: operations.image_to_image_operation,
+    Task.jugger_inpainting: operations.inpaint_operation,
+    Task.clip_image_embeddings: operations.clip_embeddings_operation,
+    Task.avatar: operations.avatar_operation,
+}
+
+
+def get_task_from_synapse(synapse: bt.Synapse) -> Optional[Task]:
+    if isinstance(synapse, synapses.Chat):
+        if synapse.model == utility_models.ChatModels.mixtral.value:
+            return Task.chat_mixtral
+        elif synapse.model == utility_models.ChatModels.llama_3.value:
+            return Task.chat_llama_3
+        else:
+            return None
+    elif isinstance(synapse, synapses.TextToImage):
+        if synapse.engine == utility_models.EngineEnum.PROTEUS.value:
+            return Task.proteus_text_to_image
+        elif synapse.engine == utility_models.EngineEnum.PLAYGROUND.value:
+            return Task.playground_text_to_image
+        elif synapse.engine == utility_models.EngineEnum.DREAMSHAPER.value:
+            return Task.dreamshaper_text_to_image
+        else:
+            return None
+    elif isinstance(synapse, synapses.ImageToImage):
+        if synapse.engine == utility_models.EngineEnum.PROTEUS.value:
+            return Task.proteus_image_to_image
+        elif synapse.engine == utility_models.EngineEnum.PLAYGROUND.value:
+            return Task.playground_image_to_image
+        elif synapse.engine == utility_models.EngineEnum.DREAMSHAPER.value:
+            return Task.dreamshaper_image_to_image
+        else:
+            return None
+    elif isinstance(synapse, synapses.Inpaint):
+        return Task.jugger_inpainting
+    elif isinstance(synapse, synapses.ClipEmbeddings):
+        return Task.clip_image_embeddings
+    elif isinstance(synapse, synapses.Avatar):
+        return Task.avatar
+    else:
+        return None

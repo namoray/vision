@@ -298,5 +298,6 @@ async def get_image_from_server(body: BaseModel, post_endpoint: str, timeout: fl
             bt.logging.warning(
                 f"Error getting an image; response {error.response.status_code} while making request to {endpoint}: {error}"
             )
+        # Sometimes error is logging as none, need some more info here!
         except httpx.RequestError as error:
             bt.logging.warning(f"Error getting an image; An error occurred while making request to {endpoint}: {error}")

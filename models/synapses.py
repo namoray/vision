@@ -5,13 +5,14 @@ import bittensor as bt
 from models import base_models
 
 from typing import AsyncIterator
+from core import Task
 
 from starlette.responses import StreamingResponse
 
 
-class AvailableTasksOperation(bt.Synapse, base_models.AvailableTasksOperationBase):
-    def deserialize(self) -> Optional[Dict[str, bool]]:
-        return self.available_tasks
+class Capacity(bt.Synapse, base_models.CapacityBase):
+    def deserialize(self) -> Optional[Dict[Task, base_models.VolumeForTask]]:
+        return self.capacities
 
 
 class TextToImage(bt.Synapse, base_models.TextToImageBase):
@@ -47,11 +48,6 @@ class Upscale(bt.Synapse, base_models.UpscaleBase):
 class ClipEmbeddings(bt.Synapse, base_models.ClipEmbeddingsBase):
     def deserialize(self) -> Optional[List[List[float]]]:
         return self.clip_embeddings
-
-
-class Sota(bt.Synapse, base_models.SotaBase):
-    def deserialize(self) -> Optional[str]:
-        return self.image_url
 
 
 class Chat(bt.StreamingSynapse, base_models.ChatBase):

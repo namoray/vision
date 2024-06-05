@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+from fastapi.responses import JSONResponse
 from models import base_models, synapses, utility_models, request_models
 from validation.proxy import validation_utils
 from starlette.responses import StreamingResponse
@@ -21,17 +22,17 @@ async def chat(
         synapse_model=synapses.Chat,
     )
 
-    if synapse.model == utility_models.ChatModels.bittensor_finetune.value:
-        task = tasks.Tasks.chat_bittensor_finetune.value
-    elif synapse.model == utility_models.ChatModels.mixtral.value:
-        task = tasks.Tasks.chat_mixtral.value
+    if synapse.model == utility_models.ChatModels.mixtral.value:
+        task = tasks.Task.chat_mixtral
     elif synapse.model == utility_models.ChatModels.llama_3.value:
-        task = tasks.Tasks.chat_llama_3.value
+        task = tasks.Task.chat_llama_3
     else:
         raise HTTPException(status_code=400, detail="Invalid model provided")
-        return
 
-    text_generator = await core_validator.execute_query(
-        synapse, outgoing_model=base_models.ChatOutgoing, stream=True, task=task, synthetic_query=False
+    text_generator = await core_validator.make_organic_query(
+        synapse=synapse, outgoing_model=base_models.ChatOutgoing, stream=True, task=task
     )
+    if isinstance(text_generator, JSONResponse):
+        return text_generator
+
     return StreamingResponse(text_generator, media_type="text/plain")
