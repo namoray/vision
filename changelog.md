@@ -1,4 +1,4 @@
-# Vision 4.0 Changelog
+# 4.0
 
 ## 🚀 High Level Flow Changes
 -    Capacities announced by miners.
