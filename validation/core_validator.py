@@ -218,7 +218,7 @@ class CoreValidator:
                     )
                 )
         post_data = post_stats.MinerCapacitiesPostBody(data=data_to_post)
-        await post_stats.post_to_tauvision(data_to_post=post_data.dump(), keypair=self.keypair)
+        await post_stats.post_to_tauvision(data_to_post=post_data.dump(), keypair=self.keypair, data_type_to_post=post_stats.DataTypeToPost.MINER_CAPACITIES)
 
     async def run_vali(self) -> None:
         await post_stats.post_to_tauvision(
