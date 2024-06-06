@@ -217,7 +217,7 @@ class CoreValidator:
                         validator_hotkey=self.public_hotkey_address, miner_hotkey=hotkey, task=task, volume=volume
                     )
                 )
-        post_data = post_stats.MinerCapacitiesPostBody(data_to_post)
+        post_data = post_stats.MinerCapacitiesPostBody(data=data_to_post)
         await post_stats.post_to_tauvision(data_to_post=post_data.dump(), keypair=self.keypair)
 
     async def run_vali(self) -> None:
