@@ -102,7 +102,19 @@ class CoreValidator:
         TODO: Replace with onchain commitments. For initial testnet release,
         Hardcode to a couple of values
         """
-        return {Task.proteus_text_to_image: 0.5, Task.playground_text_to_image: 0.1, Task.chat_llama_3: 0.4}
+        return {
+            Task.chat_mixtral: 0.05,
+            Task.chat_llama_3: 0.1,
+            Task.proteus_text_to_image: 0.2,
+            Task.playground_text_to_image: 0.1,
+            Task.dreamshaper_text_to_image: 0.05,
+            Task.proteus_image_to_image: 0.1,
+            Task.playground_image_to_image: 0.05,
+            Task.dreamshaper_image_to_image: 0.05,
+            Task.jugger_inpainting: 0.05,
+            Task.clip_image_embeddings: 0.05,
+            Task.avatar: 0.2,
+        }
 
     def _correct_capacities(self) -> None:
         self._correct_for_max_capacities()
@@ -218,7 +230,11 @@ class CoreValidator:
                     )
                 )
         post_data = post_stats.MinerCapacitiesPostBody(data=data_to_post)
-        await post_stats.post_to_tauvision(data_to_post=post_data.dump(), keypair=self.keypair, data_type_to_post=post_stats.DataTypeToPost.MINER_CAPACITIES)
+        await post_stats.post_to_tauvision(
+            data_to_post=post_data.dump(),
+            keypair=self.keypair,
+            data_type_to_post=post_stats.DataTypeToPost.MINER_CAPACITIES,
+        )
 
     async def run_vali(self) -> None:
         await post_stats.post_to_tauvision(
