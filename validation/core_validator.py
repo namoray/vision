@@ -207,6 +207,19 @@ class CoreValidator:
 
         return
 
+    async def _post_miner_capacities_to_tauvision(self) -> None:
+        data_to_post = []
+        for task in self.capacities_for_tasks:
+            for uid, volume in self.capacities_for_tasks[task].items():
+                hotkey = self.uid_to_uid_info[uid].hotkey
+                data_to_post.append(
+                    post_stats.MinerCapacitiesPostObject(
+                        validator_hotkey=self.public_hotkey_address, miner_hotkey=hotkey, task=task, volume=volume
+                    )
+                )
+        post_data = post_stats.MinerCapacitiesPostBody(data_to_post)
+        await post_stats.post_to_tauvision(data_to_post=post_data.dump(), keypair=self.keypair)
+
     async def run_vali(self) -> None:
         await post_stats.post_to_tauvision(
             data_to_post={
@@ -224,6 +237,7 @@ class CoreValidator:
         while True:
             # Wait for initial syncing of metagraph
             await self.resync_metagraph()
+            await self._post_miner_capacities_to_tauvision()
             self.scorer.start_scoring_results_if_not_already()
 
             bt.logging.info("🚀 Starting to score stuff, metagraph is synced...")

@@ -1,10 +1,14 @@
+from core import Task
 import enum
 import json
 import time
-from typing import Any, Dict
+from typing import Any, Dict, List, Union
 import httpx
 import bittensor as bt
+from pydantic import BaseModel
 from substrateinterface import Keypair
+
+from validation.models import RewardData
 
 
 class DataTypeToPost(enum.Enum):
@@ -33,7 +37,10 @@ def _sign_timestamp(keypair: Keypair, timestamp: float) -> str:
 
 
 async def post_to_tauvision(
-    data_to_post: Dict[str, Any], keypair: Keypair, data_type_to_post: DataTypeToPost, timeout: int = 10
+    data_to_post: Union[Dict[str, Any], List[Dict[str, Any]]],
+    keypair: Keypair,
+    data_type_to_post: DataTypeToPost,
+    timeout: int = 10,
 ) -> None:
     if not POST_TO_TAUVISION:
         return
@@ -58,3 +65,61 @@ async def post_to_tauvision(
             return resp
         except Exception as e:
             bt.logging.error(f"Error when posting to taovision to store score data: {e}")
+
+
+class RewardDataPostBody(RewardData):
+    testnet: bool
+
+
+class ValidatorInfoPostBody(BaseModel):
+    versions: str
+    validator_hotkey: str
+
+
+class MinerCapacitiesPostObject(BaseModel):
+    validator_hotkey: str
+    miner_hotkey: str
+    task: Task
+    volume: float
+
+
+class MinerCapacitiesPostBody(BaseModel):
+    data: List[MinerCapacitiesPostObject]
+
+    def dump(self):
+        return [
+            {
+                "validator_hotkey": ob.validator_hotkey,
+                "miner_hotkey": ob.miner_hotkey,
+                "task": ob.task.value,
+                "volume": ob.volume,
+            }
+            for ob in self.data
+        ]
+
+
+class UidRecordPostBody(BaseModel):
+    axon_uid: int
+    miner_hotkey: str
+    validator_hotkey: str
+    task: Task
+    declared_volume: float
+    consumed_volume: float
+    total_requests_made: int
+    requests_429: int
+    requests_500: int
+    period_score: int
+
+    def dict(self):
+        return {
+            "axon_uid": self.axon_uid,
+            "miner_hotkey": self.miner_hotkey,
+            "validator_hotkey": self.validator_hotkey,
+            "task": self.task.value,
+            "declared_volume": self.declared_volume,
+            "consumed_volume": self.consumed_volume,
+            "total_requests_made": self.total_requests_made,
+            "requests_429": self.requests_429,
+            "requests_500": self.requests_500,
+            "period_score": self.period_score,
+        }
