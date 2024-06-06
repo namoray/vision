@@ -1,4 +1,4 @@
-bittensor==6.12.1
+bittensor==6.9.3
 pydantic
 fastapi
 httpx
