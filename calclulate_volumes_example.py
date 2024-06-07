@@ -1,3 +1,9 @@
+"""
+Use this code to calculate a volume estimation for each task
+If you prefer, you can remove the 'mean' estimation and instead insert your own estimation of speed per step or token
+So you can more accurately calculate your own volume
+"""
+
 from core import Task
 from core import constants as core_cst
 from validation.proxy.work_and_speed_functions import TaskType, _get_task_config
@@ -10,7 +16,7 @@ def calculate_volume_for_task(
 
     task_config = _get_task_config(task)
 
-    # For llm seconds per character
+    # You can change this if you have better/worse hardware
     mean = task_config.mean
 
     # In the case of llm, this will get the number of characters we can do
