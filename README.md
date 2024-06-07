@@ -29,7 +29,8 @@ Validators operate as decentralised access points to the network. In a one-click
 
 They check and score the miners through 'Checking servers' that they run themselves on their own hardware. No centralisation to be found here.
 
-
+## Organic scoring is a primary citizen
+All organic requests can be scored, and checked for the upmost quality. Not only that, but we always keep track of the miners who are most likely to be available to answer organic requests, meaning the lowest latency and highest reliability possible! The user experience is the most important thing about SN19 - allowing validators to monetise and the world to experience Bittensor.
 
 # Installation
 ### [Miners](docs/mining.md)
@@ -40,4 +41,29 @@ They check and score the miners through 'Checking servers' that they run themsel
 [See changelog here](changelog.md)
 
 
-P.S. to start a vali and miner on the same machine, and to only talk to eachother, use external_ip 0.0.0.0
+# Deep dive into the subnet mechanism
+The subnet is split into `tasks`. These `tasks` are things like:
+- Llama3 70B text generation [1]
+- Stable Diffusion text to image generation [2]
+  
+Each of these independent tasks have a weighting associated with them (say [1]: 60%, [2]: 40%, for example ). Note they sum to 100%!
+
+First, miners configure their servers and associate a specific capacity or volume for the task. Validators then fetch the capacities that each miner can handle for that particular task. Every 60 minutes (this interval is configurable), validators perform several critical steps for each miner.
+
+Validators begin by determining the percentage of the miner's capacity they will test. They estimate how many queries are needed during the scoring period to test this capacity accurately. These queries are sent at regular intervals, and validators keep track of the results for quality scoring. They carefully note any failed queries or instances where miners rate limit the validator.
+
+At the end of the scoring period, validators calculate a ﻿period score for each miner. This score reflects the percentage of requests that were correctly responded to. Miners are penalized for missed queries based on the volume left unqueried. If the announced volume is fully utilized, no penalties are imposed. However, if a miner is queried only once or twice and fails to respond, the penalties are more severe.
+
+Simultaneously, validators assess the quality of all responses from miners, maintaining a running tally of their 'quality scores' and 'speed factors' (rewarding both speed and correctness). When it is time to set weights, validators calculate a volume-weighted average period score for each miner. This score is then multiplied by the miner's combined quality score to derive an overall score for that specific task.
+
+Finally, the overall scores for each miner are combined across all tasks - which is what makes the tasks completely optional for miners. The different scores for all tasks are then summed up to derive a final overall score for each miner, which is used to set weights appropriately.
+
+Phew!
+
+### Ok that's a lot of text, what does it mean?
+It means a few things:
+- Miners can run tasks completely optionally. The more tasks they run, with greater volumes and speeds, the more incentive they will get.
+- By controlling the reward distribution to miners, we can directly incentivise greater volumes and speeds for tasks that get greater organic usage. We could even give power for validators to have a stake weighted 'vote' for the tasks they care about...
+- We can add as many tasks as we like! If there's demand for something we can add it! If not, we can remove it! No registrations or deregistrations needed, miners can just scale up and scale down their capacity as needed.
+- Miners have the ability to rate limit explicitly to validators without incurring a greater penalty. This means we can much more effectively load balance between miners, to make sure any organic requests can be always handled by a miner who is capable of performing that task!
+- There's nothing special about a synthetic or organic query. No distinction can be made on the miner side, but validators can still give preferential treatment to organics!
