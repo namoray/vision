@@ -15,6 +15,9 @@ class TaskType(Enum):
     CLIP = "clip"
 
 
+CHARACTER_TO_TOKEN_CONVERSION = 4.0
+
+
 class TaskConfig(BaseModel):
     task: Task
     overhead: float
@@ -131,20 +134,20 @@ def _get_task_config(task: Task) -> TaskConfig:
     raise ValueError(f"Task configuration for {task.value} not found")
 
 
-def _calculate_work_image(steps: int, config: TaskConfig) -> float:
+def _calculate_work_image(steps: int) -> float:
     """Returns the expected work for that image boi. Overhead is not needed in this calculation
 
-    Volume for images is in terms of step generating seconds. Mean is in seconds per step"""
-    work = steps * config.mean
+    Volume for images is in terms of steps."""
+    work = steps
     return work
 
 
-def _calculate_work_text(character_count: int, config: TaskConfig) -> float:
+def _calculate_work_text(character_count: int) -> float:
     """
     Returns the expected work for dem chars .
 
-    Volume for text is in terms of token generating seconds"""
-    work = character_count * config.mean
+    Volume for text is tokems"""
+    work = character_count / CHARACTER_TO_TOKEN_CONVERSION
     return work
 
 
@@ -202,7 +205,7 @@ def calculate_work(
 
     if config.task_type == TaskType.IMAGE:
         steps = synapse.get("steps", 1) if isinstance(synapse, dict) else synapse.steps
-        return _calculate_work_image(steps, config)
+        return _calculate_work_image(steps)
     elif config.task_type == TaskType.TEXT:
         formatted_response = (
             json.loads(raw_formatted_response) if isinstance(raw_formatted_response, str) else raw_formatted_response
@@ -216,7 +219,7 @@ def calculate_work(
         if number_of_characters == 0:
             return 1
 
-        return _calculate_work_text(number_of_characters, config)
+        return _calculate_work_text(number_of_characters)
     elif config.task_type == TaskType.CLIP:
         clip_result = (
             base_models.ClipEmbeddingsOutgoing(**json.loads(raw_formatted_response))
