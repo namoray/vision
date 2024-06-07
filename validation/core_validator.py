@@ -103,7 +103,7 @@ class CoreValidator:
         Hardcode to a couple of values
         """
         return {
-            Task.chat_mixtral: 0.05,
+            Task.chat_mixtral: 0.1,
             Task.chat_llama_3: 0.1,
             Task.proteus_text_to_image: 0.2,
             Task.playground_text_to_image: 0.1,
@@ -112,7 +112,7 @@ class CoreValidator:
             Task.playground_image_to_image: 0.05,
             Task.dreamshaper_image_to_image: 0.05,
             Task.jugger_inpainting: 0.05,
-            Task.clip_image_embeddings: 0.05,
+            Task.clip_image_embeddings: 0.0,
             Task.avatar: 0.2,
         }
 

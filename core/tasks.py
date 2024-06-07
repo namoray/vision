@@ -18,7 +18,7 @@ TASK_TO_MAX_CAPACITY: Dict[Task, int] = {
     Task.playground_image_to_image: 10000,
     Task.dreamshaper_image_to_image: 10000,
     Task.jugger_inpainting: 10000,
-    Task.clip_image_embeddings: 10000,
+    Task.clip_image_embeddings: 0,  # disabled clip for now
     Task.avatar: 10000,
 }
 
