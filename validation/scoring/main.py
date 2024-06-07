@@ -115,7 +115,10 @@ class Scorer:
                 
                 # TODO: Noticed this is bugged, we actually should be dividing by
                 # The old speed scoring factor, NOT the max expected score.
-                quality_score = score / score_with_old_speed
+                if score == 0 or score_with_old_speed == 0:
+                    quality_score = 0
+                else:
+                    quality_score = score / score_with_old_speed
                 bt.logging.info(f"Score: {score}, score_with_old_speed: {score_with_old_speed}")
 
                 id = _generate_uid()
