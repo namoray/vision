@@ -1,5 +1,6 @@
 -- migrate:up
 
+DROP TABLE IF EXISTS tasks;
 CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     task_name TEXT NOT NULL,

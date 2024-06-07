@@ -121,7 +121,7 @@ def alter_clip_body(
     return body
 
 
-tasks_to_scoring_function = {
+tasks_to_old_speed_scoring_function = {
     Task.chat_mixtral.value: old_speed_scoring_functions.speed_scoring_chat,
     Task.chat_llama_3.value: old_speed_scoring_functions.speed_scoring_chat,
     Task.proteus_text_to_image.value: old_speed_scoring_functions.speed_scoring_images,
@@ -137,5 +137,5 @@ tasks_to_scoring_function = {
 
 
 async def get_expected_score(result: utility_models.QueryResult, synapse: Dict[str, Any], task: str) -> float:
-    expected_score = await tasks_to_scoring_function[task](result, synapse, task)
+    expected_score = await tasks_to_old_speed_scoring_function[task](result, synapse, task)
     return max(expected_score, 1)
