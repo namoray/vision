@@ -1,6 +1,5 @@
 from models import base_models, utility_models
 from typing import Dict, Any
-from loguru import logger
 import json
 from typing import List
 
@@ -12,9 +11,6 @@ def _calculate_speed_modifier(normalised_response_time: float, lower_bound: floa
 
     penalty = adjusted_response_time / (upper_bound - lower_bound)
 
-    logger.info(
-        f"Normalised response time: {normalised_response_time}; Lower bound: {lower_bound}; Upper bound: {upper_bound}; Penalty: {penalty}"
-    )
     return max(1 - penalty**2, 0)
 
 
@@ -30,22 +26,6 @@ def _calculate_work_bonus_text(character_count: int, overhead: float, lower_boun
 
     bonus_flat = overhead + character_count * lower_bound_for_seconds_per_character
     return bonus_flat**0.8
-
-
-### SOTA ####
-
-
-SOTA_OVERHEAD = 1
-SOTA_LOWER_BOUND = 30
-SOTA_MAX_ALLOWED_TIME = 120
-
-
-async def speed_scoring_sota(result: utility_models.QueryResult, synapse: Dict[str, Any], task: Task):
-    speed_modifier = _calculate_speed_modifier(
-        result.response_time - SOTA_OVERHEAD, SOTA_LOWER_BOUND, SOTA_MAX_ALLOWED_TIME
-    )
-    work_bonus = SOTA_LOWER_BOUND
-    return work_bonus * speed_modifier
 
 
 ### CLIP  ####
@@ -155,7 +135,6 @@ async def speed_scoring_images(result: utility_models.QueryResult, synapse: Dict
         work_bonus = _calculate_work_bonus_images(steps, AVATAR_OVERHEAD, lower_bound_time)
         return speed_modifier * work_bonus
 
-    logger.error(f"Task {task} not found")
     return 1
 
 
@@ -171,7 +150,9 @@ async def speed_scoring_chat(result: utility_models.QueryResult, synapse: Dict[s
         if isinstance(result.formatted_response, str)
         else result.formatted_response
     )
-    miner_chat_responses: List[utility_models.MinerChatResponse] = [utility_models.MinerChatResponse(**r) for r in formatted_response]
+    miner_chat_responses: List[utility_models.MinerChatResponse] = [
+        utility_models.MinerChatResponse(**r) for r in formatted_response
+    ]
 
     all_text = "".join([mcr.text for mcr in miner_chat_responses])
 
@@ -181,7 +162,6 @@ async def speed_scoring_chat(result: utility_models.QueryResult, synapse: Dict[s
         return 1
 
     response_time = result.response_time
-
 
     if task == Task.chat_mixtral:
         response_time_without_overhead = max(response_time - CHAT_OVERHEAD, 0.1)
@@ -200,7 +180,6 @@ async def speed_scoring_chat(result: utility_models.QueryResult, synapse: Dict[s
         speed_modifier = _calculate_speed_modifier(seconds_per_character, lower_bound_time, upper_thershold_time)
         work_bonus = _calculate_work_bonus_text(number_of_characters, CHAT_OVERHEAD, lower_bound_time)
     else:
-        logger.error(f"Task {task} not found")
         return None
 
     return speed_modifier * work_bonus

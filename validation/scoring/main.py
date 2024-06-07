@@ -101,8 +101,8 @@ class Scorer:
                 bt.logging.error(f"Error occurred when parsing the response: {parse_err}")
                 continue
 
-            max_expected_score = await validation_utils.get_expected_score(
-                utility_models.QueryResult(**results_json), synapse, task.value
+            score_with_old_speed = await validation_utils.get_expected_score(
+                utility_models.QueryResult(**results_json), synapse, task
             )
             volume = work_and_speed_functions.calculate_work(task=task, result=results_json, synapse=synapse)
             speed_scoring_factor = work_and_speed_functions.calculate_speed_modifier(
@@ -112,10 +112,11 @@ class Scorer:
             for uid, score in axon_scores.items():
                 # We divide max_expected_score whilst the orchestrator is still factoring this into the score
                 # once it's removed from orchestrator, we'll remove it from here
-
+                
                 # TODO: Noticed this is bugged, we actually should be dividing by
                 # The old speed scoring factor, NOT the max expected score.
-                quality_score = score
+                quality_score = score / score_with_old_speed
+                bt.logging.info(f"Score: {score}, score_with_old_speed: {score_with_old_speed}")
 
                 id = _generate_uid()
 

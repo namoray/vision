@@ -122,17 +122,17 @@ def alter_clip_body(
 
 
 tasks_to_old_speed_scoring_function = {
-    Task.chat_mixtral.value: old_speed_scoring_functions.speed_scoring_chat,
-    Task.chat_llama_3.value: old_speed_scoring_functions.speed_scoring_chat,
-    Task.proteus_text_to_image.value: old_speed_scoring_functions.speed_scoring_images,
-    Task.playground_text_to_image.value: old_speed_scoring_functions.speed_scoring_images,
-    Task.dreamshaper_text_to_image.value: old_speed_scoring_functions.speed_scoring_images,
-    Task.proteus_image_to_image.value: old_speed_scoring_functions.speed_scoring_images,
-    Task.playground_image_to_image.value: old_speed_scoring_functions.speed_scoring_images,
-    Task.dreamshaper_image_to_image.value: old_speed_scoring_functions.speed_scoring_images,
-    Task.jugger_inpainting.value: old_speed_scoring_functions.speed_scoring_images,
-    Task.avatar.value: old_speed_scoring_functions.speed_scoring_images,
-    Task.clip_image_embeddings.value: old_speed_scoring_functions.speed_scoring_clip,
+    Task.chat_mixtral: old_speed_scoring_functions.speed_scoring_chat,
+    Task.chat_llama_3: old_speed_scoring_functions.speed_scoring_chat,
+    Task.proteus_text_to_image: old_speed_scoring_functions.speed_scoring_images,
+    Task.playground_text_to_image: old_speed_scoring_functions.speed_scoring_images,
+    Task.dreamshaper_text_to_image: old_speed_scoring_functions.speed_scoring_images,
+    Task.proteus_image_to_image: old_speed_scoring_functions.speed_scoring_images,
+    Task.playground_image_to_image: old_speed_scoring_functions.speed_scoring_images,
+    Task.dreamshaper_image_to_image: old_speed_scoring_functions.speed_scoring_images,
+    Task.jugger_inpainting: old_speed_scoring_functions.speed_scoring_images,
+    Task.avatar: old_speed_scoring_functions.speed_scoring_images,
+    Task.clip_image_embeddings: old_speed_scoring_functions.speed_scoring_clip,
 }
 
 
