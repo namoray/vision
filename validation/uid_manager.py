@@ -91,7 +91,7 @@ class UidManager:
     async def handle_task_scoring_for_uid(
         self, task: Task, uid: axon_uid, volume: float, axon: bt.chain_data.AxonInfo
     ) -> None:
-        volume_to_score = volume * self._get_percentage_of_tasks_to_score() * 10
+        volume_to_score = volume * self._get_percentage_of_tasks_to_score()
 
         uid_queue = self.task_to_uid_queue[task]
 
@@ -232,7 +232,7 @@ class UidManager:
 
         """
         # TODO: REMOVE AFTER TESTNET
-        return 0.1
+        return 1
         if random.random() < 0.75:
             return 0
         elif random.random() < 0.9:
