@@ -51,6 +51,8 @@ class WeightSetter:
             uid = hotkey_to_uid[hotkey]
             weights_tensor[uid] = score
 
+        if all(score == 0 for score in total_hotkey_scores.values()):
+            bt.logging.warning("Scores all zero, not setting weights!")
         (
             processed_weight_uids,
             processed_weights,
