@@ -37,8 +37,8 @@ class DatabaseManager:
         cursor.execute(sql.select_count_of_rows_in_tasks())
         row_count = cursor.fetchone()[0]
 
-        if row_count >= 310:
-            cursor.execute(sql.delete_oldest_rows_from_tasks())
+        if row_count >= 1010:
+            cursor.execute(sql.delete_oldest_rows_from_tasks(limit=10))
 
         data_to_store = {
             "result": result.json(),
