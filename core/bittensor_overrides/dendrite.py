@@ -29,11 +29,11 @@ class dendrite(bittensor.dendrite):
         endpoint = f"{target_axon.ip}:{str(target_axon.port)}"
 
         # TODO: COMMENT OUT FOR MAINNET
-        endpoint = (
-            f"0.0.0.0:{str(target_axon.port)}"
-            if target_axon.ip == str(self.external_ip)
-            else f"{target_axon.ip}:{str(target_axon.port)}"
-        )
+        # endpoint = (
+        #     f"0.0.0.0:{str(target_axon.port)}"
+        #     if target_axon.ip == str(self.external_ip)
+        #     else f"{target_axon.ip}:{str(target_axon.port)}"
+        # )
 
         return f"http://{endpoint}/{request_name}"
 

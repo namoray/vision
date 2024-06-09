@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from core import Task, bittensor_overrides as bto
 import bittensor as bt
 from validation.models import UIDRecord, axon_uid
-from validation.proxy import synthetic_generations
+from validation.synthetic_data import synthetic_generations
 from core import tasks, constants as core_cst
 from validation.proxy.utils import constants as cst, query_utils
 from models import base_models, utility_models
@@ -45,6 +45,7 @@ class UidManager:
         dendrite: bt.dendrite,
         validator_hotkey: str,
         uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
+        synthetic_data_manager: synthetic_generations.SyntheticDataManager,
     ) -> None:
         self.capacities_for_tasks = capacities_for_tasks
         self.dendrite = dendrite
@@ -54,6 +55,7 @@ class UidManager:
         self.uid_records_for_tasks: Dict[Task, Dict[axon_uid, UIDRecord]] = collections.defaultdict(dict)
         self.synthetic_scoring_tasks: List[asyncio.Task] = []
         self.task_to_uid_queue: Dict[Task, query_utils.UIDQueue] = {}
+        self.synthetic_data_manager = synthetic_data_manager
 
     def calculate_period_scores_for_uids(self) -> None:
         for task in self.uid_records_for_tasks:
@@ -127,14 +129,7 @@ class UidManager:
             if uid_record.consumed_volume >= volume_to_score:
                 break
 
-            synthetic_data = await synthetic_generations.get_synthetic_data(task)
-
-            if synthetic_data is None:
-                bt.logging.debug(
-                    f"Synthetic data is none for operation {task.value}, THIS IS NORMAL AS THIS HAPPENS PERIODICALLY, will try again in {cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING}."
-                )
-                await asyncio.sleep(cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING)
-                continue
+            synthetic_data = await self.synthetic_data_manager.fetch_synthetic_data_for_task(task)
 
             synthetic_synapse = tasks.TASKS_TO_SYNAPSE[task](**synthetic_data)
             stream = isinstance(synthetic_synapse, bt.StreamingSynapse)

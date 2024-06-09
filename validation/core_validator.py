@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from core import Task
 from core.tasks import TASK_TO_MAX_CAPACITY
 import bittensor as bt
+from validation.synthetic_data.synthetic_generations import SyntheticDataManager
 from validation.proxy.utils import query_utils
 from core import bittensor_overrides as bto
 from config import configuration
@@ -95,6 +96,7 @@ class CoreValidator:
 
         self.scorer = Scorer(validator_hotkey=self.keypair.ss58_address, testnet=is_testnet, keypair=self.keypair)
         self.weight_setter = WeightSetter(subtensor=self.subtensor, config=self.config)
+        self.synthetic_data_manager = SyntheticDataManager()
         self.uid_manager = None
 
     def _get_task_importances(self) -> Dict[Task, float]:
@@ -262,6 +264,7 @@ class CoreValidator:
                 dendrite=self.dendrite,
                 uid_to_uid_info=self.uid_to_uid_info,
                 validator_hotkey=self.keypair.ss58_address,
+                synthetic_data_manager=self.synthetic_data_manager,
             )
             await self.uid_manager.start_synthetic_scoring()
 
