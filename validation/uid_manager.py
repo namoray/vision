@@ -101,7 +101,8 @@ class UidManager:
             )
             return
         volume_to_requests_conversion = TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
-        number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 1) / 60
+        # TODO: REMOVE THE /60 AND RESET SCORING PERIOD
+        number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 1) / 1000
 
         delay_between_requests = core_cst.SCORING_PERIOD_TIME // (number_of_requests) * (random.random() * 0.1 + 0.9)
 
@@ -161,6 +162,7 @@ class UidManager:
 
         # NOTE: Do we want to do this semi regularly, to not exceed bandwidth perhaps?
         await asyncio.gather(*tasks_in_progress)
+        bt.logging.info(f"Done scoring for task: {task} and uid: {uid} and volume: {volume}")
 
     async def make_orgnanic_query(
         self, task: Task, stream: bool, synapse: bt.Synapse, outgoing_model: BaseModel
