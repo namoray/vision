@@ -71,13 +71,13 @@ class SyntheticDataManager:
                     json={"task": task.value},
                 )
                 response.raise_for_status()  # raises an HTTPError if an unsuccessful status code was received
-        except httpx.RequestError as err:
-            bt.logging.warning(f"Getting synthetic data error: {err.request.url!r}: {err}")
+        except httpx.RequestError:
+            # bt.logging.warning(f"Getting synthetic data error: {err.request.url!r}: {err}")
             return None
-        except httpx.HTTPStatusError as err:
-            bt.logging.warning(
-                f"Syntehtic data error; status code {err.response.status_code} while requesting {err.request.url!r}: {err}"
-            )
+        except httpx.HTTPStatusError:
+            # bt.logging.warning(
+            #     f"Syntehtic data error; status code {err.response.status_code} while requesting {err.request.url!r}: {err}"
+            # )
             return None
 
         try:
