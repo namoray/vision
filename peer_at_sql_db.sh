@@ -1,1 +1,1 @@
-sqlite_web validator_database.db
+pm2 start --name "peer_at_sql_db" "sqlite_web validator_database.db"
