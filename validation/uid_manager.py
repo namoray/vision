@@ -102,9 +102,6 @@ class UidManager:
             return
         volume_to_requests_conversion = TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
         number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 1)
-        bt.logging.info(
-            f"For task: {task} and uid: {uid} and volume: {volume} and number of requests: {number_of_requests}"
-        )
 
         delay_between_requests = core_cst.SCORING_PERIOD_TIME // (number_of_requests) * (random.random() * 0.1 + 0.9)
 
@@ -115,6 +112,9 @@ class UidManager:
             declared_volume=volume,
             axon=axon,
             hotkey=axon.hotkey,
+        )
+        bt.logging.info(
+            f"For task: {task} and uid: {uid} and volume: {volume} and number of requests: {number_of_requests}, delay: {delay_between_requests}. synthetic requests still to make: {uid_record.synthetic_requests_still_to_make}"
         )
         self.uid_records_for_tasks[task][uid] = uid_record
 
