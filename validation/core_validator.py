@@ -266,11 +266,10 @@ class CoreValidator:
                 validator_hotkey=self.keypair.ss58_address,
                 synthetic_data_manager=self.synthetic_data_manager,
             )
-            await self.uid_manager.start_synthetic_scoring()
-
-            await self.uid_manager.collect_synthetic_scoring_results()
-            self.uid_manager.calculate_period_scores_for_uids()
-            self.uid_manager.store_period_scores()
+            # await self.uid_manager.start_synthetic_scoring()
+            # await self.uid_manager.collect_synthetic_scoring_results()
+            # self.uid_manager.calculate_period_scores_for_uids()
+            # self.uid_manager.store_period_scores()
 
             bt.logging.info(f"Finished scoring for iteration: {iteration}. Now settings weights")
             iteration += 1

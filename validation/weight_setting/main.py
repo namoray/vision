@@ -121,7 +121,9 @@ class WeightSetter:
 
                 hotkey_to_overall_scores[miner_hotkey] = overall_score_for_task * volume
 
-                bt.logging.info(f"Got overall hotkey score\n: {hotkey_to_overall_scores[miner_hotkey]},\n with period scores: {all_period_scores}. \nThe quality score for this task is {combined_quality_score} \nand the normalised period score is {normalised_period_score}.")
+                bt.logging.info(
+                    f"Got overall hotkey score: {hotkey_to_overall_scores[miner_hotkey]},\n The quality score for this task is {combined_quality_score} \nand the normalised period score is {normalised_period_score}. Volume is: {volume}"
+                )
 
             sum_of_scores = sum(hotkey_to_overall_scores.values())
             if sum_of_scores == 0:
@@ -132,6 +134,9 @@ class WeightSetter:
             for hotkey in normalised_scores_for_task:
                 total_hotkey_scores[hotkey] = total_hotkey_scores.get(hotkey, 0) + normalised_scores_for_task[hotkey]
 
+            bt.logging.info(f"Normalised hotkeys scores for task: {task}\n{normalised_scores_for_task}")
+
+        bt.logging.info(f"Total hotkey scores: {total_hotkey_scores}")
         return total_hotkey_scores
 
     @staticmethod
