@@ -10,7 +10,7 @@ import bittensor as bt
 from validation.models import UIDRecord, axon_uid
 from validation.synthetic_data import synthetic_generations
 from core import tasks, constants as core_cst
-from validation.proxy.utils import constants as cst, query_utils
+from validation.proxy.utils import query_utils
 from models import base_models, utility_models
 from validation.db.db_management import db_manager
 
