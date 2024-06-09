@@ -121,6 +121,8 @@ class WeightSetter:
 
                 hotkey_to_overall_scores[miner_hotkey] = overall_score_for_task * volume
 
+                bt.logging.info(f"Got overall hotkey score\n: {hotkey_to_overall_scores[miner_hotkey]},\n with period scores: {all_period_scores}. \nThe quality score for this task is {combined_quality_score} \nand the normalised period score is {normalised_period_score}.")
+
             sum_of_scores = sum(hotkey_to_overall_scores.values())
             if sum_of_scores == 0:
                 continue
