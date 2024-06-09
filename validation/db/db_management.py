@@ -27,7 +27,6 @@ class DatabaseManager:
     ) -> None:
         # NOTE: Add logic to depend on how many tasks there already are for that hotkey?
         if random.random() < 1:
-            bt.logging.info("Storing a task!")
             db_manager.insert_task_results(task.value, result, synapse, synthetic_query)
 
     def insert_task_results(
