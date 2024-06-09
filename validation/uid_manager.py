@@ -120,9 +120,11 @@ class UidManager:
         i = 0
         tasks_in_progress = []
         while uid_record.synthetic_requests_still_to_make > 0:
-            bt.logging.debug(
-                f"synthetic requests still to make: {uid_record.synthetic_requests_still_to_make} on iteration {i} for uid {uid_record.axon_uid} and task {task}"
-            )
+
+            if uid_record.synthetic_requests_still_to_make % 50 == 0:
+                bt.logging.debug(
+                    f"synthetic requests still to make: {uid_record.synthetic_requests_still_to_make} on iteration {i} for uid {uid_record.axon_uid} and task {task}"
+                )
 
             if uid_record.consumed_volume >= volume_to_score:
                 break
