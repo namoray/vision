@@ -1,5 +1,6 @@
 import asyncio
 import random
+import threading
 import httpx
 from typing import Dict, Any
 from config.validator_config import config as validator_config
@@ -13,7 +14,14 @@ class SyntheticDataManager:
     def __init__(self) -> None:
         self.task_to_stored_synthetic_data: Dict[Task, Dict[str, Any]] = {}
 
-        self.fetch_task = asyncio.create_task(self._continuously_fetch_synthetic_data_for_tasks)
+        thread = threading.Thread(target=self._start_async_loop, daemon=True)
+        thread.start()
+
+    def _start_async_loop(self):
+        """Start the event loop and run the async tasks."""
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self._continuously_fetch_synthetic_data_for_tasks())
 
     async def _continuously_fetch_synthetic_data_for_tasks(self) -> None:
         bt.logging.error(f"here!")
