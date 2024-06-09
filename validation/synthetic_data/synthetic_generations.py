@@ -7,7 +7,11 @@ from config.validator_config import config as validator_config
 from core import Task, tasks
 import bittensor as bt
 
+from models import base_models
+from validation.proxy import validation_utils
+
 SEED = "seed"
+TEMPERATURE = "temperature"
 
 
 class SyntheticDataManager:
@@ -46,14 +50,16 @@ class SyntheticDataManager:
             await asyncio.sleep(10)
 
         synth_data = self.task_to_stored_synthetic_data[task]
-        bt.logging.info(f"Synthetic data found for task {task}: {synth_data}")
         task_config = tasks.get_task_config(task)
         if task_config.task_type == tasks.TaskType.IMAGE:
             synth_data[SEED] = random.randint(1, 1_000_000_000)
         elif task_config.task_type == tasks.TaskType.TEXT:
-            ...
+            synth_data[SEED] = random.randint(1, 1_000_000_000)
+            synth_data[TEMPERATURE] = round(random.uniform(0, 1), 2)
         elif task_config.task_type == tasks.TaskType.CLIP:
-            ...
+            synth_model = base_models.ClipEmbeddingsIncoming(**synth_data)
+            synth_model_altered = validation_utils.alter_clip_body(synth_model)
+            synth_data = synth_model_altered.dict()
 
         return synth_data
 
