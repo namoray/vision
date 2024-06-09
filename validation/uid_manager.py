@@ -102,7 +102,7 @@ class UidManager:
             return
         volume_to_requests_conversion = TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
         # TODO: REMOVE THE /60 AND RESET SCORING PERIOD
-        number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 1) / 1000
+        number_of_requests = max(int(volume_to_score / volume_to_requests_conversion) / 1000, 1)
 
         delay_between_requests = core_cst.SCORING_PERIOD_TIME // (number_of_requests) * (random.random() * 0.1 + 0.9)
 
