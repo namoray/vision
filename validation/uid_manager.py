@@ -84,8 +84,6 @@ class UidManager:
                         )
                     )
                 )
-        task_q_to_log = {k.value: len(v.uid_map) for k, v in self.task_to_uid_queue.items()}
-        bt.logging.info(f"Task to uid queue: {task_q_to_log}")
 
     async def collect_synthetic_scoring_results(self) -> None:
         await asyncio.gather(*self.synthetic_scoring_tasks)
