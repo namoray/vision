@@ -129,10 +129,10 @@ class WeightSetter:
             if sum_of_scores == 0:
                 continue
             normalised_scores_for_task = {
-                hotkey: importance * score / sum_of_scores for hotkey, score in hotkey_to_overall_scores.items()
+                hotkey: score / sum_of_scores for hotkey, score in hotkey_to_overall_scores.items()
             }
             for hotkey in normalised_scores_for_task:
-                total_hotkey_scores[hotkey] = total_hotkey_scores.get(hotkey, 0) + normalised_scores_for_task[hotkey]
+                total_hotkey_scores[hotkey] = total_hotkey_scores.get(hotkey, 0) + normalised_scores_for_task[hotkey] * importance
 
             bt.logging.info(f"Normalised hotkeys scores for task: {task}\n{normalised_scores_for_task}")
 
