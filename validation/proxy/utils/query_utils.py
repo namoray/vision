@@ -167,6 +167,7 @@ async def query_miner_stream(
             last_payload = _get_formatted_payload("", False, add_finish_reason=True)
             yield f"data: {last_payload}\n\n"
             yield "data: [DONE]\n\n"
+            bt.logging.info(f"✅ Successfully queried axon: {axon_uid} for task: {task}")
 
         response_time = time.time() - time1
         query_result = utility_models.QueryResult(
@@ -179,8 +180,7 @@ async def query_miner_stream(
             status_code=status_code,
             error_message=error_message,
         )
-        if len(text_jsons) > 0:
-            bt.logging.info(f"✅ Successfully queried axon: {axon_uid} for task: {task}")
+
         create_scoring_adjustment_task(query_result, synapse, uid_record, synthetic_query)
 
 
