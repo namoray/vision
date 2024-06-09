@@ -53,6 +53,7 @@ class WeightSetter:
 
         if all(score == 0 for score in total_hotkey_scores.values()):
             bt.logging.warning("Scores all zero, not setting weights!")
+            return
         (
             processed_weight_uids,
             processed_weights,
