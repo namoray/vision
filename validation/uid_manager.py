@@ -119,7 +119,9 @@ class UidManager:
         )
         self.uid_records_for_tasks[task][uid] = uid_record
 
-        await asyncio.sleep(delay_between_requests * random.random() * 2)
+        initial_sleep_duration = min(delay_between_requests * random.random(), core_cst.SCORING_PERIOD_TIME / 2)
+
+        await asyncio.sleep(initial_sleep_duration)
 
         i = 0
         tasks_in_progress = []
