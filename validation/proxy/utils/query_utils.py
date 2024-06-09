@@ -179,6 +179,8 @@ async def query_miner_stream(
             status_code=status_code,
             error_message=error_message,
         )
+        if len(text_jsons) > 0:
+            bt.logging.info(f"✅ Successfully queried axon: {axon_uid} for task: {task}")
         create_scoring_adjustment_task(query_result, synapse, uid_record, synthetic_query)
 
 
