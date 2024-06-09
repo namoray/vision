@@ -24,7 +24,6 @@ class SyntheticDataManager:
         loop.run_until_complete(self._continuously_fetch_synthetic_data_for_tasks())
 
     async def _continuously_fetch_synthetic_data_for_tasks(self) -> None:
-        bt.logging.error(f"here!")
         # Initial fetch be quick
         initial_sync_tasks = []
         for task in tasks.Task:
@@ -77,5 +76,4 @@ class SyntheticDataManager:
             bt.logging.error(f"Synthetic data Response contained invalid JSON: error :{e}")
             return None
 
-        bt.logging.info(f"Got synthetic data for task {task}: {response_json}")
         self.task_to_stored_synthetic_data[task] = response_json
