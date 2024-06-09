@@ -248,7 +248,7 @@ class CoreValidator:
             data_type_to_post=post_stats.DataTypeToPost.VALIDATOR_INFO,
         )
 
-        db_manager.delete_data_older_than_date(minutes=60*24)
+        db_manager.delete_data_older_than_date(minutes=60 * 24)
         db_manager.delete_tasks_older_than_date(minutes=120)
 
         iteration = 1
