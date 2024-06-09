@@ -102,6 +102,9 @@ class UidManager:
             return
         volume_to_requests_conversion = TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
         number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 1)
+        bt.logging.info(
+            f"For task: {task} and uid: {uid} and volume: {volume} and number of requests: {number_of_requests}"
+        )
 
         delay_between_requests = core_cst.SCORING_PERIOD_TIME // (number_of_requests) * (random.random() * 0.1 + 0.9)
 
