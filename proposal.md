@@ -42,6 +42,10 @@ Cons:
 Overall, I propose we should opt for option 1, as this protects all validators of vtrust over the foreseeable future. Miners have more freedom of rewards, and will give us more control to move to a distribution that more proportionally rewards ‘work’. Miners will still not be limited to one task and can run as much as they like.
 
 
+### Further changes:
+- Removal of Go journey API - we want to be the leading subnet on bittensor for decentralisation. Whilst we have used the dataset to train a new model to fit midjourney, we no longer need more data, and so we should be as decentralised as possible.
+- Removal of subnet 6's finetune model - for obvious reasons
+
 ## Timeline:
 Code release: 5th Jun 2024
 
