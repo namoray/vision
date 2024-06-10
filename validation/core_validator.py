@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from core import Task
 from core.tasks import TASK_TO_MAX_CAPACITY
 import bittensor as bt
+from validation.synthetic_data.synthetic_generations import SyntheticDataManager
 from validation.proxy.utils import query_utils
 from core import bittensor_overrides as bto
 from config import configuration
@@ -95,6 +96,7 @@ class CoreValidator:
 
         self.scorer = Scorer(validator_hotkey=self.keypair.ss58_address, testnet=is_testnet, keypair=self.keypair)
         self.weight_setter = WeightSetter(subtensor=self.subtensor, config=self.config)
+        self.synthetic_data_manager = SyntheticDataManager()
         self.uid_manager = None
 
     def _get_task_importances(self) -> Dict[Task, float]:
@@ -122,7 +124,7 @@ class CoreValidator:
 
     def _correct_capacities_for_my_stake(self) -> None:
         # TODO: Replace with real stake finding on mainnet - but for testnet, the stakes dont make sense, so will fix it for now
-        my_proportion_of_stake = 0.25
+        my_proportion_of_stake = 1
 
         for task in Task:
             capacities = self.capacities_for_tasks[task]
@@ -246,7 +248,7 @@ class CoreValidator:
             data_type_to_post=post_stats.DataTypeToPost.VALIDATOR_INFO,
         )
 
-        db_manager.delete_data_older_than_date(minutes=72 * 60)
+        db_manager.delete_data_older_than_date(minutes=60 * 24)
         db_manager.delete_tasks_older_than_date(minutes=120)
 
         iteration = 1
@@ -262,9 +264,9 @@ class CoreValidator:
                 dendrite=self.dendrite,
                 uid_to_uid_info=self.uid_to_uid_info,
                 validator_hotkey=self.keypair.ss58_address,
+                synthetic_data_manager=self.synthetic_data_manager,
             )
             await self.uid_manager.start_synthetic_scoring()
-
             await self.uid_manager.collect_synthetic_scoring_results()
             self.uid_manager.calculate_period_scores_for_uids()
             self.uid_manager.store_period_scores()

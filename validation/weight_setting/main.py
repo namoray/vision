@@ -51,6 +51,9 @@ class WeightSetter:
             uid = hotkey_to_uid[hotkey]
             weights_tensor[uid] = score
 
+        if all(score == 0 for score in total_hotkey_scores.values()):
+            bt.logging.warning("Scores all zero, not setting weights!")
+            return
         (
             processed_weight_uids,
             processed_weights,
@@ -121,15 +124,24 @@ class WeightSetter:
 
                 hotkey_to_overall_scores[miner_hotkey] = overall_score_for_task * volume
 
+                # bt.logging.info(
+                #     f"\nTask: {task}\nGot overall hotkey score: {hotkey_to_overall_scores[miner_hotkey]},\n Qaulity score: {combined_quality_score} \n normalised period score is {normalised_period_score}. Volume is: {volume}"
+                # )
+
             sum_of_scores = sum(hotkey_to_overall_scores.values())
             if sum_of_scores == 0:
                 continue
             normalised_scores_for_task = {
-                hotkey: importance * score / sum_of_scores for hotkey, score in hotkey_to_overall_scores.items()
+                hotkey: score / sum_of_scores for hotkey, score in hotkey_to_overall_scores.items()
             }
             for hotkey in normalised_scores_for_task:
-                total_hotkey_scores[hotkey] = total_hotkey_scores.get(hotkey, 0) + normalised_scores_for_task[hotkey]
+                total_hotkey_scores[hotkey] = (
+                    total_hotkey_scores.get(hotkey, 0) + normalised_scores_for_task[hotkey] * importance
+                )
 
+        #     bt.logging.info(f"Normalised hotkeys scores for task: {task}\n{normalised_scores_for_task}")
+
+        # bt.logging.info(f"Total hotkey scores: {total_hotkey_scores}")
         return total_hotkey_scores
 
     @staticmethod

@@ -1,108 +1,16 @@
-from enum import Enum
 import json
 import math
-from pydantic import BaseModel
 from typing import Dict, Any, List, Union
 
 from core import Task
+from core import tasks
+from core.tasks import TaskConfig, TaskType
 from models import base_models, utility_models
 import bittensor as bt
 
-
-class TaskType(Enum):
-    IMAGE = "image"
-    TEXT = "text"
-    CLIP = "clip"
-
-
-CHARACTER_TO_TOKEN_CONVERSION = 4.0
-
-
-class TaskConfig(BaseModel):
-    task: Task
-    overhead: float
-    mean: float
-    variance: float
-    task_type: TaskType
-
-
-TASK_CONFIGS = [
-    TaskConfig(
-        task=Task.proteus_text_to_image,
-        overhead=3,
-        mean=0.5,
-        variance=1,
-        task_type=TaskType.IMAGE,
-    ),
-    TaskConfig(
-        task=Task.dreamshaper_text_to_image,
-        overhead=3,
-        mean=0.5,
-        variance=6,
-        task_type=TaskType.IMAGE,
-    ),
-    TaskConfig(
-        task=Task.playground_text_to_image,
-        overhead=3,
-        mean=0.2,
-        variance=6,
-        task_type=TaskType.IMAGE,
-    ),
-    TaskConfig(
-        task=Task.proteus_image_to_image,
-        overhead=3,
-        mean=0.6,
-        variance=6,
-        task_type=TaskType.IMAGE,
-    ),
-    TaskConfig(
-        task=Task.dreamshaper_image_to_image,
-        overhead=3,
-        mean=0.6,
-        variance=6,
-        task_type=TaskType.IMAGE,
-    ),
-    TaskConfig(
-        task=Task.playground_image_to_image,
-        overhead=3,
-        mean=0.3,
-        variance=5,
-        task_type=TaskType.IMAGE,
-    ),
-    TaskConfig(
-        task=Task.jugger_inpainting,
-        overhead=4,
-        mean=0.5,
-        variance=6,
-        task_type=TaskType.IMAGE,
-    ),
-    TaskConfig(task=Task.avatar, overhead=5, mean=0.7, variance=6, task_type=TaskType.IMAGE),
-    TaskConfig(
-        task=Task.chat_mixtral,
-        overhead=1,
-        mean=1 / 80,
-        variance=100,
-        task_type=TaskType.TEXT,
-    ),
-    TaskConfig(
-        task=Task.chat_llama_3,
-        overhead=1,
-        mean=1 / 80,
-        variance=100,
-        task_type=TaskType.TEXT,
-    ),
-    TaskConfig(
-        task=Task.clip_image_embeddings,
-        overhead=1,
-        mean=0.5,
-        variance=2,
-        task_type=TaskType.CLIP,
-    ),
-]
-
-
 MAX_SPEED_BONUS = 1.4  # Adjust this value as needed
 BELOW_MEAN_EXPONENT = 3
+CHARACTER_TO_TOKEN_CONVERSION = 4.0
 
 
 def _calculate_speed_modifier(normalised_response_time: float, config: TaskConfig) -> float:
@@ -125,13 +33,6 @@ def _calculate_speed_modifier(normalised_response_time: float, config: TaskConfi
         speed_modifier = math.exp((mean - normalised_response_time) * variance)
 
     return speed_modifier
-
-
-def _get_task_config(task: Task) -> TaskConfig:
-    for config in TASK_CONFIGS:
-        if config.task == task:
-            return config
-    raise ValueError(f"Task configuration for {task.value} not found")
 
 
 def _calculate_work_image(steps: int) -> float:
@@ -160,7 +61,7 @@ def _calculate_work_clip(number_of_images: int) -> float:
 def calculate_speed_modifier(
     task: Task, result: Union[utility_models.QueryResult, str], synapse: Dict[str, Any]
 ) -> float:
-    config = _get_task_config(task)
+    config = tasks.get_task_config(task)
 
     response_time = result.response_time if isinstance(result, utility_models.QueryResult) else result["response_time"]
     raw_formatted_response = (
@@ -197,7 +98,7 @@ def calculate_work(
     task: Task, result: Union[utility_models.QueryResult, Dict[str, Any]], synapse: Union[Dict[str, Any], bt.Synapse]
 ) -> float:
     """Gets volume for the task that was executed"""
-    config = _get_task_config(task)
+    config = tasks.get_task_config(task)
 
     raw_formatted_response = (
         result.formatted_response if isinstance(result, utility_models.QueryResult) else result["formatted_response"]

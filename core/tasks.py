@@ -1,5 +1,7 @@
 """Would prefer to make this just one dataclass"""
 
+from enum import Enum
+from pydantic import BaseModel
 from core import Task
 from models import synapses, utility_models
 from mining.proxy import operations
@@ -98,3 +100,99 @@ def get_task_from_synapse(synapse: bt.Synapse) -> Optional[Task]:
         return Task.avatar
     else:
         return None
+
+
+class TaskType(Enum):
+    IMAGE = "image"
+    TEXT = "text"
+    CLIP = "clip"
+
+
+class TaskConfig(BaseModel):
+    task: Task
+    overhead: float
+    mean: float
+    variance: float
+    task_type: TaskType
+
+
+TASK_CONFIGS = [
+    TaskConfig(
+        task=Task.proteus_text_to_image,
+        overhead=3,
+        mean=0.5,
+        variance=1,
+        task_type=TaskType.IMAGE,
+    ),
+    TaskConfig(
+        task=Task.dreamshaper_text_to_image,
+        overhead=3,
+        mean=0.5,
+        variance=6,
+        task_type=TaskType.IMAGE,
+    ),
+    TaskConfig(
+        task=Task.playground_text_to_image,
+        overhead=3,
+        mean=0.2,
+        variance=6,
+        task_type=TaskType.IMAGE,
+    ),
+    TaskConfig(
+        task=Task.proteus_image_to_image,
+        overhead=3,
+        mean=0.6,
+        variance=6,
+        task_type=TaskType.IMAGE,
+    ),
+    TaskConfig(
+        task=Task.dreamshaper_image_to_image,
+        overhead=3,
+        mean=0.6,
+        variance=6,
+        task_type=TaskType.IMAGE,
+    ),
+    TaskConfig(
+        task=Task.playground_image_to_image,
+        overhead=3,
+        mean=0.3,
+        variance=5,
+        task_type=TaskType.IMAGE,
+    ),
+    TaskConfig(
+        task=Task.jugger_inpainting,
+        overhead=4,
+        mean=0.5,
+        variance=6,
+        task_type=TaskType.IMAGE,
+    ),
+    TaskConfig(task=Task.avatar, overhead=5, mean=0.7, variance=6, task_type=TaskType.IMAGE),
+    TaskConfig(
+        task=Task.chat_mixtral,
+        overhead=1,
+        mean=1 / 80,
+        variance=100,
+        task_type=TaskType.TEXT,
+    ),
+    TaskConfig(
+        task=Task.chat_llama_3,
+        overhead=1,
+        mean=1 / 80,
+        variance=100,
+        task_type=TaskType.TEXT,
+    ),
+    TaskConfig(
+        task=Task.clip_image_embeddings,
+        overhead=1,
+        mean=0.5,
+        variance=2,
+        task_type=TaskType.CLIP,
+    ),
+]
+
+
+def get_task_config(task: Task) -> TaskConfig:
+    for config in TASK_CONFIGS:
+        if config.task == task:
+            return config
+    raise ValueError(f"Task configuration for {task.value} not found")

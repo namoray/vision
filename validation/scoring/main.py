@@ -92,6 +92,9 @@ class Scorer:
 
                 except httpx.HTTPError as http_err:
                     bt.logging.error(f"When scoring, HTTP error occurred: {http_err}")
+                    if response.status_code == 503:
+                        # if timeout, give it a couple minutes
+                        await asyncio.sleep(3 * 60)
                     continue
 
             try:
@@ -112,7 +115,7 @@ class Scorer:
             for uid, score in axon_scores.items():
                 # We divide max_expected_score whilst the orchestrator is still factoring this into the score
                 # once it's removed from orchestrator, we'll remove it from here
-                
+
                 # TODO: Noticed this is bugged, we actually should be dividing by
                 # The old speed scoring factor, NOT the max expected score.
                 if score == 0 or score_with_old_speed == 0:

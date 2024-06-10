@@ -9,3 +9,4 @@ imagehash
 typer==0.10.0
 xgboost==2.0.3
 scikit-learn
+sqlite-web==0.6.3

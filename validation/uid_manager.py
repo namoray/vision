@@ -8,9 +8,9 @@ from pydantic import BaseModel
 from core import Task, bittensor_overrides as bto
 import bittensor as bt
 from validation.models import UIDRecord, axon_uid
-from validation.proxy import synthetic_generations
+from validation.synthetic_data import synthetic_generations
 from core import tasks, constants as core_cst
-from validation.proxy.utils import constants as cst, query_utils
+from validation.proxy.utils import query_utils
 from models import base_models, utility_models
 from validation.db.db_management import db_manager
 
@@ -45,6 +45,7 @@ class UidManager:
         dendrite: bt.dendrite,
         validator_hotkey: str,
         uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
+        synthetic_data_manager: synthetic_generations.SyntheticDataManager,
     ) -> None:
         self.capacities_for_tasks = capacities_for_tasks
         self.dendrite = dendrite
@@ -54,6 +55,7 @@ class UidManager:
         self.uid_records_for_tasks: Dict[Task, Dict[axon_uid, UIDRecord]] = collections.defaultdict(dict)
         self.synthetic_scoring_tasks: List[asyncio.Task] = []
         self.task_to_uid_queue: Dict[Task, query_utils.UIDQueue] = {}
+        self.synthetic_data_manager = synthetic_data_manager
 
     def calculate_period_scores_for_uids(self) -> None:
         for task in self.uid_records_for_tasks:
@@ -82,8 +84,6 @@ class UidManager:
                         )
                     )
                 )
-        task_q_to_log = {k.value: len(v.uid_map) for k, v in self.task_to_uid_queue.items()}
-        bt.logging.info(f"Task to uid queue: {task_q_to_log}")
 
     async def collect_synthetic_scoring_results(self) -> None:
         await asyncio.gather(*self.synthetic_scoring_tasks)
@@ -115,28 +115,21 @@ class UidManager:
         )
         self.uid_records_for_tasks[task][uid] = uid_record
 
-        await asyncio.sleep(delay_between_requests * random.random())
+        initial_sleep_duration = min(delay_between_requests * random.random(), core_cst.SCORING_PERIOD_TIME / 2)
+
+        await asyncio.sleep(initial_sleep_duration)
 
         i = 0
         tasks_in_progress = []
         while uid_record.synthetic_requests_still_to_make > 0:
-
-            if uid_record.synthetic_requests_still_to_make % 50 == 0:
+            if i % 100 == 0:
                 bt.logging.debug(
                     f"synthetic requests still to make: {uid_record.synthetic_requests_still_to_make} on iteration {i} for uid {uid_record.axon_uid} and task {task}"
                 )
-
             if uid_record.consumed_volume >= volume_to_score:
                 break
 
-            synthetic_data = await synthetic_generations.get_synthetic_data(task)
-
-            if synthetic_data is None:
-                bt.logging.debug(
-                    f"Synthetic data is none for operation {task.value}, THIS IS NORMAL AS THIS HAPPENS PERIODICALLY, will try again in {cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING}."
-                )
-                await asyncio.sleep(cst.MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING)
-                continue
+            synthetic_data = await self.synthetic_data_manager.fetch_synthetic_data_for_task(task)
 
             synthetic_synapse = tasks.TASKS_TO_SYNAPSE[task](**synthetic_data)
             stream = isinstance(synthetic_synapse, bt.StreamingSynapse)
@@ -167,6 +160,7 @@ class UidManager:
 
         # NOTE: Do we want to do this semi regularly, to not exceed bandwidth perhaps?
         await asyncio.gather(*tasks_in_progress)
+        bt.logging.info(f"Done scoring for task: {task} and uid: {uid} and volume: {volume}")
 
     async def make_orgnanic_query(
         self, task: Task, stream: bool, synapse: bt.Synapse, outgoing_model: BaseModel
