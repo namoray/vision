@@ -173,7 +173,7 @@ If you get the error message `vision not found`, you should make sure that requi
 #### Configure the task_config & task_concurrency_config json's
 For each hotkey you see files created in the format `.{hotkey}.task_config.json` and `.{hotkey}.task_concurrency_config`
 
-See the example [task_config](../task_concurrency_config.example.json) and [task_concurrency_config](../task_concurrency_config.example.json)
+See the example [task_config](../task_config.example.json) and [task_concurrency_config](../task_concurrency_config.example.json)
 
 
 **Task config**
