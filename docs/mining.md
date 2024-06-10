@@ -98,7 +98,7 @@ ulimit -n 4096
 
 
 
-## Setup steps
+## Setup environment
 
 Note: if you're using a provider such as runpod or vast, make sure you expose the necessary ports first, e.g.: https://docs.runpod.io/docs/expose-ports#:~:text=If%20your%20pod%20supports%20a,address%20to%20access%20your%20service. Follow the "Symmetrical port mapping" step :)
 
@@ -163,14 +163,28 @@ pip3 install -e .
 I trust we can do this at this point ;D
 
 
-### Create the config
+## Create the config
 ```bash
 vision create-config
 ```
 
 If you get the error message `vision not found`, you should make sure that requirements are correctly installed
 
-### Start miners
+#### Configure the task_config & task_concurrency_config json's
+For each hotkey you see files created in the format `.{hotkey}.task_config.json` and `.{hotkey}.task_concurrency_config`
+
+See the example [task_config](../task_concurrency_config.example.json) and [task_concurrency_config](../task_concurrency_config.example.json)
+
+
+**Task config**
+
+Here we defined the capacitity (or volume) for each task, for that miner. This is the maximum amount of 'work' that a hotkey can do in a 1 hour period. To calculate that work, you can use `calculate_volumes_example.py` tool.
+
+**Concurrency groups**
+
+We also define the `concurrency groups`. All the tasks belong to a concurrency group, and you can configure a maximum number of concurrent requests for that group, which is shared between all the tasks in that group
+
+## Start miners
 
 **Autoupdates**
 
