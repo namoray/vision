@@ -154,7 +154,7 @@ class UidManager:
 
             # Need to make this here so its lowered regardless of the result of the above
             uid_record.synthetic_requests_still_to_make -= 1
-            await asyncio.sleep(delay_between_requests)
+            await asyncio.sleep(delay_between_requests * (random.random() * 0.2 + 0.9))
 
             i += 1
 
