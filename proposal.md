@@ -8,7 +8,7 @@ On Subnet 19, miners are incentivized to do lots of different tasks. Currently, 
 
 There are a couple of ways to tackle this problem, to better reward 1 UID per miner.
 
-### Approach 1 - capacities:
+### Approach 1 - Capacities:
 We could allow miners to define their maximum capacities for each task. Capacities are things like Tokens (LLMS), or Steps (Images) - proportional to GPU seconds.
 
 We define weights for each task, which sum up to 1. A miner's score can be calculated by summing all their calculated scores for each task, multiplied by the ‘weight’ of that task.
@@ -18,15 +18,16 @@ Pros:
 - Synthetic and Organic validators all can agree on what a miner is capable of 
 - Tasks are truly optional for a miner, as their score is a linear combination of all of their scores for different tasks.
 - Miners can optimize their setups for predictable traffic
-- Miners can directly allocate bandwidth according to the game theory optimum demonstrated in [DSIS](link)
+- Miners can directly allocate bandwidth according to the game theory optimum demonstrated in [DSIS](https://corcel.io/whitepapers/decentralised-subnet-inference-at-scale)
 - Organic queries can directly reduce the amount of synthetics needed
 - We can check the full capacity a smaller % of the time synthetically, allowing higher bandwidth for the validators that have higher demand
-- 
+
+
 Cons:
 - Validators have fixed bandwidth for each task, that they cannot organically exceed
 - Volumes can in theory go unlimited, but in practice, validator hardware might limit this
 
-### Approach 2 - ‘availabilities’
+### Approach 2 - ‘Availabilities’
 
 We keep the same concept of task weightings, but instead of communicating capacities, we allow miners to communicate when they are ‘available’ to accept another request, for a specific task. 
 
@@ -34,12 +35,12 @@ Pros:
 - Miners can get directly rewarded for every query they perform, and are free to choose that number
 - Validators can always pick a uid that is available for organic requests
 - Miners can optimize their setups for predictable traffic
-- Miners can directly allocate bandwidth according to the game theory optimum demonstrated in [DSIS](link)
+- Miners can directly allocate bandwidth according to the game theory optimum demonstrated in [DSIS](https://corcel.io/whitepapers/decentralised-subnet-inference-at-scale)
 - Validators could check in bursts, and instead give rewards for concurrencies, to minimise unnecessary checks
-- 
+
+
 Cons:
 - Synthetic and organic validators’ vtrust would potentially get out of sync if organic traffic was significantly higher than the synthetic traffic (/bursts)
-
 
 Overall, I propose we should opt for option 1, as this protects all validators of vtrust over the foreseeable future. Miners have more freedom of rewards, and will give us more control to move to a distribution that more proportionally rewards ‘work’. Miners will still not be limited to one task and can run as much as they like.
 
@@ -62,7 +63,7 @@ Proposed delivery: 13th June 1 PM UTC
 - SN21: Reward tiers (Not used yet, but a potential addition for Vision 4.1)
 - SN23: Declared volumes of requests for one task
 
-** With a special thanks to ban44ntje, Tenet, Sirouk, amongst other awesome SN19 miners, for their continued input**
+**With a special thanks to ban44ntje, Tenet, Sirouk, amongst other awesome SN19 miners, for their continued input**
 
 
 
