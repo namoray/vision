@@ -21,6 +21,7 @@ Pros:
 - Miners can directly allocate bandwidth according to the game theory optimum demonstrated in [DSIS](link)
 - Organic queries can directly reduce the amount of synthetics needed
 - We can check the full capacity a smaller % of the time synthetically, allowing higher bandwidth for the validators that have higher demand
+- 
 Cons:
 - Validators have fixed bandwidth for each task, that they cannot organically exceed
 - Volumes can in theory go unlimited, but in practice, validator hardware might limit this
@@ -35,6 +36,7 @@ Pros:
 - Miners can optimize their setups for predictable traffic
 - Miners can directly allocate bandwidth according to the game theory optimum demonstrated in [DSIS](link)
 - Validators could check in bursts, and instead give rewards for concurrencies, to minimise unnecessary checks
+- 
 Cons:
 - Synthetic and organic validators’ vtrust would potentially get out of sync if organic traffic was significantly higher than the synthetic traffic (/bursts)
 
