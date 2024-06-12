@@ -11,10 +11,12 @@ from models import utility_models
 from validation.db import sql
 from validation.models import PeriodScore, RewardData, UIDRecord
 
+MAX_TASKS_IN_DB_STORE = 1000
 
 class DatabaseManager:
     def __init__(self):
         self.conn = sqlite3.connect(core_cst.VISION_DB)
+        self.task_weights: Dict[Task, float] = {}
 
     def get_tasks_and_number_of_results(self) -> Dict[str, int]:
         cursor = self.conn.cursor()
@@ -37,7 +39,7 @@ class DatabaseManager:
         cursor.execute(sql.select_count_of_rows_in_tasks())
         row_count = cursor.fetchone()[0]
 
-        if row_count >= 1010:
+        if row_count >= MAX_TASKS_IN_DB_STORE + 10:
             cursor.execute(sql.delete_oldest_rows_from_tasks(limit=10))
 
         data_to_store = {

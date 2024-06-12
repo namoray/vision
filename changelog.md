@@ -14,7 +14,7 @@
      - Use a decaying weighted average of previous period scores to calculate a weighted period score.
      - Combine the weighted period score with the task quality score and multiply by volume to get the effective volume (capacity).
      - Compare the effective capacities with others to get a score for this UID for the task.
-     - Weight all scores across each task using the subnet-level task importances to derive an overall incentive score.
+     - Weight all scores across each task using the subnet-level task weights to derive an overall incentive score.
      - Miners can rate limit explicitly to validators without incurring a greater penalty, depending on volume.
 
 

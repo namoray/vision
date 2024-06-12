@@ -65,7 +65,7 @@ class CoreValidator:
         self.dendrite = bto.dendrite(wallet=self.wallet)
         self.metagraph: bt.metagraph = self.subtensor.metagraph(netuid=self.config.netuid, lite=True)
         self.netuid: int = self.config.netuid if self.config.netuid is not None else 19
-        self.task_importances = self._get_task_importances()
+        self.task_weights = self._get_task_weights()
 
         is_testnet = validator_config.subtensor_network == "test" or self.netuid != 19
 
@@ -99,7 +99,7 @@ class CoreValidator:
         self.synthetic_data_manager = SyntheticDataManager()
         self.uid_manager = None
 
-    def _get_task_importances(self) -> Dict[Task, float]:
+    def _get_task_weights(self) -> Dict[Task, float]:
         """
         TODO: Replace with onchain commitments. For initial testnet release,
         Hardcode to a couple of values
@@ -280,7 +280,7 @@ class CoreValidator:
                 self.config.netuid,
                 self.capacities_for_tasks,
                 self.uid_to_uid_info,
-                self.task_importances,
+                self.task_weights,
             )
 
             db_manager.delete_tasks_older_than_date(minutes=120)
