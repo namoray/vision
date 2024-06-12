@@ -42,7 +42,7 @@ class DatabaseManager:
         target_number_of_tasks_to_store = int(MAX_TASKS_IN_DB_STORE * target_percentage)
 
         number_of_these_tasks_already_stored = db_manager._get_number_of_these_tasks_already_stored(task)
-        if target_number_of_tasks_to_store < number_of_these_tasks_already_stored:
+        if number_of_these_tasks_already_stored < target_number_of_tasks_to_store:
             db_manager.insert_task_results(task.value, result, synapse, synthetic_query)
         else:
             actual_percentage = number_of_these_tasks_already_stored / MAX_TASKS_IN_DB_STORE
