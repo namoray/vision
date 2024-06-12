@@ -6,4 +6,3 @@
 
 # ./start_miners.sh
 python set_miner_defaults.py
-echo "Nothing to do!"

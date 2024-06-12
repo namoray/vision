@@ -185,10 +185,22 @@ dbmate --url "sqlite:vision_database.db" up
 
 #### Configure the task_config & task_concurrency_config json's
 
-For each hotkey you see files created in the format `.{hotkey}.task_config.json` and `.{hotkey}.task_concurrency_config`
+For each hotkey, there was default task configuration created in the sqlite db.
 
-See the example [task_config](../task_config.example.json) and [task_concurrency_config](../task_concurrency_config.example.json)
+View this with
 
+```bash
+./peer_at_sql_db.sh
+```
+For a GUI, or
+
+```bash
+sqlite3 vision_database.db
+```
+For no gui
+
+
+The default values for volumes are 1/2 of the maximum allowed values.
 
 **Task config**
 

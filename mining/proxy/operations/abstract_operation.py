@@ -42,7 +42,7 @@ def enforce_concurrency_limits(func):
 
         capacity_config = utils.load_capacities(miner_config.hotkey_name)
         concurrency_groups = utils.load_concurrency_groups(miner_config.hotkey_name)
-        concurrency_group_id = concurrency_groups.get(task.value, {}).get("concurrency_group_id")
+        concurrency_group_id = capacity_config.get(task.value, {}).get("concurrency_group_id")
 
         if concurrency_group_id is None:
             bt.logging.error(

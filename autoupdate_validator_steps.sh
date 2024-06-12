@@ -16,5 +16,8 @@ else
     echo "$OLD_DB does not exist"
 fi
 
+dbmate --url "sqlite:vision_database.db" up
+
+pip install -e .
 ./launch_validators.sh
 echo "Nothing to do!"
