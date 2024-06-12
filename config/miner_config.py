@@ -1,11 +1,10 @@
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from typing import Dict, Optional
-from core import Task, constants as core_cst
+from typing import Optional
+from core import constants as core_cst
 import os
 import bittensor as bt
 import argparse
-from core import utils
 
 
 def _get_env_file_from_cli_config() -> str:
@@ -41,10 +40,6 @@ class Config(BaseModel):
     axon_external_ip: str = os.getenv(core_cst.AXON_EXTERNAL_IP_PARAM, "127.0.0.1")
 
     debug_miner: bool = os.getenv(core_cst.DEBUG_MINER_PARAM, False)
-
-    capacity_config: Dict[Task, Dict[str, float]] = utils.load_capacities(hotkey_name)
-    concurrency_groups: Dict[Task, int] = utils.load_concurrency_groups(hotkey_name)
-
 
 
 config = Config()

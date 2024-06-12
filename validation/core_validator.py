@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from core import Task
-from core.tasks import TASK_TO_MAX_CAPACITY
+from core import TASK_TO_MAX_CAPACITY
 import bittensor as bt
 from validation.synthetic_data.synthetic_generations import SyntheticDataManager
 from validation.proxy.utils import query_utils

@@ -170,11 +170,37 @@ vision create-config
 
 If you get the error message `vision not found`, you should make sure that requirements are correctly installed
 
+
+
+## Creating the database
+Used to store concurrency info
+
+```bash
+sudo curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64
+sudo chmod +x /usr/local/bin/dbmate
+
+dbmate --url "sqlite:vision_database.db" up
+```
+
+
 #### Configure the task_config & task_concurrency_config json's
-For each hotkey you see files created in the format `.{hotkey}.task_config.json` and `.{hotkey}.task_concurrency_config`
 
-See the example [task_config](../task_config.example.json) and [task_concurrency_config](../task_concurrency_config.example.json)
+For each hotkey, there was default task configuration created in the sqlite db.
 
+View this with
+
+```bash
+./peer_at_sql_db.sh
+```
+For a GUI, or
+
+```bash
+sqlite3 vision_database.db
+```
+For no gui
+
+
+The default values for volumes are 1/2 of the maximum allowed values.
 
 **Task config**
 

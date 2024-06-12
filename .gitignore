@@ -18,7 +18,7 @@ embeddings_for_testing.txt
 
 tmp/*
 dbmate
-validator_database
+vision_database
 miner_autoupdate.log
 valiator_autoupdate.log
 .*.env

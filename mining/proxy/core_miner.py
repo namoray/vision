@@ -7,7 +7,7 @@ import bittensor as bt
 
 # import base miner class which takes care of most of the boilerplate
 from config import configuration
-from core import Task, constants as core_cst
+from core import Task, constants as core_cst, utils
 from config.miner_config import config as miner_config
 from core import bittensor_overrides as bto
 
@@ -32,7 +32,8 @@ class MinerRequestsStatus:
         return self._active_requests_for_each_concurrency_group
 
     def decrement_concurrency_group_from_task(self, task: Task) -> None:
-        concurrency_group_id = miner_config.capacity_config.get(task.value, {}).get("concurrency_group_id")
+        capacity_config = utils.load_capacities(miner_config.hotkey_name)
+        concurrency_group_id = capacity_config.get(task.value, {}).get("concurrency_group_id")
         if concurrency_group_id is not None:
             concurrency_group_id = str(concurrency_group_id)
         current_number_of_concurrent_requests = self._active_requests_for_each_concurrency_group.get(

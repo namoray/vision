@@ -1,6 +1,7 @@
 from typing import Dict, Any, Optional
 from core import constants as core_cst
 from rich.prompt import Prompt
+from mining.db.db_management import miner_db_manager
 
 
 def device_processing_func(input: str):
@@ -94,14 +95,11 @@ MINER_PARAMETERS = {
 gpu_assigned_dict = {}
 config = {}
 
-
-TASK_CONFIG_JSON = "task_config.json"
-CONCURRENCY_CONFIG_JSON = "task_concurrency_config.json"
+DEFAULT_CONCURRENCY_GROUPS = {"1": 10, "2": 10, "3": 10, "4": 1}
 
 
-def _make_empty_json(filename: str) -> None:
-    with open(filename, "w") as f:
-        f.write("{}")
+def _insert_defaults_for_task_configs(hotkey: str) -> None:
+    miner_db_manager.insert_default_task_configs(hotkey)
 
 
 def handle_parameters(parameters: Dict[str, Any], hotkey: str):
@@ -148,13 +146,11 @@ def get_config():
         else:
             handle_parameters(MINER_PARAMETERS, hotkey)
 
-            config_json_name = "." + hotkey + "." + TASK_CONFIG_JSON
-            concurrency_config_json_name = "." + hotkey + "." + CONCURRENCY_CONFIG_JSON
             print(
-                f"Please remember to edit your config jsons!\n {config_json_name} and  {concurrency_config_json_name}"
+                "\nNote: You must now edit your task configuration (Capacities & concurrency settings). Please use ./peer_at_sql_db.sh, or "
+                "use `sqlite3 vision_database.db` to finish your configuration"
             )
-            _make_empty_json(config_json_name)
-            _make_empty_json(concurrency_config_json_name)
+            _insert_defaults_for_task_configs(hotkey)
 
         with open(f".{hotkey}.env", "w") as f:
             f.write(f"{core_cst.HOTKEY_PARAM}=" + hotkey + "\n")

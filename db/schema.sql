@@ -48,6 +48,19 @@ CREATE TABLE uid_records (
     period_score FLOAT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE miner_concurrency_group (
+    concurrency_group_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    concurrent_tasks_limit INTEGER NOT NULL,
+    name TEXT
+);
+CREATE TABLE miner_task_config (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_name TEXT NOT NULL,
+    miner_hotkey TEXT NOT NULL,
+    volume FLOAT NOT NULL,
+    concurrency_group_id INTEGER,
+    FOREIGN KEY (concurrency_group_id) REFERENCES miner_concurrency_group(concurrency_group_id) ON DELETE CASCADE
+);
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20240213111625'),
@@ -55,4 +68,5 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20240602214214'),
   ('20240602225958'),
   ('20240602230138'),
-  ('20240603230153');
+  ('20240603230153'),
+  ('20240611144515');

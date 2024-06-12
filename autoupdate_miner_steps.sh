@@ -5,5 +5,4 @@
 
 
 # ./start_miners.sh
-
-echo "Nothing to do!"
+python set_miner_defaults.py
