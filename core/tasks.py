@@ -10,19 +10,7 @@ import bittensor as bt
 
 # I don't love this being here. How else should I do it though?
 # I don't want to rely on any extra third party service for fetching this info...
-TASK_TO_MAX_CAPACITY: Dict[Task, int] = {
-    Task.chat_mixtral: 576_000,
-    Task.chat_llama_3: 576_000,
-    Task.proteus_text_to_image: 2_000,
-    Task.playground_text_to_image: 10_000,
-    Task.dreamshaper_text_to_image: 2_000,
-    Task.proteus_image_to_image: 2_000,
-    Task.playground_image_to_image: 6_000,
-    Task.dreamshaper_image_to_image: 2_000,
-    Task.jugger_inpainting: 2_000,
-    Task.clip_image_embeddings: 0,  # disabled clip for now
-    Task.avatar: 5_120,
-}
+
 
 TASK_IS_STREAM: Dict[Task, bool] = {
     Task.chat_mixtral: True,

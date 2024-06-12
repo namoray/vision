@@ -14,7 +14,7 @@ from validation.models import PeriodScore, RewardData, UIDRecord
 
 class DatabaseManager:
     def __init__(self):
-        self.conn = sqlite3.connect(core_cst.VALIDATOR_DB)
+        self.conn = sqlite3.connect(core_cst.VISION_DB)
 
     def get_tasks_and_number_of_results(self) -> Dict[str, int]:
         cursor = self.conn.cursor()

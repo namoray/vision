@@ -157,4 +157,4 @@ AXON_PORT_PARAM = "AXON_PORT"
 AXON_EXTERNAL_IP_PARAM = "AXON_EXTERNAL_IP"
 
 
-VALIDATOR_DB = "validator_database.db"
+VISION_DB = "vision_database.db"

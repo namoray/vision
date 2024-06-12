@@ -19,7 +19,7 @@
 
 
 ## 🆙 Upgrades
--    Bittensor upgrade to version 6.12.1.
+-    Bittensor upgrade to version 6.9.3.
 
 ## 🔧 Validator Enhancements
 -    Validators to store extensive stats information.

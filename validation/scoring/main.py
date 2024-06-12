@@ -92,8 +92,8 @@ class Scorer:
 
                 except httpx.HTTPError as http_err:
                     bt.logging.error(f"When scoring, HTTP error occurred: {http_err}")
-                    if response.status_code == 503:
-                        # if timeout, give it a couple minutes
+                    if response.status_code == 503 or response.status_code == 524:
+                        # if timeout, give it a few minutes
                         await asyncio.sleep(3 * 60)
                     continue
 

@@ -8,26 +8,16 @@ from io import BytesIO
 
 import io
 import binascii
-import json
-import os
-from core import constants as cst
+from mining.db.db_management import miner_db_manager
 
 
 # Would people want this to be in a DB instead which is read on every request, but then more configurable?
 def load_concurrency_groups(hotkey: str) -> Dict[str, float]:
-    if not os.path.exists("." + hotkey + "." + cst.TASK_CONCURRENCY_CONFIG_JSON):
-        return {}
-    with open("." + hotkey + "." + cst.TASK_CONCURRENCY_CONFIG_JSON) as f:
-        return json.load(f)
+    return miner_db_manager.load_concurrency_groups()
 
 
 def load_capacities(hotkey: str) -> Dict[str, Dict[str, float]]:
-    if not os.path.exists("." + hotkey + "." + cst.TASK_CONFIG_JSON):
-        return {}
-    with open("." + hotkey + "." + cst.TASK_CONFIG_JSON) as f:
-        capacities_with_concurrencies = json.load(f)
-
-    return capacities_with_concurrencies
+    return miner_db_manager.load_task_capacities(hotkey)
 
 
 def generate_mask_with_circle(image_b64: str) -> np.ndarray:
