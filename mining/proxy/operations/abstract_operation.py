@@ -46,7 +46,7 @@ def enforce_concurrency_limits(func):
 
         if concurrency_group_id is None:
             bt.logging.error(
-                f"[BUG 🐞] Task '{task}' not in concurrency groups. "
+                f"[BUG 🐞] Task '{task.value}' not in concurrency groups. "
                 f"Capacity config: {capacity_config}. "
                 f"Concurrency groups: {concurrency_groups}."
                 f"Available tasks: {list(capacity_config.keys())}. "

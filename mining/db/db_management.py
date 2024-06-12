@@ -95,7 +95,6 @@ class DatabaseManager:
         results = {}
         for row in rows:
             task, volume, concurrency_group_id = row
-            task = Task(task)
             results[task] = {"volume": volume, "concurrency_group_id": concurrency_group_id}
         return results
 
