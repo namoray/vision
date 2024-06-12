@@ -30,10 +30,10 @@ class WeightSetter:
         netuid: int,
         capacities_for_tasks: Dict[Task, Dict[axon_uid, float]],
         uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
-        task_importances: Dict[Task, float],
+        task_weights: Dict[Task, float],
     ) -> None:
         total_hotkey_scores = self._calculate_scores_for_settings_weights(
-            capacities_for_tasks, uid_to_uid_info, task_importances
+            capacities_for_tasks, uid_to_uid_info, task_weights
         )
         await asyncio.to_thread(self._set_weights, metagraph, wallet, netuid, total_hotkey_scores, uid_to_uid_info)
 
@@ -92,15 +92,15 @@ class WeightSetter:
     def _calculate_scores_for_settings_weights(
         capacities_for_tasks: Dict[Task, Dict[axon_uid, float]],
         uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
-        task_importances: Dict[Task, float],
+        task_weights: Dict[Task, float],
     ):
         total_hotkey_scores: Dict[str, float] = {}
         for task in Task:
             hotkey_to_overall_scores: Dict[str, float] = {}
             capacities = capacities_for_tasks[task]
-            if task not in task_importances:
+            if task not in task_weights:
                 continue
-            importance = task_importances[task]
+            importance = task_weights[task]
 
             for uid in capacities:
                 miner_hotkey = uid_to_uid_info[uid].hotkey

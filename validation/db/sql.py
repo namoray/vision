@@ -96,6 +96,12 @@ def select_count_of_rows_in_tasks() -> str:
     """
 
 
+def select_count_rows_of_task_stored_for_scoring() -> str:
+    return f"""
+    SELECT COUNT(*) FROM {cst.TABLE_TASKS} WHERE {cst.COLUMN_TASK_NAME} = ?
+    """
+
+
 def select_task_for_deletion() -> str:
     return f"""
     SELECT {cst.COLUMN_CHECKING_DATA}, {cst.COLUMN_MINER_HOTKEY} FROM {cst.TABLE_TASKS} 

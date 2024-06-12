@@ -195,6 +195,7 @@ View this with
 For a GUI, or
 
 ```bash
+sudo apt install sqlite3
 sqlite3 vision_database.db
 ```
 For no gui
