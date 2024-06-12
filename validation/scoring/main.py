@@ -85,10 +85,12 @@ class Scorer:
 
                 except httpx.HTTPStatusError as stat_err:
                     bt.logging.error(f"When scoring, HTTP error occurred: {stat_err}")
+                    await asyncio.sleep(10)
                     continue
 
                 except (httpx.RemoteProtocolError, httpx.ReadError, httpx.ReadTimeout) as read_err:
                     bt.logging.error(f"When scoring, Read timeout occurred: {read_err}")
+                    await asyncio.sleep(10)
                     continue
 
                 except httpx.HTTPError as http_err:
@@ -96,6 +98,9 @@ class Scorer:
                     if response.status_code == 503 or response.status_code == 524:
                         # if timeout, give it a few minutes
                         await asyncio.sleep(3 * 60)
+                    if response.status_code == 502:
+                        bt.logging.error("Is your orchestrator server running?")
+                        await asyncio.sleep(60)
                     continue
 
             try:
