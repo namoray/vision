@@ -228,7 +228,7 @@ class UidManager:
 
         """
         # TODO: REMOVE AFTER TESTNET
-        return 1
+        return 0.1
         if random.random() < 0.75:
             return 0
         elif random.random() < 0.9:
