@@ -3,10 +3,10 @@ import time
 import tracemalloc
 
 import bittensor as bt
-from core import tasks, utils, Task
+from core import utils, Task
 from mining.proxy import core_miner
 from config.miner_config import config
-from config import miner_config
+from mining.proxy import operations
 # For determinism
 
 tracemalloc.start()
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     if not config.debug_miner:
         for task in task_and_capacities:
             task_as_enum = Task(task)
-            operation_module = miner_config.TASKS_TO_MINER_OPERATION_MODULES[task_as_enum]
+            operation_module = operations.TASKS_TO_MINER_OPERATION_MODULES[task_as_enum]
             if operation_module.__name__ not in operations_supported:
                 operations_supported.add(operation_module.__name__)
                 operation_class = getattr(operation_module, operation_module.operation_name)
