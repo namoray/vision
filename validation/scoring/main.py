@@ -54,6 +54,7 @@ class Scorer:
 
     async def _check_scores_for_task(self, task: Task) -> None:
         i = 0
+        bt.logging.info(f"Scoring some results for task {task}")
         while i < cst.MAX_RESULTS_TO_SCORE_FOR_TASK:
             data_and_hotkey = db_manager.select_and_delete_task_result(task)  # noqa
             if data_and_hotkey is None:
