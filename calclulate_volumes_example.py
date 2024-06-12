@@ -4,9 +4,9 @@ If you prefer, you can remove the 'mean' estimation and instead insert your own 
 So you can more accurately calculate your own volume
 """
 
-from core import Task
+from core import Task, tasks
 from core import constants as core_cst
-from validation.proxy.work_and_speed_functions import TaskType, _get_task_config
+from validation.proxy.work_and_speed_functions import TaskType
 
 
 def calculate_volume_for_task(
@@ -14,7 +14,7 @@ def calculate_volume_for_task(
 ) -> int:
     vol_in_seconds = gpus_with_server_on * concurrent_requests_each_gpu_server_can_handle * core_cst.SCORING_PERIOD_TIME
 
-    task_config = _get_task_config(task)
+    task_config = tasks.get_task_config(task)
 
     # You can change this if you have better/worse hardware
     mean = task_config.mean

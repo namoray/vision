@@ -4,8 +4,7 @@ from enum import Enum
 from pydantic import BaseModel
 from core import Task
 from models import synapses, utility_models
-from mining.proxy import operations
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 import bittensor as bt
 
 # I don't love this being here. How else should I do it though?
@@ -37,20 +36,6 @@ TASKS_TO_SYNAPSE: Dict[Task, bt.Synapse] = {
     Task.jugger_inpainting: synapses.Inpaint,
     Task.clip_image_embeddings: synapses.ClipEmbeddings,
     Task.avatar: synapses.Avatar,
-}
-
-TASKS_TO_MINER_OPERATION_MODULES: Dict[Task, Any] = {
-    Task.chat_mixtral: operations.chat_operation,
-    Task.chat_llama_3: operations.chat_operation,
-    Task.proteus_text_to_image: operations.text_to_image_operation,
-    Task.playground_text_to_image: operations.text_to_image_operation,
-    Task.dreamshaper_text_to_image: operations.text_to_image_operation,
-    Task.proteus_image_to_image: operations.image_to_image_operation,
-    Task.playground_image_to_image: operations.image_to_image_operation,
-    Task.dreamshaper_image_to_image: operations.image_to_image_operation,
-    Task.jugger_inpainting: operations.inpaint_operation,
-    Task.clip_image_embeddings: operations.clip_embeddings_operation,
-    Task.avatar: operations.avatar_operation,
 }
 
 

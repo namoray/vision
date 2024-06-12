@@ -1,11 +1,26 @@
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from typing import Optional
-from core import constants as core_cst
+from typing import Any, Dict, Optional
+from core import Task, constants as core_cst
 import os
 import bittensor as bt
 import argparse
 
+from mining.proxy import operations
+
+TASKS_TO_MINER_OPERATION_MODULES: Dict[Task, Any] = {
+    Task.chat_mixtral: operations.chat_operation,
+    Task.chat_llama_3: operations.chat_operation,
+    Task.proteus_text_to_image: operations.text_to_image_operation,
+    Task.playground_text_to_image: operations.text_to_image_operation,
+    Task.dreamshaper_text_to_image: operations.text_to_image_operation,
+    Task.proteus_image_to_image: operations.image_to_image_operation,
+    Task.playground_image_to_image: operations.image_to_image_operation,
+    Task.dreamshaper_image_to_image: operations.image_to_image_operation,
+    Task.jugger_inpainting: operations.inpaint_operation,
+    Task.clip_image_embeddings: operations.clip_embeddings_operation,
+    Task.avatar: operations.avatar_operation,
+}
 
 def _get_env_file_from_cli_config() -> str:
     parser = argparse.ArgumentParser()
