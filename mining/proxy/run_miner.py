@@ -28,9 +28,8 @@ if __name__ == "__main__":
     task_and_capacities = utils.load_capacities(hotkey=config.hotkey_name)
     operations_supported = set()
     if not config.debug_miner:
-        for task in task_and_capacities:
-            task_as_enum = Task(task)
-            operation_module = operations.TASKS_TO_MINER_OPERATION_MODULES[task_as_enum]
+        for task in Task:
+            operation_module = operations.TASKS_TO_MINER_OPERATION_MODULES[task]
             if operation_module.__name__ not in operations_supported:
                 operations_supported.add(operation_module.__name__)
                 operation_class = getattr(operation_module, operation_module.operation_name)
