@@ -13,6 +13,7 @@ from validation.models import PeriodScore, RewardData, UIDRecord
 
 MAX_TASKS_IN_DB_STORE = 1000
 
+
 class DatabaseManager:
     def __init__(self):
         self.conn = sqlite3.connect(core_cst.VISION_DB)
@@ -24,12 +25,30 @@ class DatabaseManager:
         rows = cursor.fetchall()
         return {row[0]: row[1] for row in rows}
 
+    def _get_number_of_these_tasks_already_stored(self, task: Task) -> int:
+        cursor = self.conn.cursor()
+        cursor.execute(sql.select_count_rows_of_task_stored_for_scoring(), (task.value,))
+        row_count = cursor.fetchone()[0]
+        return row_count
+
     def potentially_store_result_in_sql_lite_db(
         self, result: utility_models.QueryResult, task: Task, synapse: bt.Synapse, synthetic_query: bool
     ) -> None:
         # NOTE: Add logic to depend on how many tasks there already are for that hotkey?
-        if random.random() < 1:
+        if task not in self.task_weights:
+            bt.logging.error(f"{task} not in task weights in db_manager")
+            return
+        target_percentage = self.task_weights[task]
+        target_number_of_tasks_to_store = int(MAX_TASKS_IN_DB_STORE * target_percentage)
+
+        number_of_these_tasks_already_stored = db_manager._get_number_of_these_tasks_already_stored(task)
+        if target_number_of_tasks_to_store < number_of_these_tasks_already_stored:
             db_manager.insert_task_results(task.value, result, synapse, synthetic_query)
+        else:
+            actual_percentage = number_of_these_tasks_already_stored / MAX_TASKS_IN_DB_STORE
+            probability_to_score_again = ((target_percentage / actual_percentage - target_percentage) ** 4)
+            if random.random() < probability_to_score_again:
+                db_manager.insert_task_results(task.value, result, synapse, synthetic_query)
 
     def insert_task_results(
         self, task: str, result: utility_models.QueryResult, synapse: bt.Synapse, synthetic_query: bool

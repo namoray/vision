@@ -104,7 +104,7 @@ class CoreValidator:
         TODO: Replace with onchain commitments. For initial testnet release,
         Hardcode to a couple of values
         """
-        return {
+        weights= {
             Task.chat_mixtral: 0.1,
             Task.chat_llama_3: 0.1,
             Task.proteus_text_to_image: 0.2,
@@ -117,6 +117,7 @@ class CoreValidator:
             Task.clip_image_embeddings: 0.0,
             Task.avatar: 0.2,
         }
+        db_manager.task_weights = weights
 
     def _correct_capacities(self) -> None:
         self._correct_for_max_capacities()
