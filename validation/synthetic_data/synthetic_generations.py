@@ -40,12 +40,10 @@ class SyntheticDataManager:
                 task for task in tasks.Task if task not in self.task_to_stored_synthetic_data
             ]
 
-        bt.logging.info("Got initial synthetic data!")
-
         while True:
             for task in tasks.Task:
                 await self._update_synthetic_data_for_task(task)
-                await asyncio.sleep(2)
+                await asyncio.sleep(3)
 
     async def fetch_synthetic_data_for_task(self, task: Task) -> Dict[str, Any]:
         while task not in self.task_to_stored_synthetic_data:
