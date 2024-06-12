@@ -29,13 +29,16 @@ class SyntheticDataManager:
 
     async def _continuously_fetch_synthetic_data_for_tasks(self) -> None:
         # Initial fetch be quick
-        tasks_not_initial_sync = [task for task in tasks.Task if task not in self.task_to_stored_synthetic_data]
-        while tasks_not_initial_sync:
-            initial_sync_tasks = []
-            for task in tasks_not_initial_sync:
-                initial_sync_tasks.append(asyncio.create_task(self._update_synthetic_data_for_task(task)))
+        tasks_needing_synthetic_data = [task for task in tasks.Task if task not in self.task_to_stored_synthetic_data]
+        while tasks_needing_synthetic_data:
+            sync_tasks = []
+            for task in tasks_needing_synthetic_data:
+                sync_tasks.append(asyncio.create_task(self._update_synthetic_data_for_task(task)))
 
-            await asyncio.gather(*initial_sync_tasks)
+            await asyncio.gather(*sync_tasks)
+            tasks_needing_synthetic_data = [
+                task for task in tasks.Task if task not in self.task_to_stored_synthetic_data
+            ]
 
         bt.logging.info("Got initial synthetic data!")
 
