@@ -45,7 +45,7 @@ class SyntheticDataManager:
         while True:
             for task in tasks.Task:
                 await self._update_synthetic_data_for_task(task)
-            await asyncio.sleep(2)
+                await asyncio.sleep(2)
 
     async def fetch_synthetic_data_for_task(self, task: Task) -> Dict[str, Any]:
         while task not in self.task_to_stored_synthetic_data:
