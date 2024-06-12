@@ -4,7 +4,7 @@ from typing import Any, Tuple, TypeVar
 import bittensor as bt
 from fastapi.responses import JSONResponse
 
-from core import tasks
+from core import tasks, utils
 from mining.proxy import core_miner
 from mining.proxy.core_miner import miner_requests_stats
 from config.miner_config import config as miner_config
@@ -36,17 +36,20 @@ def enforce_concurrency_limits(func):
         """
         Applies concurrency limits to the operations
         """
+
         task = tasks.get_task_from_synapse(synapse)
         task_is_stream = tasks.TASK_IS_STREAM.get(task, False)
-        concurrency_groups = miner_config.concurrency_groups
-        concurrency_group_id = miner_config.capacity_config.get(task.value, {}).get("concurrency_group_id")
+
+        capacity_config = utils.load_capacities(miner_config.hotkey_name)
+        concurrency_groups = utils.load_concurrency_groups(miner_config.hotkey_name)
+        concurrency_group_id = concurrency_groups.get(task.value, {}).get("concurrency_group_id")
 
         if concurrency_group_id is None:
             bt.logging.error(
                 f"[BUG 🐞] Task '{task}' not in concurrency groups. "
-                f"Capacity config: {miner_config.capacity_config}. "
+                f"Capacity config: {capacity_config}. "
                 f"Concurrency groups: {concurrency_groups}."
-                f"Available tasks: {list(miner_config.capacity_config.keys())}. "
+                f"Available tasks: {list(capacity_config.keys())}. "
             )
             synapse.axon.status_code = "429"
             synapse.dendrite.status_code = "429"
