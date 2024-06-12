@@ -26,6 +26,7 @@ if __name__ == "__main__":
     miner.attach_to_axon(CapcityClass.forward, CapcityClass.blacklist, CapcityClass.priority)
 
     task_and_capacities = utils.load_capacities(hotkey=config.hotkey_name)
+    print(task_and_capacities)
     operations_supported = set()
     if not config.debug_miner:
         for task in task_and_capacities:
