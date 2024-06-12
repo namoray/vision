@@ -4,7 +4,7 @@ from core import Task, constants as core_cst
 
 from core import TASK_TO_MAX_CAPACITY
 from mining.db import sql
-
+from threading import local
 
 DEFUALT_CONCURRENCY_GROUPS = {
     Task.chat_mixtral: 1,
@@ -25,16 +25,27 @@ DEFAULT_CONCURRENCY_GROUP_VALUES = {1: 7, 2: 7, 3: 1}
 
 class DatabaseManager:
     def __init__(self):
-        self.conn = sqlite3.connect(core_cst.VISION_DB)
+        self.local_data = local()
+
+    def get_connection(self):
+        if not hasattr(self.local_data, "conn"):
+            self.local_data.conn = sqlite3.connect(core_cst.VISION_DB)
+        return self.local_data.conn
+
+    def close(self):
+        if hasattr(self.local_data, "conn"):
+            self.local_data.conn.close()
 
     def read_miner_task_config(self, miner_hotkey: str) -> Dict[str, int]:
-        cursor = self.conn.cursor()
+        conn = self.get_connection()
+        cursor = conn.cursor()
         cursor.execute(sql.select_tasks_and_number_of_results(), (miner_hotkey,))
         rows = cursor.fetchall()
         return rows
 
     def insert_default_task_configs(self, miner_hotkey: str) -> None:
-        cursor = self.conn.cursor()
+        conn = self.get_connection()
+        cursor = conn.cursor()
 
         for task in Task:
             cursor.execute(
@@ -67,16 +78,18 @@ class DatabaseManager:
                     sql.insert_default_task_concurrency_group_configs(),
                     (concurrency_group_id, concurrency_group_limit),
                 )
-        self.conn.commit()
+        conn.commit()
 
     def load_concurrency_groups(self) -> Dict[str, int]:
-        cursor = self.conn.cursor()
+        conn = self.get_connection()
+        cursor = conn.cursor()
         cursor.execute(sql.load_concurrency_groups(), ())
         rows = cursor.fetchall()
         return {str(key): value for key, value in dict(rows).items()}
 
     def load_task_capacities(self, miner_hotkey: str) -> Dict[str, Dict[str, int]]:
-        cursor = self.conn.cursor()
+        conn = self.get_connection()
+        cursor = conn.cursor()
         cursor.execute(sql.load_task_capacities(), (miner_hotkey,))
         rows = cursor.fetchall()
         results = {}
@@ -84,9 +97,6 @@ class DatabaseManager:
             task, volume, concurrency_group_id = row
             results[task] = {"volume": volume, "concurrency_group_id": concurrency_group_id}
         return results
-
-    def close(self):
-        self.conn.close()
 
 
 miner_db_manager = DatabaseManager()
