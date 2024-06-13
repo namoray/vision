@@ -187,14 +187,13 @@ class CoreValidator:
             for task, volume in capacities.items():
                 bt.logging.warning(f"Task: {task} Volume: {volume}")
                 bt.logging.warning(f"volume.volume type: {type(volume.volume)}")
-                bt.logging.warning(f"Volume is tensor: {isinstance(volume.volume, torch.tensor)}")
                 # This is to stop people claiming tasks that don't exist
                 if task not in allowed_tasks:
                     continue
                 if uid not in self.capacities_for_tasks[task]:
-                    if isinstance(volume.volume, torch.Tensor):
+                    try:
                         vol = volume.volume.item()
-                    else:
+                    except AttributeError:
                         vol = volume.volume
                     self.capacities_for_tasks[task][uid] = vol
         self._correct_capacities()
