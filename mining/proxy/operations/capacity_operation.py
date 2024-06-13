@@ -23,6 +23,7 @@ class CapacityOperation(abstract_operation.Operation):
         for key in capacities_with_concurrencies:
             del capacities_with_concurrencies[key]["concurrency_group_id"]
 
+        bt.logging.debug(f"Capacities with concurrencies: {capacities_with_concurrencies}")
         return synapses.Capacity(capacities=capacities_with_concurrencies)
 
     @staticmethod
