@@ -139,7 +139,7 @@ TASK_CONFIGS = [
         variance=2,
         task_type=TaskType.IMAGE,
     ),
-    TaskConfig(task=Task.avatar, overhead=10, mean=1, variance=10, task_type=TaskType.IMAGE),
+    TaskConfig(task=Task.avatar, overhead=5, mean=1, variance=20, task_type=TaskType.IMAGE),
     TaskConfig(
         task=Task.chat_mixtral,
         overhead=1,
