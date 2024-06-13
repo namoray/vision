@@ -77,6 +77,8 @@ def calculate_speed_modifier(
         result.formatted_response if isinstance(result, utility_models.QueryResult) else result["formatted_response"]
     )
 
+    bt.logging.info(f"Response time: {response_time}, overhead: {config.overhead}")
+
     normalised_response_time = max(response_time - config.overhead, 0)
 
     if config.task_type == TaskType.IMAGE:
