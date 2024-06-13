@@ -1,5 +1,6 @@
 import asyncio
 import random
+import string
 import threading
 import httpx
 from typing import Dict, Any
@@ -12,6 +13,12 @@ from validation.proxy import validation_utils
 
 SEED = "seed"
 TEMPERATURE = "temperature"
+TEXT_PROMPTS = "text_prompts"
+
+
+def _get_random_letters(length: int) -> str:
+    letters = string.ascii_letters
+    return "".join(random.choice(letters) for i in range(length))
 
 
 class SyntheticDataManager:
@@ -54,6 +61,10 @@ class SyntheticDataManager:
         task_config = tasks.get_task_config(task)
         if task_config.task_type == tasks.TaskType.IMAGE:
             synth_data[SEED] = random.randint(1, 1_000_000_000)
+            text_prompts = synth_data[TEXT_PROMPTS]
+            text = text_prompts[0]["text"]
+            new_text = text + _get_random_letters(4)
+            synth_data[TEXT_PROMPTS][0]["text"] = new_text
         elif task_config.task_type == tasks.TaskType.TEXT:
             synth_data[SEED] = random.randint(1, 1_000_000_000)
             synth_data[TEMPERATURE] = round(random.uniform(0, 1), 2)
