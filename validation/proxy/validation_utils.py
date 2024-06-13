@@ -109,6 +109,10 @@ def alter_image(
             numpy_image[rand_y, rand_x, i] = np.clip(numpy_image[rand_y, rand_x, i] + change, 0, 255)
 
     pil_image = Image.fromarray(numpy_image)
+
+    if pil_image.mode == "RGBA":
+        pil_image = pil_image.convert("RGB")
+
     new_image = core_utils.pil_to_base64(pil_image)
     return new_image
 
