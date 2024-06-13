@@ -105,10 +105,7 @@ class UidManager:
         if number_of_requests == 0:
             return
 
-        delay_between_requests = min(
-            core_cst.SCORING_PERIOD_TIME // (number_of_requests),
-            core_cst.SCORING_PERIOD_TIME * (random.random() * 0.2 + 0.8) / 2,
-        )
+        delay_between_requests = (core_cst.SCORING_PERIOD_TIME * 0.98) // (number_of_requests)
 
         uid_record = UIDRecord(
             axon_uid=uid,
