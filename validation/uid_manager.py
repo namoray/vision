@@ -102,8 +102,6 @@ class UidManager:
             return
         volume_to_requests_conversion = TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
         number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 0)
-        if number_of_requests == 0:
-            return
 
         delay_between_requests = (core_cst.SCORING_PERIOD_TIME * 0.98) // (number_of_requests)
 
@@ -116,6 +114,9 @@ class UidManager:
             hotkey=axon.hotkey,
         )
         self.uid_records_for_tasks[task][uid] = uid_record
+
+        if number_of_requests == 0:
+            return
 
         bt.logging.info(
             f"Scoring {task} for uid {uid} with {number_of_requests} requests. Delay is {delay_between_requests}."
