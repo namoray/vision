@@ -163,15 +163,6 @@ pip3 install -e .
 I trust we can do this at this point ;D
 
 
-## Create the config
-```bash
-vision create-config
-```
-
-If you get the error message `vision not found`, you should make sure that requirements are correctly installed
-
-
-
 ## Creating the database
 Used to store concurrency info
 
@@ -181,6 +172,13 @@ sudo chmod +x /usr/local/bin/dbmate
 
 dbmate --url "sqlite:vision_database.db" up
 ```
+
+## Create the config
+```bash
+vision create-config
+```
+
+If you get the error message `vision not found`, you should make sure that requirements are correctly installed
 
 
 #### Configure the task_config & task_concurrency_config json's

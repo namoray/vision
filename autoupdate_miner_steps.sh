@@ -6,11 +6,12 @@
 
 # ./start_miners.sh
 
-sudo curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64
-sudo chmod +x /usr/local/bin/dbmate
-sudo apt install sqlite3
+# sudo curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64
+# sudo chmod +x /usr/local/bin/dbmate
+# sudo apt install sqlite3
 
-dbmate --url "sqlite:vision_database.db" up
+# dbmate --url "sqlite:vision_database.db" up
 
 
-python set_miner_defaults.py
+# python set_miner_defaults.py
+echo "Nothing to do!"
