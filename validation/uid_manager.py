@@ -91,6 +91,7 @@ class UidManager:
     async def handle_task_scoring_for_uid(
         self, task: Task, uid: axon_uid, volume: float, axon: bt.chain_data.AxonInfo
     ) -> None:
+        return
         volume_to_score = volume * self._get_percentage_of_tasks_to_score()
 
         uid_queue = self.task_to_uid_queue[task]
@@ -103,7 +104,7 @@ class UidManager:
         volume_to_requests_conversion = TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
         number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 1)
 
-        delay_between_requests = core_cst.SCORING_PERIOD_TIME // (number_of_requests) * (random.random() * 0.1 + 0.9)
+        delay_between_requests = core_cst.SCORING_PERIOD_TIME // (number_of_requests) * (random.random() * 0.05 + 0.95)
 
         uid_record = UIDRecord(
             axon_uid=uid,
@@ -116,6 +117,8 @@ class UidManager:
         self.uid_records_for_tasks[task][uid] = uid_record
 
         initial_sleep_duration = min(delay_between_requests * random.random(), core_cst.SCORING_PERIOD_TIME / 2)
+
+        bt.logging.info(f"Scoring {task} for uid {uid} with {number_of_requests} requests. Delay is {delay_between_requests}.")
 
         await asyncio.sleep(initial_sleep_duration)
 

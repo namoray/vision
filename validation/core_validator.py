@@ -104,7 +104,7 @@ class CoreValidator:
         TODO: Replace with onchain commitments. For initial testnet release,
         Hardcode to a couple of values
         """
-        weights= {
+        weights = {
             Task.chat_mixtral: 0.1,
             Task.chat_llama_3: 0.1,
             Task.proteus_text_to_image: 0.2,
@@ -118,6 +118,7 @@ class CoreValidator:
             Task.avatar: 0.2,
         }
         db_manager.task_weights = weights
+        return weights
 
     def _correct_capacities(self) -> None:
         self._correct_for_max_capacities()
@@ -125,7 +126,7 @@ class CoreValidator:
 
     def _correct_capacities_for_my_stake(self) -> None:
         # TODO: Replace with real stake finding on mainnet - but for testnet, the stakes dont make sense, so will fix it for now
-        my_proportion_of_stake = 0.5
+        my_proportion_of_stake = 1 / 60
 
         for task in Task:
             capacities = self.capacities_for_tasks[task]

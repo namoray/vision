@@ -9,11 +9,11 @@ from models import base_models, utility_models
 import bittensor as bt
 
 MAX_SPEED_BONUS = 1.4  # Adjust this value as needed
-BELOW_MEAN_EXPONENT = 3
+BELOW_MEAN_EXPONENT = 0.5
 CHARACTER_TO_TOKEN_CONVERSION = 4.0
 
 
-def _calculate_speed_modifier(normalised_response_time: float, config: TaskConfig) -> float:
+def _calculate_speed_modifier(time_per_unit: float, config: TaskConfig) -> float:
     """
     Calculates the speed modifier based on the normalised response time
     using sewed together gaussian distribution's
@@ -23,14 +23,14 @@ def _calculate_speed_modifier(normalised_response_time: float, config: TaskConfi
 
     assert variance > 0
 
-    if normalised_response_time <= mean:
-        # y = (M - 1) * (b - x)^c / b^c + 1
-        speed_modifier = 1 + (MAX_SPEED_BONUS - 1) * ((mean - normalised_response_time) ** BELOW_MEAN_EXPONENT) / (
+    if time_per_unit <= mean:
+        # y = 1 + (M - 1) * (b - x)^c / b^c
+        speed_modifier = 1 + (MAX_SPEED_BONUS - 1) * ((mean - time_per_unit) ** BELOW_MEAN_EXPONENT) / (
             mean**BELOW_MEAN_EXPONENT
         )
     else:
         # y = e^((b - x) * v)
-        speed_modifier = math.exp((mean - normalised_response_time) * variance)
+        speed_modifier = math.exp((mean - time_per_unit) * variance)
 
     return speed_modifier
 
@@ -68,7 +68,7 @@ def calculate_speed_modifier(
         result.formatted_response if isinstance(result, utility_models.QueryResult) else result["formatted_response"]
     )
 
-    normalised_response_time = response_time - config.overhead
+    normalised_response_time = max(response_time - config.overhead, 0)
 
     if config.task_type == TaskType.IMAGE:
         steps = synapse.get("steps", 1)

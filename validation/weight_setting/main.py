@@ -100,7 +100,7 @@ class WeightSetter:
             capacities = capacities_for_tasks[task]
             if task not in task_weights:
                 continue
-            importance = task_weights[task]
+            task_weight = task_weights[task]
 
             for uid in capacities:
                 miner_hotkey = uid_to_uid_info[uid].hotkey
@@ -136,7 +136,7 @@ class WeightSetter:
             }
             for hotkey in normalised_scores_for_task:
                 total_hotkey_scores[hotkey] = (
-                    total_hotkey_scores.get(hotkey, 0) + normalised_scores_for_task[hotkey] * importance
+                    total_hotkey_scores.get(hotkey, 0) + normalised_scores_for_task[hotkey] * task_weight
                 )
 
         #     bt.logging.info(f"Normalised hotkeys scores for task: {task}\n{normalised_scores_for_task}")

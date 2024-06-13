@@ -6,6 +6,7 @@ from typing import Optional
 from typing import Dict
 from typing import Type
 from typing import Union, Any
+from PIL import Image
 from rich.console import Console
 import bittensor as bt
 import fastapi
@@ -17,7 +18,6 @@ import random
 from core import constants as core_cst, utils as core_utils
 from models import utility_models, base_models
 import numpy as np
-from PIL import Image
 from validation.proxy import old_speed_scoring_functions
 from core.tasks import Task
 
@@ -93,6 +93,29 @@ def connect_to_external_server() -> str:
                     retry_interval = 15
 
 
+def alter_image(
+    pil_image: Image.Image,
+) -> str:
+    numpy_image = np.array(pil_image)
+    for _ in range(3):
+        rand_x, rand_y = (
+            random.randint(0, pil_image.width - 1),
+            random.randint(0, pil_image.height - 1),
+        )
+
+        for i in range(3):
+            change = random.choice([-1, 1])
+            numpy_image[rand_y, rand_x, i] = np.clip(numpy_image[rand_y, rand_x, i] + change, 0, 255)
+
+    pil_image = Image.fromarray(numpy_image)
+
+    if pil_image.mode == "RGBA":
+        pil_image = pil_image.convert("RGB")
+
+    new_image = core_utils.pil_to_base64(pil_image)
+    return new_image
+
+
 def alter_clip_body(
     body: base_models.ClipEmbeddingsIncoming,
 ) -> base_models.ClipEmbeddingsIncoming:
@@ -102,19 +125,7 @@ def alter_clip_body(
     new_images = []
     for image in body.image_b64s:
         pil_image = core_utils.base64_to_pil(image)
-        numpy_image = np.array(pil_image)
-        for _ in range(3):
-            rand_x, rand_y = (
-                random.randint(0, pil_image.width - 1),
-                random.randint(0, pil_image.height - 1),
-            )
-
-            for i in range(3):
-                change = random.choice([-1, 1])
-                numpy_image[rand_y, rand_x, i] = np.clip(numpy_image[rand_y, rand_x, i] + change, 0, 255)
-
-        pil_image = Image.fromarray(numpy_image)
-        new_image = core_utils.pil_to_base64(pil_image)
+        new_image = alter_image(pil_image)
         new_images.append(new_image)
 
     body.image_b64s = new_images

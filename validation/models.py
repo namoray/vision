@@ -53,11 +53,16 @@ class UIDRecord(BaseModel):
         volume_unqueried = (self.declared_volume - self.consumed_volume) / self.declared_volume
         percentage_of_429s = self.requests_429 / self.total_requests_made
         percentage_of_500s = self.requests_500 / self.total_requests_made
+        percentage_of_good_requests = (
+            self.total_requests_made - self.requests_429 - self.requests_500
+        ) / self.total_requests_made
 
         rate_limit_punishment_factor = percentage_of_429s * volume_unqueried
         server_error_punishment_factor = percentage_of_500s * volume_unqueried
 
-        self.period_score = max(1 - (rate_limit_punishment_factor / 2 + server_error_punishment_factor), 0)
+        self.period_score = max(
+            percentage_of_good_requests * (1 - rate_limit_punishment_factor) * (1 - server_error_punishment_factor), 0
+        )
 
 
 class RewardData(BaseModel):
