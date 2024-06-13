@@ -13,7 +13,7 @@ BELOW_MEAN_EXPONENT = 3
 CHARACTER_TO_TOKEN_CONVERSION = 4.0
 
 
-def _calculate_speed_modifier(normalised_response_time: float, config: TaskConfig) -> float:
+def _calculate_speed_modifier(time_per_unit: float, config: TaskConfig) -> float:
     """
     Calculates the speed modifier based on the normalised response time
     using sewed together gaussian distribution's
@@ -24,21 +24,21 @@ def _calculate_speed_modifier(normalised_response_time: float, config: TaskConfi
     assert variance > 0
 
     bt.logging.warning(
-        f"\nGetting the speed for task: {config.task} with normalised response time: {normalised_response_time}."
+        f"\nGetting the speed for task: {config.task} with time_per_unit time: {time_per_unit}."
         f"\nMean: {mean}\nVariance: {variance}"
         f"\nBelow mean exponent: {BELOW_MEAN_EXPONENT}"
         f"\nMax speed bonus: {MAX_SPEED_BONUS}"
     )
 
-    if normalised_response_time <= mean:
+    if time_per_unit <= mean:
         # y = 1 + (M - 1) * (b - x)^c / b^c
-        speed_modifier = 1 + (MAX_SPEED_BONUS - 1) * ((mean - normalised_response_time) ** BELOW_MEAN_EXPONENT) / (
+        speed_modifier = 1 + (MAX_SPEED_BONUS - 1) * ((mean - time_per_unit) ** BELOW_MEAN_EXPONENT) / (
             mean**BELOW_MEAN_EXPONENT
         )
         bt.logging.warning(f"Speed modifier in the if: {speed_modifier}.")
     else:
         # y = e^((b - x) * v)
-        speed_modifier = math.exp((mean - normalised_response_time) * variance)
+        speed_modifier = math.exp((mean - time_per_unit) * variance)
         bt.logging.warning(f"Speed modifier in the else: {speed_modifier}.")
 
     return speed_modifier
