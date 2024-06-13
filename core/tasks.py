@@ -93,14 +93,14 @@ TASK_CONFIGS = [
     TaskConfig(
         task=Task.proteus_text_to_image,
         overhead=0.5,
-        mean=0.5,
+        mean=0.25,
         variance=1,
         task_type=TaskType.IMAGE,
     ),
     TaskConfig(
         task=Task.dreamshaper_text_to_image,
         overhead=0.5,
-        mean=0.5,
+        mean=0.25,
         variance=6,
         task_type=TaskType.IMAGE,
     ),
@@ -135,7 +135,7 @@ TASK_CONFIGS = [
     TaskConfig(
         task=Task.jugger_inpainting,
         overhead=1.2,
-        mean=0.5,
+        mean=0.25,
         variance=6,
         task_type=TaskType.IMAGE,
     ),
