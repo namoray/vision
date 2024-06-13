@@ -18,6 +18,7 @@ class CapacityOperation(abstract_operation.Operation):
     @staticmethod
     async def forward(synapse: synapses.Capacity) -> synapses.Capacity:
         capacity_config = utils.load_capacities(miner_config.hotkey_name)
+        bt.logging.error(f"Capacity config: {capacity_config}")
         capacities_with_concurrencies = copy.deepcopy(capacity_config)
         for key in capacities_with_concurrencies:
             del capacities_with_concurrencies[key]["concurrency_group_id"]
