@@ -201,7 +201,10 @@ sqlite3 vision_database.db
 For no gui
 
 
-The default values for volumes are 1/2 of the maximum allowed values.
+The default values for volumes are 1/2 of the maximum allowed values. These are filled EITHER:
+
+- When you use vision create-config
+- run `python set_miner_defaults.py`
 
 **Task config**
 
