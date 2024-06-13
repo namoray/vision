@@ -109,7 +109,7 @@ class SyntheticDataManager:
 
     async def _update_synthetic_data_for_task(self, task: Task) -> Dict[str, Any]:
         if task == Task.avatar:
-            base_models.AvatarIncoming(
+            return base_models.AvatarIncoming(
                 seed=random.randint(1, 1_000_000_000),
                 text_prompts=[_get_random_avatar_text_prompt()],
                 height=1280,
@@ -118,7 +118,7 @@ class SyntheticDataManager:
                 control_strength=0.5,
                 ipadapter_strength=0.5,
                 init_image=_my_boy_postie(),
-            )
+            ).dict()
         else:
             try:
                 async with httpx.AsyncClient(timeout=7) as client:
