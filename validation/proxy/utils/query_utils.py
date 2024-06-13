@@ -41,9 +41,6 @@ class UIDQueue:
 def get_formatted_response(
     resulting_synapse: base_models.BaseSynapse, initial_synapse: bt.Synapse
 ) -> Optional[BaseModel]:
-    bt.logging.warning(
-        f"Resulting synapse: {resulting_synapse}, initial synapse: {initial_synapse}, resulting_synapse.dendrite: {resulting_synapse.dendrite}",
-    )
     if resulting_synapse and resulting_synapse.dendrite.status_code == 200 and resulting_synapse != initial_synapse:
         formatted_response = _extract_response(resulting_synapse, initial_synapse)
         return formatted_response

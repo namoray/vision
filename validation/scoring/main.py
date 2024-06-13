@@ -57,10 +57,8 @@ class Scorer:
         bt.logging.info(f"Scoring some results for task {task}")
         while i < cst.MAX_RESULTS_TO_SCORE_FOR_TASK:
             data_and_hotkey = db_manager.select_and_delete_task_result(task)  # noqa
-            bt.logging.error(f"here0")
             if data_and_hotkey is None:
                 return
-            bt.logging.error(f"here1")
             checking_data, miner_hotkey = data_and_hotkey
             results, synthetic_query, synapse_dict_str = (
                 checking_data["result"],
@@ -111,16 +109,15 @@ class Scorer:
             except (json.JSONDecodeError, KeyError) as parse_err:
                 bt.logging.error(f"Error occurred when parsing the response: {parse_err}")
                 continue
-                
 
-            bt.logging.error(f"here1")
+            bt.logging.error("here1")
             score_with_old_speed = await validation_utils.get_expected_score(
                 utility_models.QueryResult(**results_json), synapse, task
             )
             volume = work_and_speed_functions.calculate_work(task=task, result=results_json, synapse=synapse)
             speed_scoring_factor = work_and_speed_functions.calculate_speed_modifier(
                 task=task, result=results_json, synapse=synapse
-            )  
+            )
 
             bt.logging.error(f"here2, axon scores: {axon_scores}")
             bt.logging.error(f"resp json: {response_json}")
