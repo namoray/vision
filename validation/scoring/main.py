@@ -1,5 +1,6 @@
 # Schema for the db
 import asyncio
+import random
 
 import bittensor as bt
 import substrateinterface
@@ -44,10 +45,9 @@ class Scorer:
                 continue
 
             else:
-                # task_to_score = random.choices(
-                #     list(tasks_and_number_of_results.keys()), weights=list(tasks_and_number_of_results.values()), k=1
-                # )[0]
-                task_to_score = Task.avatar.value
+                task_to_score = random.choices(
+                    list(tasks_and_number_of_results.keys()), weights=list(tasks_and_number_of_results.values()), k=1
+                )[0]
 
                 await self._check_scores_for_task(Task(task_to_score))
                 await asyncio.sleep(5)
