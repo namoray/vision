@@ -71,6 +71,10 @@ class CoreValidator:
 
         self.public_hotkey_address = self.keypair.ss58_address
 
+        _my_stake = self.metagraph.S[self.metagraph.hotkeys.index(self.public_hotkey_address)]
+        self._my_prop_of_stake = _my_stake / sum(self.metagraph.S)
+
+
         validation_utils.connect_to_external_server()
 
         # Make the above class variables instead
@@ -126,7 +130,7 @@ class CoreValidator:
 
     def _correct_capacities_for_my_stake(self) -> None:
         # TODO: Replace with real stake finding on mainnet - but for testnet, the stakes dont make sense, so will fix it for now
-        my_proportion_of_stake = 1 / 60
+        my_proportion_of_stake = self._my_prop_of_stake
 
         for task in Task:
             capacities = self.capacities_for_tasks[task]
