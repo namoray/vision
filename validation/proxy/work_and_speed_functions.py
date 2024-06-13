@@ -68,13 +68,10 @@ def calculate_speed_modifier(
         result.formatted_response if isinstance(result, utility_models.QueryResult) else result["formatted_response"]
     )
 
-    bt.logging.info(f"Response time: {response_time}, overhead: {config.overhead}. ")
-
     normalised_response_time = max(response_time - config.overhead, 0)
 
     if config.task_type == TaskType.IMAGE:
         steps = synapse.get("steps", 1)
-        bt.logging.warning(f"Steps:      {steps}")
         time_per_step = normalised_response_time / steps
         return _calculate_speed_modifier(time_per_step, config)
     elif config.task_type == TaskType.TEXT:
