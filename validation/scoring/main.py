@@ -57,8 +57,10 @@ class Scorer:
         bt.logging.info(f"Scoring some results for task {task}")
         while i < cst.MAX_RESULTS_TO_SCORE_FOR_TASK:
             data_and_hotkey = db_manager.select_and_delete_task_result(task)  # noqa
+            bt.logging.error(f"here0")
             if data_and_hotkey is None:
                 return
+            bt.logging.error(f"here1")
             checking_data, miner_hotkey = data_and_hotkey
             results, synthetic_query, synapse_dict_str = (
                 checking_data["result"],
