@@ -128,7 +128,7 @@ TASK_CONFIGS = [
     TaskConfig(
         task=Task.playground_image_to_image,
         overhead=0.5,
-        mean=0.45,
+        mean=0.21,
         variance=5,
         task_type=TaskType.IMAGE,
     ),
