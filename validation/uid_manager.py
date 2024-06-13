@@ -115,9 +115,13 @@ class UidManager:
         )
         self.uid_records_for_tasks[task][uid] = uid_record
 
-        initial_sleep_duration = min(delay_between_requests * random.random(), core_cst.SCORING_PERIOD_TIME / 2)
+        initial_sleep_duration = min(
+            delay_between_requests * random.random(), (random.random() * 0.1 + 0.9) * core_cst.SCORING_PERIOD_TIME / 2
+        )
 
-        bt.logging.info(f"Scoring {task} for uid {uid} with {number_of_requests} requests. Delay is {delay_between_requests}.")
+        bt.logging.info(
+            f"Scoring {task} for uid {uid} with {number_of_requests} requests. Delay is {delay_between_requests}."
+        )
 
         await asyncio.sleep(initial_sleep_duration)
 
