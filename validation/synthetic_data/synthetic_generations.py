@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import random
 import string
 import threading
@@ -7,7 +8,7 @@ from typing import Dict, Any
 from config.validator_config import config as validator_config
 from core import Task, tasks
 import bittensor as bt
-
+from core import dataclasses as dc
 from models import base_models
 from validation.proxy import validation_utils
 
@@ -16,9 +17,40 @@ TEMPERATURE = "temperature"
 TEXT_PROMPTS = "text_prompts"
 
 
+def load_image_to_base64(image_path: str):
+    with open(image_path, "rb") as image_file:
+        base64_string = base64.b64encode(image_file.read()).decode("utf-8")
+    return base64_string
+
+
+my_boy_postie = load_image_to_base64("validation/synthetic_data/postie.png")
+
+
 def _get_random_letters(length: int) -> str:
     letters = string.ascii_letters
     return "".join(random.choice(letters) for i in range(length))
+
+
+def _get_random_avatar_text_prompt() -> dc.TextPrompt:
+    nouns = ['king', 'man', 'woman', 'joker', 'queen', 'child', 'doctor', 'teacher', 'soldier', 'merchant']  # fmt: off
+    locations = ['forest', 'castle', 'city', 'village', 'desert', 'oceanside', 'mountain', 'garden', 'library', 'market']  # fmt: off
+    looks = ['happy', 'sad', 'angry', 'worried', 'curious', 'lost', 'busy', 'relaxed', 'fearful', 'thoughtful']  # fmt: off
+    actions = ['running', 'walking', 'reading', 'talking', 'sleeping', 'dancing', 'working', 'playing', 'watching', 'singing']  # fmt: off
+    times = ['in the morning', 'at noon', 'in the afternoon', 'in the evening', 'at night', 'at midnight', 'at dawn', 'at dusk', 'during a storm', 'during a festival']  # fmt: off
+
+    noun = random.choice(nouns)
+    location = random.choice(locations)
+    look = random.choice(looks)
+    action = random.choice(actions)
+    time = random.choice(times)
+
+    text = f"{noun} in a {location}, looking {look}, {action} {time}"
+    return dc.TextPrompt(text=text, weight=1.0)
+
+
+def _my_boy_postie() -> Dict[str, Any]:
+    b64_postie_altered = validation_utils.alter_image(my_boy_postie)
+    return b64_postie_altered
 
 
 class SyntheticDataManager:
@@ -76,26 +108,38 @@ class SyntheticDataManager:
         return synth_data
 
     async def _update_synthetic_data_for_task(self, task: Task) -> Dict[str, Any]:
-        try:
-            async with httpx.AsyncClient(timeout=7) as client:
-                response = await client.post(
-                    validator_config.external_server_url + "get-synthetic-data",
-                    json={"task": task.value},
-                )
-                response.raise_for_status()  # raises an HTTPError if an unsuccessful status code was received
-        except httpx.RequestError:
-            # bt.logging.warning(f"Getting synthetic data error: {err.request.url!r}: {err}")
-            return None
-        except httpx.HTTPStatusError:
-            # bt.logging.warning(
-            #     f"Syntehtic data error; status code {err.response.status_code} while requesting {err.request.url!r}: {err}"
-            # )
-            return None
+        if task == Task.avatar:
+            base_models.AvatarIncoming(
+                seed=random.randint(1, 1_000_000_000),
+                text_prompts=[_get_random_avatar_text_prompt()],
+                height=1280,
+                width=1280,
+                steps=15,
+                control_strength=0.5,
+                ipadapter_strength=0.5,
+                init_image=_my_boy_postie(),
+            )
+        else:
+            try:
+                async with httpx.AsyncClient(timeout=7) as client:
+                    response = await client.post(
+                        validator_config.external_server_url + "get-synthetic-data",
+                        json={"task": task.value},
+                    )
+                    response.raise_for_status()  # raises an HTTPError if an unsuccessful status code was received
+            except httpx.RequestError:
+                # bt.logging.warning(f"Getting synthetic data error: {err.request.url!r}: {err}")
+                return None
+            except httpx.HTTPStatusError:
+                # bt.logging.warning(
+                #     f"Syntehtic data error; status code {err.response.status_code} while requesting {err.request.url!r}: {err}"
+                # )
+                return None
 
-        try:
-            response_json = response.json()
-        except ValueError as e:
-            bt.logging.error(f"Synthetic data Response contained invalid JSON: error :{e}")
-            return None
+            try:
+                response_json = response.json()
+            except ValueError as e:
+                bt.logging.error(f"Synthetic data Response contained invalid JSON: error :{e}")
+                return None
 
-        self.task_to_stored_synthetic_data[task] = response_json
+            self.task_to_stored_synthetic_data[task] = response_json
