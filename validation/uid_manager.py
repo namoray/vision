@@ -103,7 +103,10 @@ class UidManager:
         volume_to_requests_conversion = TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
         number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 1)
 
-        delay_between_requests = core_cst.SCORING_PERIOD_TIME // (number_of_requests)
+        delay_between_requests = min(
+            core_cst.SCORING_PERIOD_TIME // (number_of_requests),
+            core_cst.SCORING_PERIOD_TIME * (random.random() * 0.2 + 0.8) / 2,
+        )
 
         uid_record = UIDRecord(
             axon_uid=uid,
@@ -115,19 +118,16 @@ class UidManager:
         )
         self.uid_records_for_tasks[task][uid] = uid_record
 
-        initial_sleep_duration = min(
-            delay_between_requests * random.random(), (random.random() * 0.1 + 0.9) * core_cst.SCORING_PERIOD_TIME / 2
-        )
-
         bt.logging.info(
             f"Scoring {task} for uid {uid} with {number_of_requests} requests. Delay is {delay_between_requests}."
         )
 
-        await asyncio.sleep(initial_sleep_duration)
-
         i = 0
         tasks_in_progress = []
         while uid_record.synthetic_requests_still_to_make > 0:
+            # Random pertubation to make sure we dont burst
+            await asyncio.sleep(delay_between_requests * (random.random() * 0.05 + 0.95))
+
             if i % 100 == 0:
                 bt.logging.debug(
                     f"synthetic requests still to make: {uid_record.synthetic_requests_still_to_make} on iteration {i} for uid {uid_record.axon_uid} and task {task}"
@@ -160,8 +160,6 @@ class UidManager:
 
             # Need to make this here so its lowered regardless of the result of the above
             uid_record.synthetic_requests_still_to_make -= 1
-            # Random pertubation to make sure we dont burst
-            await asyncio.sleep(delay_between_requests * (random.random() * 0.05 + 0.95))
 
             i += 1
 
