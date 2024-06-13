@@ -128,7 +128,7 @@ class Scorer:
                     quality_score = 0
                 else:
                     quality_score = score / score_with_old_speed
-                bt.logging.info(f"Score: {score}, score_with_old_speed: {score_with_old_speed}")
+                bt.logging.info(f"Score: {score}, score_with_old_speed: {score_with_old_speed} for task {task}. Speed factor: {speed_scoring_factor} Quality score: {quality_score}")
 
                 id = _generate_uid()
 
