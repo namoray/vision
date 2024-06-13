@@ -2,23 +2,51 @@ import asyncio
 import threading
 import time
 import traceback
-from typing import Any, Callable, Optional, Tuple, TypeVar
+from typing import Any, Callable, Dict, Optional, Tuple, TypeVar
 import bittensor as bt
 
 # import base miner class which takes care of most of the boilerplate
 from config import configuration
-from core import constants as core_cst
+from core import Task, constants as core_cst, utils
 from config.miner_config import config as miner_config
+from core import bittensor_overrides as bto
+
 
 T = TypeVar("T", bound=bt.Synapse)
 
 
 metagraph = None
 
-requests_from_each_validator = {}
 asyncio_lock: asyncio.Lock = asyncio.Lock()
 threading_lock: threading.Lock = threading.Lock()
-MIN_VALIDATOR_STAKE = 0 if miner_config.subtensor_network == 'test' else 5000
+MIN_VALIDATOR_STAKE = 0 if miner_config.subtensor_network == "test" else 5000
+
+
+class MinerRequestsStatus:
+    def __init__(self) -> None:
+        self.requests_from_each_validator = {}
+        self._active_requests_for_each_concurrency_group: Dict[Task, int] = {}
+
+    @property
+    def active_requests_for_each_concurrency_group(self) -> Dict[Task, int]:
+        return self._active_requests_for_each_concurrency_group
+
+    def decrement_concurrency_group_from_task(self, task: Task) -> None:
+        capacity_config = utils.load_capacities(miner_config.hotkey_name)
+        concurrency_group_id = capacity_config.get(task.value, {}).get("concurrency_group_id")
+        if concurrency_group_id is not None:
+            concurrency_group_id = str(concurrency_group_id)
+        current_number_of_concurrent_requests = self._active_requests_for_each_concurrency_group.get(
+            concurrency_group_id, 1
+        )
+        self._active_requests_for_each_concurrency_group[concurrency_group_id] = (
+            current_number_of_concurrent_requests - 1
+        )
+
+
+# Annoyingly needs to be global since we can't access the core miner with self in operations
+# Code, as it needs to be static methods to attach the axon :/
+miner_requests_stats = MinerRequestsStatus()
 
 
 def base_blacklist(synapse: T) -> Tuple[bool, str]:
@@ -28,12 +56,9 @@ def base_blacklist(synapse: T) -> Tuple[bool, str]:
 
     stake = metagraph.S[metagraph.hotkeys.index(synapse.dendrite.hotkey)]
     if stake < MIN_VALIDATOR_STAKE:
-        bt.logging.trace(
-            f"Blacklisting hotkey, stake too low! {synapse.dendrite.hotkey}"
-        )
+        bt.logging.trace(f"Blacklisting hotkey, stake too low! {synapse.dendrite.hotkey}")
         return True, synapse.dendrite.hotkey
 
-    bt.logging.trace(f"Not Blacklisting recognized hotkey {synapse.dendrite.hotkey}")
     return False, synapse.dendrite.hotkey
 
 
@@ -42,45 +67,15 @@ def base_priority(synapse: T) -> float:
     The priority function determines the order in which requests are handled.
     """
 
-    total_stake = sum(metagraph.S)
-    stake = metagraph.S[metagraph.hotkeys.index(synapse.dendrite.hotkey)]
-
-    with threading_lock:
-        total_requests_so_far = sum(requests_from_each_validator.values())
-        requests_from_validator = requests_from_each_validator.get(
-            synapse.dendrite.hotkey, 0
-        )
-        requests_from_each_validator[synapse.dendrite.hotkey] = (
-            requests_from_validator + 1
-        )
-
-    if total_requests_so_far <= 0 or total_stake <= 0:
-        return 1
-
-    proportion_of_requests_from_this_validator = (
-        requests_from_validator / total_requests_so_far
-    )
-    validator_proprtion_of_stake = stake / total_stake
-
-    bt.logging.debug(
-        f"Validator has made {proportion_of_requests_from_this_validator * 100:.2f}% of requests so far"
-        f", and has {validator_proprtion_of_stake * 100:.2f}% of the total delegated stake."
-    )
-
-    if proportion_of_requests_from_this_validator < validator_proprtion_of_stake:
-        bt.logging.debug("Less than allowance so priority 1")
-        return 1
-    else:
-        bt.logging.debug(
-            f"More than allowance so priority {validator_proprtion_of_stake / proportion_of_requests_from_this_validator:.4f}"
-        )
-        return validator_proprtion_of_stake / proportion_of_requests_from_this_validator
+    return 1
 
 
 class CoreMiner:
     def __init__(self) -> None:
         self.config = self.prepare_config_and_logging()
         self.wallet = bt.wallet(config=self.config)
+
+        bt.logging.debug("Creating subtensor...")
         self.subtensor = bt.subtensor(config=self.config)
 
         global metagraph
@@ -88,16 +83,16 @@ class CoreMiner:
 
         if self.config.axon.external_ip is not None:
             bt.logging.debug(
-                f"Starting axon on port {self.config.axon.port} and external ip {self.config.axon.external_ip}"
+                f"Will start axon on port {self.config.axon.port} and external ip {self.config.axon.external_ip}"
             )
-            self.axon = bt.axon(
+            self.axon = bto.axon(
                 wallet=self.wallet,
                 port=self.config.axon.port,
                 external_ip=self.config.axon.external_ip,
             )
         else:
-            bt.logging.debug(f"Starting axon on port {self.config.axon.port}")
-            self.axon = bt.axon(wallet=self.wallet, port=self.config.axon.port)
+            bt.logging.debug(f"Will start axon on port {self.config.axon.port}")
+            self.axon = bto.axon(wallet=self.wallet, port=self.config.axon.port)
 
         self.should_exit: bool = False
         self.is_running: bool = False
@@ -127,9 +122,7 @@ class CoreMiner:
         blacklist: Callable[[Any], Tuple[bool, str]],
         priority: Callable[[Any], Any],
     ) -> None:
-        self.axon.attach(
-            forward_fn=forward, blacklist_fn=blacklist, priority_fn=priority
-        )
+        self.axon.attach(forward_fn=forward, blacklist_fn=blacklist, priority_fn=priority)
 
     def validate_wallet_and_retrieve_uid(self) -> Optional[int]:
         if self.wallet.hotkey.ss58_address not in metagraph.hotkeys:
@@ -139,9 +132,7 @@ class CoreMiner:
             exit()
 
         else:
-            my_hotkey_uid: int = metagraph.hotkeys.index(
-                self.wallet.hotkey.ss58_address
-            )
+            my_hotkey_uid: int = metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
             bt.logging.info(f"Running miner on uid: {my_hotkey_uid}")
             return my_hotkey_uid
 

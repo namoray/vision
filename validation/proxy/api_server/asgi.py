@@ -58,7 +58,7 @@ async def api_key_validator(request, call_next):
     api_key = _get_api_key(request)
     if not api_key:
         return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             content={"detail": "API key is missing"},
         )
 

@@ -5,19 +5,24 @@ import numpy as np
 from pydantic import BaseModel
 import bittensor as bt
 
+from core import Task
+from validation.models import axon_uid
 
 class QueryResult(BaseModel):
     formatted_response: Any
     axon_uid: Optional[int]
+    miner_hotkey: Optional[str]
     response_time: Optional[float]
     error_message: Optional[str]
     failed_axon_uids: List[int] = []
+    task: Task
+    status_code: Optional[int]
+    success: bool
 
 
 class ChatModels(str, enum.Enum):
     """Model is used for the chat"""
 
-    bittensor_finetune = "bittensor-finetune"
     mixtral = "mixtral-8x7b"
     llama_3 = "llama-3"
 
@@ -42,19 +47,9 @@ class UIDinfo(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    uid: int
+    uid: axon_uid
     hotkey: str
-    available_tasks: List[str] = []
     axon: bt.chain_data.AxonInfo
-    is_low_incentive: bool = False
-    incentive: float = 0.0
-
-    total_score: float = 0.0
-    request_count: int = 0
-
-    def add_score(self, score: float) -> None:
-        self.total_score += score
-        self.request_count += 1
 
 
 class OperationDistribution(BaseModel):
@@ -81,16 +76,12 @@ class ImageHashes(BaseModel):
     color_hash: str = ""
 
 
-class SotaCheckingRequest(BaseModel):
-    image_url: str
-    prompt: str
-
-
 class ImageResponseBody(BaseModel):
     image_b64: Optional[str] = None
     is_nsfw: Optional[bool] = None
     clip_embeddings: Optional[List[float]] = None
     image_hashes: Optional[ImageHashes] = None
+
 
 class MinerChatResponse(BaseModel):
     text: str

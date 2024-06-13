@@ -20,7 +20,6 @@ The proxy server is the server which has your hotkey, and spins up the axon (sho
 
 I would advise starting with the worker servers. The simplest way to get started is to spin up four worker servers:
 
-- One for the finetuned chat model 
 - One for the mixtral chat model
 - One for the image generation stuff
 - One for the llama3 chat model
@@ -54,11 +53,6 @@ HALF_PRECISION true
 REVISION gptq-8bit-128g-actorder_True
 ```
 
-Finetune
-```
-MODEL tau-vision/sn6-finetune
-HALF_PRECISION false
-```
 
 Llama-3
 ```
@@ -104,7 +98,7 @@ ulimit -n 4096
 
 
 
-## Setup steps
+## Setup environment
 
 Note: if you're using a provider such as runpod or vast, make sure you expose the necessary ports first, e.g.: https://docs.runpod.io/docs/expose-ports#:~:text=If%20your%20pod%20supports%20a,address%20to%20access%20your%20service. Follow the "Symmetrical port mapping" step :)
 
@@ -169,14 +163,58 @@ pip3 install -e .
 I trust we can do this at this point ;D
 
 
-### Create the config
+## Create the config
 ```bash
 vision create-config
 ```
 
 If you get the error message `vision not found`, you should make sure that requirements are correctly installed
 
-### Start miners
+
+
+## Creating the database
+Used to store concurrency info
+
+```bash
+sudo curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64
+sudo chmod +x /usr/local/bin/dbmate
+
+dbmate --url "sqlite:vision_database.db" up
+```
+
+
+#### Configure the task_config & task_concurrency_config json's
+
+For each hotkey, there was default task configuration created in the sqlite db.
+
+View this with
+
+```bash
+./peer_at_sql_db.sh
+```
+For a GUI, or
+
+```bash
+sudo apt install sqlite3
+sqlite3 vision_database.db
+```
+For no gui
+
+
+The default values for volumes are 1/2 of the maximum allowed values. These are filled EITHER:
+
+- When you use vision create-config
+- run `python set_miner_defaults.py`
+
+**Task config**
+
+Here we defined the capacitity (or volume) for each task, for that miner. This is the maximum amount of 'work' that a hotkey can do in a 1 hour period. To calculate that work, you can use `calculate_volumes_example.py` tool.
+
+**Concurrency groups**
+
+We also define the `concurrency groups`. All the tasks belong to a concurrency group, and you can configure a maximum number of concurrent requests for that group, which is shared between all the tasks in that group
+
+## Start miners
 
 **Autoupdates**
 

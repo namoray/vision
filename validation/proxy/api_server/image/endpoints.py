@@ -1,5 +1,7 @@
+from core import Task
 import fastapi
 from fastapi import HTTPException
+from fastapi.responses import JSONResponse
 from models import base_models, synapses, utility_models, request_models
 from validation.proxy import validation_utils
 from fastapi import routing
@@ -21,9 +23,14 @@ async def text_to_image(
         synapse_model=synapses.TextToImage,
     )
 
-    result: utility_models.QueryResult = await core_validator.execute_query(
-        synapse, outgoing_model=base_models.TextToImageOutgoing, task=synapse.engine + "-text-to-image"
+    result: utility_models.QueryResult = await core_validator.make_organic_query(
+        synapse=synapse,
+        outgoing_model=base_models.TextToImageOutgoing,
+        task=Task(synapse.engine + "-text-to-image"),
+        stream=False,
     )
+    if isinstance(result, JSONResponse):
+        return result
     validation_utils.handle_bad_result(result)
 
     formatted_response: base_models.TextToImageOutgoing = result.formatted_response
@@ -42,9 +49,14 @@ async def image_to_image(
         synapse_model=synapses.ImageToImage,
     )
 
-    result: utility_models.QueryResult = await core_validator.execute_query(
-        synapse, outgoing_model=base_models.ImageToImageOutgoing, task=synapse.engine + "-image-to-image"
+    result: utility_models.QueryResult = await core_validator.make_organic_query(
+        synapse=synapse,
+        outgoing_model=base_models.ImageToImageOutgoing,
+        task=Task(synapse.engine + "-image-to-image"),
+        stream=False,
     )
+    if isinstance(result, JSONResponse):
+        return result
     validation_utils.handle_bad_result(result)
 
     formatted_response: base_models.ImageToImageOutgoing = result.formatted_response
@@ -63,7 +75,11 @@ async def inpaint(
         synapse_model=synapses.Inpaint,
     )
 
-    result = await core_validator.execute_query(synapse, outgoing_model=base_models.InpaintOutgoing, task="inpaint")
+    result = await core_validator.make_organic_query(
+        synapse=synapse, outgoing_model=base_models.InpaintOutgoing, task=Task("inpaint"), stream=False
+    )
+    if isinstance(result, JSONResponse):
+        return result
     validation_utils.handle_bad_result(result)
 
     formatted_response: base_models.InpaintOutgoing = result.formatted_response
@@ -83,7 +99,11 @@ async def avatar(
         synapse_model=synapses.Avatar,
     )
 
-    result = await core_validator.execute_query(synapse, outgoing_model=base_models.AvatarOutgoing, task="avatar")
+    result = await core_validator.make_organic_query(
+        synapse=synapse, outgoing_model=base_models.AvatarOutgoing, task=Task("avatar"), stream=False
+    )
+    if isinstance(result, JSONResponse):
+        return result
     validation_utils.handle_bad_result(result)
 
     formatted_response: base_models.AvatarOutgoing = result.formatted_response
@@ -103,7 +123,11 @@ async def upscale(
         synapse_model=synapses.Upscale,
     )
 
-    result = await core_validator.execute_query(synapse, outgoing_model=base_models.UpscaleOutgoing, task="upscale")
+    result = await core_validator.make_organic_query(
+        synapse=synapse, outgoing_model=base_models.UpscaleOutgoing, task=Task("upscale"), stream=False
+    )
+    if isinstance(result, JSONResponse):
+        return result
     validation_utils.handle_bad_result(result)
 
     formatted_response: base_models.UpscaleOutgoing = result.formatted_response
@@ -124,8 +148,11 @@ async def clip_embeddings(
         synapse_model=synapses.ClipEmbeddings,
     )
 
-    result = await core_validator.execute_query(
-        synapse, outgoing_model=base_models.ClipEmbeddingsOutgoing, task="clip-image-embeddings"
+    result = await core_validator.make_organic_query(
+        synapse=synapse,
+        outgoing_model=base_models.ClipEmbeddingsOutgoing,
+        task=Task("clip-image-embeddings"),
+        stream=False,
     )
     if result is None:
         raise HTTPException(

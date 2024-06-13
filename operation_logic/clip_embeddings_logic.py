@@ -12,13 +12,20 @@ class ClipEmbeddingsResponse(BaseModel):
 
 
 async def _get_clip_embeddings_from_server(body: BaseModel) -> ClipEmbeddingsResponse:
-    text_endpoint = miner_config.image_worker_url + "clip-embeddings"
+    clip_endpoint = miner_config.image_worker_url + "clip-embeddings"
 
     try:
         async with httpx.AsyncClient(timeout=5) as client:  # noqa
-            response = await client.post(text_endpoint, json=body.dict())
-    except Exception as e:
-        bt.logging.error(f"Clip embeddings Error occurred while sending the request to the server: {e}. IS the Image server online!?")
+            response = await client.post(clip_endpoint, json=body.dict())
+    except httpx.HTTPStatusError as error:
+        bt.logging.warning(
+            f"Error getting an image; response {error.response.status_code} while making request to {clip_endpoint}: {error}"
+        )
+        raise 
+    except httpx.RequestError as error:
+        bt.logging.warning(
+            f"Error getting an image; An error occurred while making request to {clip_endpoint}: {error}"
+        )
         raise
 
     if response.status_code != 200:

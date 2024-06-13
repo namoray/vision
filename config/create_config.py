@@ -1,8 +1,7 @@
-import os
 from typing import Dict, Any, Optional
 from core import constants as core_cst
 from rich.prompt import Prompt
-import rich
+from mining.db.db_management import miner_db_manager
 
 
 def device_processing_func(input: str):
@@ -10,10 +9,13 @@ def device_processing_func(input: str):
         input = "cuda:" + input
     return input
 
+
 def optional_http_address_processing_func(input: Optional[str]) -> str:
     if input is None:
         return None
     return http_address_processing_func(input)
+
+
 def http_address_processing_func(input: str) -> str:
     if "http://" not in input and "https://" not in input:
         input = "http://" + input
@@ -70,10 +72,6 @@ VALIDATOR_PARAMETERS = {
 }
 
 MINER_PARAMETERS = {
-    core_cst.SOTA_PROVIDER_API_KEY_PARAM: {
-        "default": None,
-        "message": "Optional SOTA Provider API Key: ",
-    },
     core_cst.AXON_PORT_PARAM: {"default": 8091, "message": "Axon Port: "},
     core_cst.AXON_EXTERNAL_IP_PARAM: {"default": None, "message": "Axon External IP: "},
     core_cst.IMAGE_WORKER_URL_PARAM: {
@@ -86,21 +84,22 @@ MINER_PARAMETERS = {
         "message": "Mixtral Text Worker URL: ",
         "process_function": optional_http_address_processing_func,
     },
-    core_cst.FINETUNE_TEXT_WORKER_URL_PARAM: {
-        "default": None,
-        "message": "Finetune Text Worker URL: ",
-        "process_function": optional_http_address_processing_func,
-    },
     core_cst.LLAMA_3_TEXT_WORKER_URL_PARAM: {
         "default": None,
         "message": "Llama 3 Text Worker URL: ",
         "process_function": optional_http_address_processing_func,
-    }
+    },
 }
 
 
 gpu_assigned_dict = {}
 config = {}
+
+DEFAULT_CONCURRENCY_GROUPS = {"1": 10, "2": 10, "3": 10, "4": 1}
+
+
+def _insert_defaults_for_task_configs(hotkey: str) -> None:
+    miner_db_manager.insert_default_task_configs(hotkey)
 
 
 def handle_parameters(parameters: Dict[str, Any], hotkey: str):
@@ -146,6 +145,12 @@ def get_config():
             handle_parameters(VALIDATOR_PARAMETERS, hotkey)
         else:
             handle_parameters(MINER_PARAMETERS, hotkey)
+
+            print(
+                "\nNote: You must now edit your task configuration (Capacities & concurrency settings). Please use ./peer_at_sql_db.sh, or "
+                "use `sqlite3 vision_database.db` to finish your configuration"
+            )
+            _insert_defaults_for_task_configs(hotkey)
 
         with open(f".{hotkey}.env", "w") as f:
             f.write(f"{core_cst.HOTKEY_PARAM}=" + hotkey + "\n")

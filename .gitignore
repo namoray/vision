@@ -18,10 +18,14 @@ embeddings_for_testing.txt
 
 tmp/*
 dbmate
-validator_database
+vision_database
 miner_autoupdate.log
 valiator_autoupdate.log
 .*.env
+.*.task_config.json
+.*.task_concurrency_config.json
+task_config.json
+task_concurrency_config.json
 
 tmp/*
 *.pth

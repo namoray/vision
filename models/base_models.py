@@ -4,14 +4,18 @@ The naming convention is super important to adhere too!
 Keep it as SynapseNameBase / SynapseNameIncoming / SynapseNameOutgoing
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel, Field
 
 
-from core import constants as cst
+from core import constants as cst, Task
 from core import dataclasses as dc
 from models import utility_models
 import bittensor as bt
+
+
+class VolumeForTask(BaseModel):
+    volume: float
 
 
 class BaseSynapse(bt.Synapse):
@@ -25,14 +29,14 @@ class BaseOutgoing(BaseModel):
 # AVAILABLE OPERATIONS
 
 
-class AvailableTasksOperationIncoming(BaseModel): ...
+class CapacityIncoming(BaseModel): ...
 
 
-class AvailableTasksOperationOutgoing(BaseModel):
-    available_tasks: Optional[List[str]]
+class CapacityOutgoing(BaseModel):
+    capacities: Optional[Dict[Task, VolumeForTask]]
 
 
-class AvailableTasksOperationBase(AvailableTasksOperationIncoming, AvailableTasksOperationOutgoing): ...
+class CapacityBase(CapacityIncoming, CapacityOutgoing): ...
 
 
 # Generic image gen
@@ -187,19 +191,6 @@ class ClipEmbeddingsOutgoing(BaseOutgoing):
 
 
 class ClipEmbeddingsBase(ClipEmbeddingsIncoming, ClipEmbeddingsOutgoing): ...
-
-
-# SOTA
-class SotaIncoming(BaseModel):
-    prompt: str
-
-
-class SotaOutgoing(BaseModel):
-    image_url: Optional[str]
-    error_message: Optional[str]
-
-
-class SotaBase(SotaIncoming, SotaOutgoing): ...
 
 
 class ChatIncoming(BaseModel):

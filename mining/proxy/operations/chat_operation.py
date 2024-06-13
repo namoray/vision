@@ -2,6 +2,7 @@ from typing import Tuple, TypeVar, AsyncIterator
 
 import bittensor as bt
 
+from core import tasks
 from mining.proxy import core_miner
 from mining.proxy.operations import abstract_operation
 from models import base_models, synapses
@@ -40,18 +41,16 @@ async def _send_text(text_generator: AsyncIterator[bytes], send: Send):
 
 class ChatOperation(abstract_operation.Operation):
     @staticmethod
+    @abstract_operation.enforce_concurrency_limits
     async def forward(synapse: synapses.Chat) -> synapses.Chat:
         if synapse.model == utility_models.ChatModels.mixtral.value:
             url = miner_config.mixtral_text_worker_url
-        elif synapse.model == utility_models.ChatModels.bittensor_finetune.value:
-            url = miner_config.finetune_text_worker_url
         elif synapse.model == utility_models.ChatModels.llama_3.value:
             url = miner_config.llama_3_text_worker_url
         else:
             raise NotImplementedError(f"Model {synapse.model} not implemented for chat operation")
-        text_generator = await chat_logic.chat_logic(
-            base_models.ChatIncoming(**synapse.dict()), url
-        )
+        task = tasks.get_task_from_synapse(synapse)
+        text_generator = await chat_logic.chat_logic(base_models.ChatIncoming(**synapse.dict()), url, task)
 
         text_streamer = partial(_send_text, text_generator)
         return synapse.create_streaming_response(text_streamer)
