@@ -101,9 +101,7 @@ class UidManager:
             )
             return
         volume_to_requests_conversion = TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
-        number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 1)
-
-        delay_between_requests = core_cst.SCORING_PERIOD_TIME // (number_of_requests) * (random.random() * 0.05 + 0.95)
+        number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 0)
 
         uid_record = UIDRecord(
             axon_uid=uid,
@@ -115,15 +113,23 @@ class UidManager:
         )
         self.uid_records_for_tasks[task][uid] = uid_record
 
-        initial_sleep_duration = min(delay_between_requests * random.random(), core_cst.SCORING_PERIOD_TIME / 2)
+        if number_of_requests == 0:
+            return
 
-        bt.logging.info(f"Scoring {task} for uid {uid} with {number_of_requests} requests. Delay is {delay_between_requests}.")
-
-        await asyncio.sleep(initial_sleep_duration)
+        delay_between_requests = (core_cst.SCORING_PERIOD_TIME * 0.98) // (number_of_requests)
+        bt.logging.info(
+            f"Scoring {task} for uid {uid} with {number_of_requests} requests. Delay is {delay_between_requests}."
+        )
 
         i = 0
         tasks_in_progress = []
         while uid_record.synthetic_requests_still_to_make > 0:
+            # Random pertubation to make sure we dont burst
+            if i == 0:
+                await asyncio.sleep(delay_between_requests * random.random())
+            else:
+                await asyncio.sleep(delay_between_requests * (random.random() * 0.05 + 0.95))
+
             if i % 100 == 0:
                 bt.logging.debug(
                     f"synthetic requests still to make: {uid_record.synthetic_requests_still_to_make} on iteration {i} for uid {uid_record.axon_uid} and task {task}"
@@ -156,7 +162,6 @@ class UidManager:
 
             # Need to make this here so its lowered regardless of the result of the above
             uid_record.synthetic_requests_still_to_make -= 1
-            await asyncio.sleep(delay_between_requests * (random.random() * 0.2 + 0.9))
 
             i += 1
 

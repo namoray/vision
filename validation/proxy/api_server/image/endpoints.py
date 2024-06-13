@@ -154,11 +154,14 @@ async def clip_embeddings(
         task=Task("clip-image-embeddings"),
         stream=False,
     )
+    if isinstance(result, JSONResponse):
+        return result
     if result is None:
         raise HTTPException(
             status_code=fastapi.status.HTTP_400_BAD_REQUEST,
             detail="I'm sorry, no valid response was possible from the miners :/",
         )
+
 
     formatted_response: base_models.ClipEmbeddingsOutgoing = result.formatted_response
 

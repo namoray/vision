@@ -47,7 +47,7 @@ class UIDRecord(BaseModel):
         But if I barely queried your volume, and you still rate limited me loads (429),
         then you're very naughty, you.
         """
-        if self.total_requests_made == 0:
+        if self.total_requests_made == 0 or self.declared_volume == 0:
             return None
 
         volume_unqueried = (self.declared_volume - self.consumed_volume) / self.declared_volume
