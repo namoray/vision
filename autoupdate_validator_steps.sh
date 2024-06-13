@@ -20,4 +20,9 @@
 
 # pip install -e .
 # ./launch_validators.sh
-echo "Nothing to do!"
+if [ -f "validator_database.db" ]; then
+    rm "validator_database.db"
+    echo "Deleted validator database"
+else
+    echo "Nothing to do!"
+fi
