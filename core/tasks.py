@@ -100,7 +100,7 @@ TASK_CONFIGS = [
     TaskConfig(
         task=Task.dreamshaper_text_to_image,
         overhead=0.5,
-        mean=0.25,
+        mean=0.44,
         variance=2,
         task_type=TaskType.IMAGE,
     ),
