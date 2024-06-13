@@ -45,9 +45,10 @@ class Scorer:
                 continue
 
             else:
-                task_to_score = random.choices(
-                    list(tasks_and_number_of_results.keys()), weights=list(tasks_and_number_of_results.values()), k=1
-                )[0]
+                # task_to_score = random.choices(
+                #     list(tasks_and_number_of_results.keys()), weights=list(tasks_and_number_of_results.values()), k=1
+                # )[0]
+                task_to_score = Task.jugger_inpainting.value
 
                 await self._check_scores_for_task(Task(task_to_score))
                 await asyncio.sleep(5)
@@ -128,7 +129,9 @@ class Scorer:
                     quality_score = 0
                 else:
                     quality_score = score / score_with_old_speed
-                bt.logging.info(f"Score: {score:.2f}, score_with_old_speed: {score_with_old_speed:.2f} for task {task}. Speed factor: {speed_scoring_factor:.2f} Quality score: {quality_score:.2f}")
+                bt.logging.info(
+                    f"Score: {score:.2f}, score_with_old_speed: {score_with_old_speed:.2f} for task {task}. Speed factor: {speed_scoring_factor:.2f} Quality score: {quality_score:.2f}"
+                )
 
                 id = _generate_uid()
 
