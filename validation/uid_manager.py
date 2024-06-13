@@ -91,7 +91,6 @@ class UidManager:
     async def handle_task_scoring_for_uid(
         self, task: Task, uid: axon_uid, volume: float, axon: bt.chain_data.AxonInfo
     ) -> None:
-        return
         volume_to_score = volume * self._get_percentage_of_tasks_to_score()
 
         uid_queue = self.task_to_uid_queue[task]
