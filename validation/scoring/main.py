@@ -47,7 +47,7 @@ class Scorer:
                 # task_to_score = random.choices(
                 #     list(tasks_and_number_of_results.keys()), weights=list(tasks_and_number_of_results.values()), k=1
                 # )[0]
-                task_to_score = Task.proteus_text_to_image.value
+                task_to_score = Task.proteus_image_to_image.value
 
                 await self._check_scores_for_task(Task(task_to_score))
                 await asyncio.sleep(5)
