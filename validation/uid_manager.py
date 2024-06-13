@@ -103,7 +103,7 @@ class UidManager:
         volume_to_requests_conversion = TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
         number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 1)
 
-        delay_between_requests = core_cst.SCORING_PERIOD_TIME // (number_of_requests) * (random.random() * 0.05 + 0.95)
+        delay_between_requests = core_cst.SCORING_PERIOD_TIME // (number_of_requests)
 
         uid_record = UIDRecord(
             axon_uid=uid,
@@ -160,7 +160,8 @@ class UidManager:
 
             # Need to make this here so its lowered regardless of the result of the above
             uid_record.synthetic_requests_still_to_make -= 1
-            await asyncio.sleep(delay_between_requests * (random.random() * 0.2 + 0.9))
+            # Random pertubation to make sure we dont burst
+            await asyncio.sleep(delay_between_requests * (random.random() * 0.05 + 0.95))
 
             i += 1
 
