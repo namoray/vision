@@ -1,6 +1,5 @@
 # Schema for the db
 import asyncio
-import random
 
 import bittensor as bt
 import substrateinterface
