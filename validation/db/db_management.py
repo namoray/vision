@@ -34,7 +34,6 @@ class DatabaseManager:
     def potentially_store_result_in_sql_lite_db(
         self, result: utility_models.QueryResult, task: Task, synapse: bt.Synapse, synthetic_query: bool
     ) -> None:
-        # NOTE: Add logic to depend on how many tasks there already are for that hotkey?
         if task not in self.task_weights:
             bt.logging.error(f"{task} not in task weights in db_manager")
             return

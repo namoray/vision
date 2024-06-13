@@ -1,7 +1,6 @@
 from typing import List, Tuple
 
 
-# TODO: CHANGE TO 1 HOUR AFTER TESTNET
 SCORING_PERIOD_TIME = 60 * 60  # 0.5
 
 

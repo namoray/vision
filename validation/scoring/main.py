@@ -120,9 +120,6 @@ class Scorer:
             for uid, score in axon_scores.items():
                 # We divide max_expected_score whilst the orchestrator is still factoring this into the score
                 # once it's removed from orchestrator, we'll remove it from here
-
-                # TODO: Noticed this is bugged, we actually should be dividing by
-                # The old speed scoring factor, NOT the max expected score.
                 if score == 0 or score_with_old_speed == 0:
                     quality_score = 0
                 else:

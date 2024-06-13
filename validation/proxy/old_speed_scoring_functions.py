@@ -139,8 +139,6 @@ async def speed_scoring_images(result: utility_models.QueryResult, synapse: Dict
 
 
 ### Chat
-
-# TODO: Improve by having this be dynamic based on input tokens
 CHAT_OVERHEAD = 1
 
 

@@ -128,7 +128,6 @@ class CoreValidator:
         self._correct_capacities_for_my_stake()
 
     def _correct_capacities_for_my_stake(self) -> None:
-        # TODO: Replace with real stake finding on mainnet - but for testnet, the stakes dont make sense, so will fix it for now
         my_proportion_of_stake = self._my_prop_of_stake
 
         for task in Task:

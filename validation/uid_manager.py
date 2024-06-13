@@ -229,11 +229,9 @@ class UidManager:
             float: The percentage of tasks to score.
 
         """
-        # TODO: REMOVE AFTER TESTNET
-        return 1
-        if random.random() < 0.75:
+        if random.random() < 0.7:
             return 0
-        elif random.random() < 0.9:
+        elif random.random() < 0.85:
             return random.random() * 0.1
         else:
             return random.random() * 0.4 + 0.4
