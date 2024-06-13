@@ -13,6 +13,7 @@ from models import base_models
 from validation.proxy import validation_utils
 from core import utils as core_utils
 from PIL.Image import Image
+
 SEED = "seed"
 TEMPERATURE = "temperature"
 TEXT_PROMPTS = "text_prompts"
@@ -111,7 +112,7 @@ class SyntheticDataManager:
 
     async def _update_synthetic_data_for_task(self, task: Task) -> Dict[str, Any]:
         if task == Task.avatar:
-            synthetic_data =  base_models.AvatarIncoming(
+            synthetic_data = base_models.AvatarIncoming(
                 seed=random.randint(1, 1_000_000_000),
                 text_prompts=[_get_random_avatar_text_prompt()],
                 height=1280,
