@@ -17,6 +17,7 @@ async def adjust_uid_record_from_result(
 
     if query_result.status_code == 200 and query_result.success:
         work = work_and_speed_functions.calculate_work(query_result.task, query_result, synapse=synapse.dict())
+        bt.logging.info(f"Calculated work: {work} for task: {query_result.task}")
         uid_record.consumed_volume += work
 
         db_manager.potentially_store_result_in_sql_lite_db(
