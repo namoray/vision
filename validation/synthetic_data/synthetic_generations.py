@@ -11,19 +11,21 @@ import bittensor as bt
 from core import dataclasses as dc
 from models import base_models
 from validation.proxy import validation_utils
-
+from core import utils as core_utils
+from PIL.Image import Image
 SEED = "seed"
 TEMPERATURE = "temperature"
 TEXT_PROMPTS = "text_prompts"
 
 
-def load_image_to_base64(image_path: str):
+def load_postie_to_pil(image_path: str) -> Image:
     with open(image_path, "rb") as image_file:
         base64_string = base64.b64encode(image_file.read()).decode("utf-8")
-    return base64_string
+    pil_image = core_utils.base64_to_pil(base64_string)
+    return pil_image
 
 
-my_boy_postie = load_image_to_base64("validation/synthetic_data/postie.png")
+my_boy_postie = load_postie_to_pil("validation/synthetic_data/postie.png")
 
 
 def _get_random_letters(length: int) -> str:
@@ -48,7 +50,7 @@ def _get_random_avatar_text_prompt() -> dc.TextPrompt:
     return dc.TextPrompt(text=text, weight=1.0)
 
 
-def _my_boy_postie() -> Dict[str, Any]:
+def _my_boy_postie() -> str:
     b64_postie_altered = validation_utils.alter_image(my_boy_postie)
     return b64_postie_altered
 
