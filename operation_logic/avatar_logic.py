@@ -11,6 +11,9 @@ async def avatar_logic(
     output = base_models.AvatarOutgoing(image_b64=None)
 
     image_response_body = await operation_utils.get_image_from_server(body, POST_ENDPOINT, timeout=40)
+
+
+    bt.logging.info(f"Image response: {image_response_body}")
     # If safe for work but still no images, something went wrong probably
     if image_response_body is None or image_response_body.image_b64 is None and not image_response_body.is_nsfw:
         output.error_message = "Some error from the generation :/"
