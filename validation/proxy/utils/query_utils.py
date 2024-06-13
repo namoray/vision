@@ -41,6 +41,9 @@ class UIDQueue:
 def get_formatted_response(
     resulting_synapse: base_models.BaseSynapse, initial_synapse: bt.Synapse
 ) -> Optional[BaseModel]:
+    bt.logging.warning(
+        f"Resulting synapse: {resulting_synapse}, initial synapse: {initial_synapse}, resulting_synapse.dendrite: {resulting_synapse.dendrite}",
+    )
     if resulting_synapse and resulting_synapse.dendrite.status_code == 200 and resulting_synapse != initial_synapse:
         formatted_response = _extract_response(resulting_synapse, initial_synapse)
         return formatted_response
@@ -226,18 +229,32 @@ async def query_miner_no_stream(
         create_scoring_adjustment_task(query_result, synapse, uid_record, synthetic_query)
         return query_result
 
-    query_result = utility_models.QueryResult(
-        formatted_response=None,
-        axon_uid=axon_uid,
-        response_time=None,
-        error_message=resulting_synapse.axon.status_message,
-        task=task,
-        status_code=resulting_synapse.axon.status_code,
-        success=False,
-        miner_hotkey=uid_record.hotkey,
-    )
-    create_scoring_adjustment_task(query_result, synapse, uid_record, synthetic_query)
-    return query_result
+    elif task == Task.avatar:
+        query_result = utility_models.QueryResult(
+            formatted_response=formatted_response,
+            axon_uid=axon_uid,
+            response_time=response_time,
+            task=task,
+            success=False,
+            miner_hotkey=uid_record.hotkey,
+            status_code=resulting_synapse.axon.status_code,
+            error_message=resulting_synapse.error_message,
+        )
+        create_scoring_adjustment_task(query_result, synapse, uid_record, synthetic_query)
+
+    else:
+        query_result = utility_models.QueryResult(
+            formatted_response=None,
+            axon_uid=axon_uid,
+            response_time=None,
+            error_message=resulting_synapse.axon.status_message,
+            task=task,
+            status_code=resulting_synapse.axon.status_code,
+            success=False,
+            miner_hotkey=uid_record.hotkey,
+        )
+        create_scoring_adjustment_task(query_result, synapse, uid_record, synthetic_query)
+        return query_result
 
 
 def _extract_response(resulting_synapse: base_models.BaseSynapse, outgoing_model: BaseModel) -> Optional[BaseModel]:
