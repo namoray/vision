@@ -23,14 +23,23 @@ def _calculate_speed_modifier(normalised_response_time: float, config: TaskConfi
 
     assert variance > 0
 
+    bt.logging.warning(
+        f"Getting the speed for task: {config.task} with normalised response time: {normalised_response_time}."
+        "\nMean: {mean}\nVariance: {variance}"
+        "\nBelow mean exponent: {BELOW_MEAN_EXPONENT}"
+        "\nMax speed bonus: {MAX_SPEED_BONUS}"
+    )
+
     if normalised_response_time <= mean:
-        # y = (M - 1) * (b - x)^c / b^c + 1
+        # y = 1 + (M - 1) * (b - x)^c / b^c
         speed_modifier = 1 + (MAX_SPEED_BONUS - 1) * ((mean - normalised_response_time) ** BELOW_MEAN_EXPONENT) / (
             mean**BELOW_MEAN_EXPONENT
         )
+        bt.logging.warning(f"Speed modifier in the if: {speed_modifier}.")
     else:
         # y = e^((b - x) * v)
         speed_modifier = math.exp((mean - normalised_response_time) * variance)
+        bt.logging.warning(f"Speed modifier in the else: {speed_modifier}.")
 
     return speed_modifier
 
