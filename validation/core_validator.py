@@ -185,6 +185,7 @@ class CoreValidator:
 
             allowed_tasks = set([task for task in Task])
             for task, volume in capacities.items():
+                bt.logging.warning(f"Task: {task} Volume: {volume}")
                 # This is to stop people claiming tasks that don't exist
                 if task not in allowed_tasks:
                     continue
