@@ -170,6 +170,7 @@ dbmate --url "sqlite:vision_database.db" up
 
 
 
+
 #### Starting the proxy server
 
 ### With autoupdates

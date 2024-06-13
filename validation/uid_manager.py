@@ -192,7 +192,7 @@ class UidManager:
                     dendrite=self.dendrite,
                     synthetic_query=False,
                 )
-                if not query_result.success:
+                if query_result is None or not query_result.success:
                     attempts += 1
                 else:
                     break
