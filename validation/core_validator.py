@@ -191,7 +191,7 @@ class CoreValidator:
                 if task not in allowed_tasks:
                     continue
                 if uid not in self.capacities_for_tasks[task]:
-                    self.capacities_for_tasks[task][uid] = volume.volume
+                    self.capacities_for_tasks[task][uid] = float(volume.volume)
         self._correct_capacities()
         capacities_to_log = {k.value: v for k, v in self.capacities_for_tasks.items()}
         bt.logging.info(f"Capacities: {capacities_to_log}")
