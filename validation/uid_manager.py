@@ -101,7 +101,9 @@ class UidManager:
             )
             return
         volume_to_requests_conversion = TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
-        number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 1)
+        number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 0)
+        if number_of_requests == 0:
+            return
 
         delay_between_requests = min(
             core_cst.SCORING_PERIOD_TIME // (number_of_requests),
@@ -126,7 +128,10 @@ class UidManager:
         tasks_in_progress = []
         while uid_record.synthetic_requests_still_to_make > 0:
             # Random pertubation to make sure we dont burst
-            await asyncio.sleep(delay_between_requests * (random.random() * 0.05 + 0.95))
+            if i == 0:
+                await asyncio.sleep(delay_between_requests * random.random())
+            else:
+                await asyncio.sleep(delay_between_requests * (random.random() * 0.05 + 0.95))
 
             if i % 100 == 0:
                 bt.logging.debug(
