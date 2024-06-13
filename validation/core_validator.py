@@ -72,8 +72,7 @@ class CoreValidator:
         self.public_hotkey_address = self.keypair.ss58_address
 
         _my_stake = self.metagraph.S[self.metagraph.hotkeys.index(self.public_hotkey_address)]
-        self._my_prop_of_stake = _my_stake / sum(self.metagraph.S)
-
+        self._my_prop_of_stake = (_my_stake / sum(self.metagraph.S)).item()
 
         validation_utils.connect_to_external_server()
 
@@ -189,7 +188,7 @@ class CoreValidator:
                 if task not in allowed_tasks:
                     continue
                 if uid not in self.capacities_for_tasks[task]:
-                    self.capacities_for_tasks[task][uid] = volume.volume
+                    self.capacities_for_tasks[task][uid] = float(volume.volume)
         self._correct_capacities()
         capacities_to_log = {k.value: v for k, v in self.capacities_for_tasks.items()}
         bt.logging.info(f"Capacities: {capacities_to_log}")
