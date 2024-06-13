@@ -24,7 +24,7 @@ def _calculate_speed_modifier(normalised_response_time: float, config: TaskConfi
     assert variance > 0
 
     bt.logging.warning(
-        f"Getting the speed for task: {config.task} with normalised response time: {normalised_response_time}."
+        f"\nGetting the speed for task: {config.task} with normalised response time: {normalised_response_time}."
         f"\nMean: {mean}\nVariance: {variance}"
         f"\nBelow mean exponent: {BELOW_MEAN_EXPONENT}"
         f"\nMax speed bonus: {MAX_SPEED_BONUS}"
