@@ -114,7 +114,7 @@ TASK_CONFIGS = [
     TaskConfig(
         task=Task.proteus_image_to_image,
         overhead=0.5,
-        mean=0.4,
+        mean=0.35,
         variance=3,
         task_type=TaskType.IMAGE,
     ),
