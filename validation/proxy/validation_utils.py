@@ -18,7 +18,6 @@ import random
 from core import constants as core_cst, utils as core_utils
 from models import utility_models, base_models
 import numpy as np
-from PIL import Image
 from validation.proxy import old_speed_scoring_functions
 from core.tasks import Task
 
