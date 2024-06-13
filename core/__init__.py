@@ -25,7 +25,7 @@ TASK_TO_MAX_CAPACITY: Dict[Task, int] = {
     Task.proteus_image_to_image: 3_600,
     Task.playground_image_to_image: 6_000,
     Task.dreamshaper_image_to_image: 2_000,
-    Task.jugger_inpainting: 2_000,
+    Task.jugger_inpainting: 4_000,
     Task.clip_image_embeddings: 0,  # disabled clip for now
     Task.avatar: 5_120,
 }
