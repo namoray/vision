@@ -224,7 +224,6 @@ class DatabaseManager:
             )
             for row in rows
         ]
-
         return sorted(period_scores, key=lambda x: x.created_at, reverse=True)
 
     def close(self):

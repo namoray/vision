@@ -35,7 +35,8 @@ def _calculate_combined_quality_score(miner_hotkey: str, task: Task) -> float:
 def _calculate_normalised_period_score(miner_hotkey: str, task: Task) -> float:
     period_scores = _get_period_scores(miner_hotkey, task)
     all_period_scores = [ps for ps in period_scores if ps.period_score is not None]
-    return _normalise_period_scores(all_period_scores)
+    normalised_period_scores = _normalise_period_scores(all_period_scores)
+    return normalised_period_scores
 
 
 def _normalise_period_scores(period_scores: List[PeriodScore]) -> float:
@@ -61,7 +62,7 @@ def _normalise_period_scores(period_scores: List[PeriodScore]) -> float:
         return total_score / total_weight
 
 
-def _calculate_hotkey_score_for_task(miner_hotkey: str, task: Task, volume: float) -> float:
+def _calculate_hotkey_effective_volume_for_task(miner_hotkey: str, task: Task, volume: float) -> float:
     combined_quality_score = _calculate_combined_quality_score(miner_hotkey, task)
     normalised_period_score = _calculate_normalised_period_score(miner_hotkey, task)
     return combined_quality_score * normalised_period_score * volume
@@ -78,19 +79,20 @@ def calculate_scores_for_settings_weights(
         if task not in task_weights:
             continue
         task_weight = task_weights[task]
-        hotkey_to_overall_scores: Dict[str, float] = {}
+        hotkey_to_effective_volumes: Dict[str, float] = {}
         capacities = capacities_for_tasks[task]
 
         for uid, volume in capacities.items():
             miner_hotkey = uid_to_uid_info[uid].hotkey
-            overall_score_for_task = _calculate_hotkey_score_for_task(miner_hotkey, task, volume)
-            hotkey_to_overall_scores[miner_hotkey] = overall_score_for_task
+            effective_volume_for_task = _calculate_hotkey_effective_volume_for_task(miner_hotkey, task, volume)
+            hotkey_to_effective_volumes[miner_hotkey] = effective_volume_for_task
 
-        sum_of_scores = sum(hotkey_to_overall_scores.values())
-        if sum_of_scores == 0:
+        sum_of_effective_volumes = sum(hotkey_to_effective_volumes.values())
+        if sum_of_effective_volumes == 0:
             continue
         normalised_scores_for_task = {
-            hotkey: score / sum_of_scores for hotkey, score in hotkey_to_overall_scores.items()
+            hotkey: effective_volume / sum_of_effective_volumes
+            for hotkey, effective_volume in hotkey_to_effective_volumes.items()
         }
         for hotkey in normalised_scores_for_task:
             total_hotkey_scores[hotkey] = (
