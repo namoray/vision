@@ -24,6 +24,21 @@ def _generate_uid() -> str:
     return uid
 
 
+def _get_sleep_time(consecutive_errors: float) -> float:
+    sleep_time = 0
+    if consecutive_errors == 1:
+        sleep_time = 60 * 5
+    elif consecutive_errors == 2:
+        sleep_time = 60 * 10
+    elif consecutive_errors == 3:
+        sleep_time = 60 * 15
+    elif consecutive_errors >= 4:
+        sleep_time = 60 * 20
+
+    bt.logging.error(f"Sleeping for {sleep_time} seconds after a http error with the orchestrator server")
+    return sleep_time
+
+
 class Scorer:
     def __init__(self, validator_hotkey: str, testnet: bool, keypair: substrateinterface.Keypair) -> None:
         self.am_scoring_results = False
@@ -34,6 +49,8 @@ class Scorer:
     def start_scoring_results_if_not_already(self):
         if not self.am_scoring_results:
             asyncio.create_task(self._score_results())
+
+        self.am_scoring_results = True
 
     async def _score_results(self):
         while True:
@@ -54,10 +71,12 @@ class Scorer:
 
     async def _check_scores_for_task(self, task: Task) -> None:
         i = 0
-        bt.logging.info(f"Scoring some results for task {task}")
+        consecutive_errors = 0
+        bt.logging.info(f"Checking some results for task {task}")
         while i < cst.MAX_RESULTS_TO_SCORE_FOR_TASK:
             data_and_hotkey = db_manager.select_and_delete_task_result(task)  # noqa
             if data_and_hotkey is None:
+                bt.logging.error(f"No data to score for task {task}")
                 return
             checking_data, miner_hotkey = data_and_hotkey
             results, synthetic_query, synapse_dict_str = (
@@ -76,6 +95,7 @@ class Scorer:
                 "task": task.value,
             }
             async with httpx.AsyncClient(timeout=180) as client:
+                bt.logging.info(f"\nPosting result {i} for task {task} to be scored\n")
                 try:
                     response = await client.post(
                         validator_config.external_server_url + "check-result",
@@ -85,27 +105,27 @@ class Scorer:
 
                 except httpx.HTTPStatusError as stat_err:
                     bt.logging.error(f"When scoring, HTTP status error occurred: {stat_err}")
-                    await asyncio.sleep(10)
+                    consecutive_errors += 1
+                    await asyncio.sleep(_get_sleep_time(consecutive_errors))
                     continue
 
                 except (httpx.RemoteProtocolError, httpx.ReadError, httpx.ReadTimeout) as read_err:
                     bt.logging.error(f"When scoring, Read timeout occurred: {read_err}")
-                    await asyncio.sleep(10)
+                    consecutive_errors += 1
+                    await asyncio.sleep(_get_sleep_time(consecutive_errors))
                     continue
 
                 except httpx.HTTPError as http_err:
+                    consecutive_errors += 1
                     bt.logging.error(f"When scoring, HTTP error occurred: {http_err}")
-                    if response.status_code == 503 or response.status_code == 524:
-                        # if timeout, give it a few minutes
-                        await asyncio.sleep(3 * 60)
-                    elif response.status_code == 502:
+                    if response.status_code == 502:
                         bt.logging.error("Is your orchestrator server running?")
-                        await asyncio.sleep(60)
                     else:
                         bt.logging.error(f"Status code: {response.status_code}")
-                        await asyncio.sleep(60)
+                    await asyncio.sleep(_get_sleep_time(consecutive_errors + 1))
                     continue
 
+            consecutive_errors = 0
             try:
                 response_json = response.json()
                 axon_scores = response_json["axon_scores"]

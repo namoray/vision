@@ -8,7 +8,6 @@ from validation.models import PeriodScore
 from validation.models import axon_uid
 from validation.models import RewardData
 
-VERSION_KEY = 40_000
 PERIOD_SCORE_TIME_DECAYING_FACTOR = 0.5
 
 
