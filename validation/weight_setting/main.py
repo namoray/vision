@@ -1,14 +1,12 @@
 # Schema for the db
 import asyncio
 import time
-from typing import Dict, List
+from typing import Dict
 
 import bittensor as bt
 import torch
 from core import Task
 from models import utility_models
-from validation.db.db_management import db_manager
-from validation.models import PeriodScore, RewardData
 from validation.models import axon_uid
 
 
@@ -17,7 +15,7 @@ VERSION_KEY = 40_000
 # If 1 then only take into account the most recent. If zero then they are all equal
 PERIOD_SCORE_TIME_DECAYING_FACTOR = 0.5
 
-
+            
 class WeightSetter:
     def __init__(self, subtensor: bt.subtensor, config: bt.config) -> None:
         self.subtensor = subtensor
@@ -88,81 +86,5 @@ class WeightSetter:
                 bt.logging.info("✅ Done setting weights!")
             time.sleep(30)
 
-    @staticmethod
-    def _calculate_scores_for_settings_weights(
-        capacities_for_tasks: Dict[Task, Dict[axon_uid, float]],
-        uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
-        task_weights: Dict[Task, float],
-    ):
-        total_hotkey_scores: Dict[str, float] = {}
-        for task in Task:
-            hotkey_to_overall_scores: Dict[str, float] = {}
-            capacities = capacities_for_tasks[task]
-            if task not in task_weights:
-                continue
-            task_weight = task_weights[task]
-
-            for uid in capacities:
-                miner_hotkey = uid_to_uid_info[uid].hotkey
-                volume = capacities[uid]
-                reward_datas: List[RewardData] = db_manager.fetch_recent_most_rewards_for_uid(task, miner_hotkey)
-                combined_quality_scores = []
-                for reward_data in reward_datas:
-                    combined_quality_scores.append(reward_data.quality_score * reward_data.speed_scoring_factor)
-
-                combined_quality_score = (
-                    0
-                    if len(combined_quality_scores) == 0
-                    else sum(combined_quality_scores) / len(combined_quality_scores)
-                )
-
-                period_scores = db_manager.fetch_hotkey_scores_for_task(task, miner_hotkey)
-                all_period_scores = [ps for ps in period_scores if ps.period_score is not None]
-                normalised_period_score = WeightSetter._normalise_period_scores(all_period_scores)
-
-                overall_score_for_task = combined_quality_score * normalised_period_score
-
-                hotkey_to_overall_scores[miner_hotkey] = overall_score_for_task * volume
-
-                # bt.logging.info(
-                #     f"\nTask: {task}\nGot overall hotkey score: {hotkey_to_overall_scores[miner_hotkey]},\n Qaulity score: {combined_quality_score} \n normalised period score is {normalised_period_score}. Volume is: {volume}"
-                # )
-
-            sum_of_scores = sum(hotkey_to_overall_scores.values())
-            if sum_of_scores == 0:
-                continue
-            normalised_scores_for_task = {
-                hotkey: score / sum_of_scores for hotkey, score in hotkey_to_overall_scores.items()
-            }
-            for hotkey in normalised_scores_for_task:
-                total_hotkey_scores[hotkey] = (
-                    total_hotkey_scores.get(hotkey, 0) + normalised_scores_for_task[hotkey] * task_weight
-                )
-
-        #     bt.logging.info(f"Normalised hotkeys scores for task: {task}\n{normalised_scores_for_task}")
-
-        # bt.logging.info(f"Total hotkey scores: {total_hotkey_scores}")
-        return total_hotkey_scores
-
-    @staticmethod
-    def _normalise_period_scores(period_scores: List[PeriodScore]) -> float:
-        if len(period_scores) == 0:
-            return 0
-
-        sum_of_volumes = sum(ps.consumed_volume for ps in period_scores)
-        if sum_of_volumes == 0:
-            return 0
-
-        total_score = 0
-        total_weight = 0
-        for i, score in enumerate(period_scores):
-            volume_weight = score.consumed_volume / sum_of_volumes
-            time_weight = (1 - PERIOD_SCORE_TIME_DECAYING_FACTOR) ** i
-            combined_weight = volume_weight * time_weight
-            total_score += score.period_score * combined_weight
-            total_weight += combined_weight
-
-        if total_weight == 0:
-            return 0
-        else:
-            return total_score / total_weight
+    
+    

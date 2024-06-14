@@ -141,8 +141,13 @@ class DatabaseManager:
         self.conn.commit()
 
     def fetch_recent_most_rewards_for_uid(
-        self, task: Task, miner_hotkey: str, quality_tasks_to_fetch: int = 30
+        self, task: Task, miner_hotkey: str, quality_tasks_to_fetch: int = 50
     ) -> List[RewardData]:
+        """
+        Fetch the most recent reward data for a given uid.
+
+        Prioritise the reward data that have been submitted for the specific task, but use all
+        """
         cursor = self.conn.cursor()
         now = datetime.now()
         cut_off = now - timedelta(hours=72)
@@ -156,7 +161,7 @@ class DatabaseManager:
         y = len(priority_results)
         cursor.execute(
             sql.select_recent_reward_data(),
-            (task.value, cut_off_timestamp, miner_hotkey, quality_tasks_to_fetch - y),
+            (cut_off_timestamp, miner_hotkey, quality_tasks_to_fetch - y),
         )
         fill_results = cursor.fetchall()
         reward_data_list = [

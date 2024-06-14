@@ -134,8 +134,7 @@ def select_recent_reward_data():
         volume,
         created_at
     FROM {cst.TABLE_REWARD_DATA}
-    WHERE {cst.COLUMN_TASK} = ?
-    AND {cst.COLUMN_CREATED_AT} > ?
+    WHERE {cst.COLUMN_CREATED_AT} > ?
     AND {cst.COLUMN_MINER_HOTKEY} = ?
     ORDER BY {cst.COLUMN_CREATED_AT} DESC
     LIMIT ?
