@@ -140,7 +140,7 @@ class CoreValidator:
             capacities = self.capacities_for_tasks[task]
             max_capacity = TASK_TO_MAX_CAPACITY[task]
             for uid, capacity in capacities.items():
-                self.capacities_for_tasks[task][uid] = min(capacity, max_capacity)
+                self.capacities_for_tasks[task][uid] = max(min(capacity, max_capacity), 1)
 
     def prepare_config_and_logging(self) -> bt.config:
         base_config = configuration.get_validator_cli_config()
@@ -272,6 +272,7 @@ class CoreValidator:
             )
             await self.uid_manager.start_synthetic_scoring()
             await self.uid_manager.collect_synthetic_scoring_results()
+            await asyncio.sleep(60 * 60)
             self.uid_manager.calculate_period_scores_for_uids()
             self.uid_manager.store_period_scores()
 
