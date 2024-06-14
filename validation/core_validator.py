@@ -272,7 +272,6 @@ class CoreValidator:
             )
             await self.uid_manager.start_synthetic_scoring()
             await self.uid_manager.collect_synthetic_scoring_results()
-            await asyncio.sleep(60 * 60)
             self.uid_manager.calculate_period_scores_for_uids()
             self.uid_manager.store_period_scores()
 
