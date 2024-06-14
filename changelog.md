@@ -1,3 +1,23 @@
+## 4.0.1
+
+**Refactored Weights Setting**:
+  - Made the weights setting process modular.
+
+**Fixed Quality Score Finder Bug**:
+  - Corrected the issue in the quality score finder to ensure accurate scoring.
+
+**Indexed Database**:
+  - Indexed the database to improve performance and retrieval times.
+
+**Increased Synthetic Rate**:
+  - Increased the rate at which synthetic querying happens.
+
+**Enhanced Task Selection for Scoring**:
+  - Selected tasks for scoring based on the lack of scores in reward data, so a more accurate picture of a miner is gathered.
+
+**Adjusted Period Decay Score**:
+  - Reduced the decay rate of period scores over time.
+
 # 4.0
 
 ## 🚀 High Level Flow Changes

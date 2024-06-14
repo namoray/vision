@@ -18,5 +18,5 @@
 
 
 # pip install -e .
-dbmate --url "sqlite:vision_database.db" up
-./launch_validators.sh
+# ./launch_validators.sh
+echo "Nothing to do!"
