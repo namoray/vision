@@ -73,6 +73,9 @@ class UidManager:
             self.task_to_uid_queue[task] = query_utils.UIDQueue()
             for uid, volume in self.capacities_for_tasks.get(task, {}).items():
                 # Need to add before start synthetic scoring so we can query the uid
+                volume_to_score = volume * self._get_percentage_of_tasks_to_score()
+                if volume_to_score == 0:
+                    continue
                 self.task_to_uid_queue[task].add_uid(uid)
                 self.synthetic_scoring_tasks.append(
                     asyncio.create_task(
@@ -92,9 +95,6 @@ class UidManager:
         self, task: Task, uid: axon_uid, volume: float, axon: bt.chain_data.AxonInfo
     ) -> None:
         volume_to_score = volume * self._get_percentage_of_tasks_to_score()
-
-        if volume_to_score == 0:
-            return
 
         uid_queue = self.task_to_uid_queue[task]
 
