@@ -18,7 +18,7 @@
 
 
 # pip install -e .
-
+dbmate --url "sqlite:vision_database.db" up
 sqlite3 "vision_database.db" "DELETE FROM uid_records;"
 ./launch_validators.sh
 echo "Nothing to do!"
