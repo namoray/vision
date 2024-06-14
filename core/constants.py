@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
 
-SCORING_PERIOD_TIME = 60 * 60  # 0.5
+SCORING_PERIOD_TIME = 60 * 1  # 0.5
 
 
 TASK_CONFIG_JSON = "task_config.json"

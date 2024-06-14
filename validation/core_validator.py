@@ -140,7 +140,7 @@ class CoreValidator:
             capacities = self.capacities_for_tasks[task]
             max_capacity = TASK_TO_MAX_CAPACITY[task]
             for uid, capacity in capacities.items():
-                self.capacities_for_tasks[task][uid] = min(capacity, max_capacity)
+                self.capacities_for_tasks[task][uid] = min(capacity / 60, max_capacity / 60)
 
     def prepare_config_and_logging(self) -> bt.config:
         base_config = configuration.get_validator_cli_config()
