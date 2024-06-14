@@ -27,14 +27,14 @@ def _generate_uid() -> str:
 def _get_sleep_time(consecutive_errors: float) -> float:
     sleep_time = 0
     if consecutive_errors == 1:
-        sleep_time =  60 * 5
+        sleep_time = 60 * 5
     elif consecutive_errors == 2:
-        sleep_time =  60 * 10
+        sleep_time = 60 * 10
     elif consecutive_errors == 3:
-        sleep_time =  60 * 15
+        sleep_time = 60 * 15
     elif consecutive_errors >= 4:
-        sleep_time =  60 * 20
-    
+        sleep_time = 60 * 20
+
     bt.logging.error(f"Sleeping for {sleep_time} seconds after a http error with the orchestrator server")
     return sleep_time
 
@@ -49,6 +49,8 @@ class Scorer:
     def start_scoring_results_if_not_already(self):
         if not self.am_scoring_results:
             asyncio.create_task(self._score_results())
+
+        self.am_scoring_results = True
 
     async def _score_results(self):
         while True:
