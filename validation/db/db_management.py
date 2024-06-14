@@ -73,7 +73,7 @@ class DatabaseManager:
     def select_and_delete_task_result(self, task: Task) -> Optional[Union[List[Dict[str, Any]], str]]:
         cursor = self.conn.cursor()
 
-        cursor.execute(sql.select_task_for_deletion(), (task.value,))
+        cursor.execute(sql.select_task_for_deletion(), (task.value, task.value))
         row = cursor.fetchone()
         if row is None:
             return None
