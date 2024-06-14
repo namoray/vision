@@ -29,7 +29,7 @@ data_type_to_url = {
 
 # Turn off if you don't wanna post your validator info to tauvision
 
-POST_TO_TAUVISION = True
+POST_TO_TAUVISION = False
 
 
 def _sign_timestamp(keypair: Keypair, timestamp: float) -> str:
