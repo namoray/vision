@@ -13,7 +13,7 @@ from validation.weight_setting import calculations
 VERSION_KEY = 40_000
 
 # If 1 then only take into account the most recent. If zero then they are all equal
-PERIOD_SCORE_TIME_DECAYING_FACTOR = 0.5
+PERIOD_SCORE_TIME_DECAYING_FACTOR = 0.2
 
             
 class WeightSetter:
