@@ -18,5 +18,7 @@
 
 
 # pip install -e .
-# ./launch_validators.sh
+
+sqlite3 "vision_database.db" "DELETE FROM uid_records;"
+./launch_validators.sh
 echo "Nothing to do!"
