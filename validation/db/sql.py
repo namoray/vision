@@ -103,7 +103,7 @@ def select_count_rows_of_task_stored_for_scoring() -> str:
 
 def select_task_for_deletion() -> str:
     return f"""
-    SELECT {cst.COLUMN_CHECKING_DATA}, {cst.COLUMN_MINER_HOTKEY}
+    SELECT t.{cst.COLUMN_CHECKING_DATA}, t.{cst.COLUMN_MINER_HOTKEY}
     FROM {cst.TABLE_TASKS} t
     LEFT JOIN (
         SELECT {cst.COLUMN_MINER_HOTKEY}, COUNT(*) as reward_count
