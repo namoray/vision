@@ -8,7 +8,7 @@ import torch
 from core import Task
 from models import utility_models
 from validation.models import axon_uid
-
+from validation.weight_setting import calculations
 
 VERSION_KEY = 40_000
 
@@ -30,7 +30,7 @@ class WeightSetter:
         uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
         task_weights: Dict[Task, float],
     ) -> None:
-        total_hotkey_scores = self._calculate_scores_for_settings_weights(
+        total_hotkey_scores = calculations.calculate_scores_for_settings_weights(
             capacities_for_tasks, uid_to_uid_info, task_weights
         )
         await asyncio.to_thread(self._set_weights, metagraph, wallet, netuid, total_hotkey_scores, uid_to_uid_info)
