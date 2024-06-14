@@ -27,6 +27,7 @@ valiator_autoupdate.log
 task_config.json
 task_concurrency_config.json
 
+schema.sql
 tmp/*
 *.pth
 *.pth.lock

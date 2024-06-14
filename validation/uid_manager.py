@@ -93,6 +93,9 @@ class UidManager:
     ) -> None:
         volume_to_score = volume * self._get_percentage_of_tasks_to_score()
 
+        if volume_to_score == 0:
+            return
+
         uid_queue = self.task_to_uid_queue[task]
 
         if task not in TASK_TO_VOLUME_TO_REQUESTS_CONVERSION:
@@ -101,7 +104,7 @@ class UidManager:
             )
             return
         volume_to_requests_conversion = TASK_TO_VOLUME_TO_REQUESTS_CONVERSION[task]
-        number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 0)
+        number_of_requests = max(int(volume_to_score / volume_to_requests_conversion), 1)
 
         uid_record = UIDRecord(
             axon_uid=uid,
@@ -112,9 +115,6 @@ class UidManager:
             hotkey=axon.hotkey,
         )
         self.uid_records_for_tasks[task][uid] = uid_record
-
-        if number_of_requests == 0:
-            return
 
         delay_between_requests = (core_cst.SCORING_PERIOD_TIME * 0.98) // (number_of_requests)
         bt.logging.info(
@@ -235,9 +235,9 @@ class UidManager:
 
         """
         if random.random() < 0.7:
-            return 0
-        elif random.random() < 0.85:
-            return random.random() * 0.1
+            return 0.05
+        elif random.random() < 0.9:
+            return random.random() * 0.05 + 0.05
         else:
             return random.random() * 0.4 + 0.4
 

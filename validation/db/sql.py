@@ -104,8 +104,17 @@ def select_count_rows_of_task_stored_for_scoring() -> str:
 
 def select_task_for_deletion() -> str:
     return f"""
-    SELECT {cst.COLUMN_CHECKING_DATA}, {cst.COLUMN_MINER_HOTKEY} FROM {cst.TABLE_TASKS} 
-    WHERE {cst.COLUMN_TASK_NAME} = ? LIMIT 1
+    SELECT {cst.COLUMN_CHECKING_DATA}, {cst.COLUMN_MINER_HOTKEY}
+    FROM {cst.TABLE_TASKS} t
+    LEFT JOIN (
+        SELECT {cst.COLUMN_MINER_HOTKEY}, COUNT(*) as reward_count
+        FROM {cst.TABLE_REWARD_DATA}
+        WHERE {cst.COLUMN_TASK_NAME} = ?
+        GROUP BY {cst.COLUMN_MINER_HOTKEY}
+    ) r ON t.{cst.COLUMN_MINER_HOTKEY} = r.{cst.COLUMN_MINER_HOTKEY}
+    WHERE t.{cst.COLUMN_TASK_NAME} = ?
+    ORDER BY COALESCE(r.reward_count, 0) ASC
+    LIMIT 1
     """
 
 
@@ -134,8 +143,7 @@ def select_recent_reward_data():
         volume,
         created_at
     FROM {cst.TABLE_REWARD_DATA}
-    WHERE {cst.COLUMN_TASK} = ?
-    AND {cst.COLUMN_CREATED_AT} > ?
+    WHERE {cst.COLUMN_CREATED_AT} > ?
     AND {cst.COLUMN_MINER_HOTKEY} = ?
     ORDER BY {cst.COLUMN_CREATED_AT} DESC
     LIMIT ?
