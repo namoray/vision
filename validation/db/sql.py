@@ -101,7 +101,6 @@ def select_count_rows_of_task_stored_for_scoring() -> str:
     SELECT COUNT(*) FROM {cst.TABLE_TASKS} WHERE {cst.COLUMN_TASK_NAME} = ?
     """
 
-
 def select_task_for_deletion() -> str:
     return f"""
     SELECT {cst.COLUMN_CHECKING_DATA}, {cst.COLUMN_MINER_HOTKEY}
@@ -109,13 +108,14 @@ def select_task_for_deletion() -> str:
     LEFT JOIN (
         SELECT {cst.COLUMN_MINER_HOTKEY}, COUNT(*) as reward_count
         FROM {cst.TABLE_REWARD_DATA}
-        WHERE {cst.COLUMN_TASK_NAME} = ?
+        WHERE {cst.COLUMN_TASK} = ?
         GROUP BY {cst.COLUMN_MINER_HOTKEY}
     ) r ON t.{cst.COLUMN_MINER_HOTKEY} = r.{cst.COLUMN_MINER_HOTKEY}
     WHERE t.{cst.COLUMN_TASK_NAME} = ?
     ORDER BY COALESCE(r.reward_count, 0) ASC
     LIMIT 1
     """
+
 
 
 def select_recent_reward_data_for_a_task():
