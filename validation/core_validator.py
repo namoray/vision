@@ -245,20 +245,20 @@ class CoreValidator:
         )
 
     async def run_vali(self) -> None:
-        await post_stats.post_to_tauvision(
-            data_to_post={
-                "versions": PROXY_VERSION + ":" + ORCHESTRATOR_VERSION,
-                "validator_hotkey": self.public_hotkey_address,
-            },
-            keypair=self.keypair,
-            data_type_to_post=post_stats.DataTypeToPost.VALIDATOR_INFO,
-        )
-
-        db_manager.delete_data_older_than_date(minutes=60 * 24)
-        db_manager.delete_tasks_older_than_date(minutes=120)
-
         iteration = 1
         while True:
+            await post_stats.post_to_tauvision(
+                data_to_post={
+                    "versions": PROXY_VERSION + ":" + ORCHESTRATOR_VERSION,
+                    "validator_hotkey": self.public_hotkey_address,
+                },
+                keypair=self.keypair,
+                data_type_to_post=post_stats.DataTypeToPost.VALIDATOR_INFO,
+            )
+
+            db_manager.delete_data_older_than_date(minutes=60 * 24)
+            db_manager.delete_tasks_older_than_date(minutes=120)
+
             # Wait for initial syncing of metagraph
             await self.resync_metagraph()
             await self._post_miner_capacities_to_tauvision()
@@ -288,8 +288,6 @@ class CoreValidator:
                 self.uid_to_uid_info,
                 self.task_weights,
             )
-
-            db_manager.delete_tasks_older_than_date(minutes=120)
 
             await asyncio.sleep(60)
 
