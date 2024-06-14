@@ -16,13 +16,7 @@
 #     echo "$OLD_DB does not exist"
 # fi
 
-# dbmate --url "sqlite:vision_database.db" up
 
 # pip install -e .
-# ./launch_validators.sh
-if [ -f "validator_database.db" ]; then
-    rm "validator_database.db"
-    echo "Deleted validator database"
-else
-    echo "Nothing to do!"
-fi
+dbmate --url "sqlite:vision_database.db" up
+./launch_validators.sh
