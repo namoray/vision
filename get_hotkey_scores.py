@@ -8,6 +8,7 @@ from validation.core_validator import core_validator
 from validation.weight_setting import calculations
 import asyncio
 import json
+import matplotlib.pyplot as plt
 
 async def main():
     await core_validator.resync_metagraph()
@@ -22,3 +23,6 @@ if __name__ == "__main__":
     result = asyncio.run(main())
     with open("hotkey_scores.json", "w") as file:
         json.dump(result, file)
+    scores = list(result.values())
+    plt.scatter(range(len(scores)), scores)
+    plt.show()
