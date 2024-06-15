@@ -61,9 +61,7 @@ def _normalise_period_scores(period_scores: List[PeriodScore]) -> float:
         return total_score / total_weight
 
 
-def _calculate_hotkey_effective_volume_for_task(miner_hotkey: str, task: Task, volume: float) -> float:
-    combined_quality_score = _calculate_combined_quality_score(miner_hotkey, task)
-    normalised_period_score = _calculate_normalised_period_score(miner_hotkey, task)
+def _calculate_hotkey_effective_volume_for_task(combined_quality_score: float, normalised_period_score: float, volume: float) -> float:
     return combined_quality_score * normalised_period_score * volume
 
 
@@ -83,7 +81,9 @@ def calculate_scores_for_settings_weights(
 
         for uid, volume in capacities.items():
             miner_hotkey = uid_to_uid_info[uid].hotkey
-            effective_volume_for_task = _calculate_hotkey_effective_volume_for_task(miner_hotkey, task, volume)
+            combined_quality_score = _calculate_combined_quality_score(miner_hotkey, task)
+            normalised_period_score = _calculate_normalised_period_score(miner_hotkey, task)
+            effective_volume_for_task = _calculate_hotkey_effective_volume_for_task(combined_quality_score, normalised_period_score, volume)
             hotkey_to_effective_volumes[miner_hotkey] = effective_volume_for_task
 
         sum_of_effective_volumes = sum(hotkey_to_effective_volumes.values())

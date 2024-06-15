@@ -16,6 +16,7 @@ sam_vit_l_0b3195.pth
 .DS_Store
 embeddings_for_testing.txt
 
+hotkey_scores.json
 tmp/*
 dbmate
 vision_database

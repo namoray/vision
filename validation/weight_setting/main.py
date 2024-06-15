@@ -1,7 +1,7 @@
 # Schema for the db
 import asyncio
 import time
-from typing import Dict
+from typing import Dict, List, Tuple
 
 import bittensor as bt
 import torch
@@ -15,7 +15,7 @@ VERSION_KEY = 40_002
 # If 1 then only take into account the most recent. If zero then they are all equal
 PERIOD_SCORE_TIME_DECAYING_FACTOR = 0.2
 
-            
+
 class WeightSetter:
     def __init__(self, subtensor: bt.subtensor, config: bt.config) -> None:
         self.subtensor = subtensor
@@ -33,16 +33,22 @@ class WeightSetter:
         total_hotkey_scores = calculations.calculate_scores_for_settings_weights(
             capacities_for_tasks, uid_to_uid_info, task_weights
         )
-        await asyncio.to_thread(self._set_weights, metagraph, wallet, netuid, total_hotkey_scores, uid_to_uid_info)
 
-    def _set_weights(
+        processed_weight_uids, processed_weights = self._get_processed_weights_and_uids(
+            metagraph, netuid, total_hotkey_scores, uid_to_uid_info
+        )
+        if processed_weight_uids is None:
+            bt.logging.warning("Scores all zero, not setting weights!")
+            return
+        await asyncio.to_thread(self._set_weights, wallet, netuid, processed_weight_uids, processed_weights)
+
+    def _get_processed_weights_and_uids(
         self,
         metagraph: bt.metagraph,
-        wallet: bt.wallet,
         netuid: int,
         total_hotkey_scores: Dict[str, float],
         uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
-    ) -> None:
+    ) -> Tuple[Dict[str, float], List[axon_uid]]:
         hotkey_to_uid = {uid_info.hotkey: uid_info.uid for uid_info in uid_to_uid_info.values()}
         weights_tensor = torch.zeros_like(metagraph.S, dtype=torch.float32)
         for hotkey, score in total_hotkey_scores.items():
@@ -50,8 +56,7 @@ class WeightSetter:
             weights_tensor[uid] = score
 
         if all(score == 0 for score in total_hotkey_scores.values()):
-            bt.logging.warning("Scores all zero, not setting weights!")
-            return
+            return None, None
         (
             processed_weight_uids,
             processed_weights,
@@ -63,6 +68,15 @@ class WeightSetter:
             metagraph=metagraph,
         )
 
+        return processed_weights, processed_weight_uids
+
+    def _set_weights(
+        self,
+        wallet: bt.wallet,
+        netuid: int,
+        processed_weights: bt.Tensor,
+        processed_weight_uids: bt.Tensor,
+    ) -> None:
         bt.logging.info(f"Weights set to: {processed_weights} for uids: {processed_weight_uids}")
 
         NUM_TIMES_TO_SET_WEIGHTS = 3
@@ -85,6 +99,3 @@ class WeightSetter:
             if success:
                 bt.logging.info("✅ Done setting weights!")
             time.sleep(30)
-
-    
-    
