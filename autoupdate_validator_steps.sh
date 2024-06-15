@@ -18,7 +18,21 @@
 
 
 # pip install -e .
+#!/bin/bash
+
+# Function to run a command with sudo only if it is available
+run_if_sudo_available() {
+    local cmd="$1"
+    if command -v sudo &>/dev/null; then
+        sudo bash -c "$cmd"
+    else
+        bash -c "$cmd"
+    fi
+}
+
+
 dbmate --url "sqlite:vision_database.db" up
+run_if_sudo_available "apt install sqlite3"
 sqlite3 "vision_database.db" "DELETE FROM uid_records;"
 ./launch_validators.sh
 echo "Nothing to do!"
