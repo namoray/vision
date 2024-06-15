@@ -21,7 +21,5 @@
 #!/bin/bash
 
 # Function to run a command with sudo only if it is available
-
-dbmate --url "sqlite:vision_database.db" up
 ./launch_validators.sh
 echo "Nothing to do!"
