@@ -179,18 +179,20 @@ class CoreValidator:
         all_capacities = [i[0] for i in responses_and_response_times]
 
         bt.logging.info(f"Got capacities from {len([i for i in all_capacities if i is not None])} axons!")
-        for uid, capacities in zip(uids, all_capacities):
-            if capacities is None:
-                continue
-
-            allowed_tasks = set([task for task in Task])
-            for task, volume in capacities.items():
-                # This is to stop people claiming tasks that don't exist
-                if task not in allowed_tasks:
+        with self.threading_lock:
+            self.capacities_for_tasks = defaultdict(lambda: {})
+            for uid, capacities in zip(uids, all_capacities):
+                if capacities is None:
                     continue
-                if uid not in self.capacities_for_tasks[task]:
-                    self.capacities_for_tasks[task][uid] = float(volume.volume)
-        self._correct_capacities()
+
+                allowed_tasks = set([task for task in Task])
+                for task, volume in capacities.items():
+                    # This is to stop people claiming tasks that don't exist
+                    if task not in allowed_tasks:
+                        continue
+                    if uid not in self.capacities_for_tasks[task]:
+                        self.capacities_for_tasks[task][uid] = float(volume.volume)
+            self._correct_capacities()
         capacities_to_log = {k.value: v for k, v in self.capacities_for_tasks.items()}
         bt.logging.info(f"Capacities: {capacities_to_log}")
         bt.logging.info("Done fetching available tasks!")

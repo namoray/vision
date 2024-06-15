@@ -21,5 +21,5 @@
 #!/bin/bash
 
 # Function to run a command with sudo only if it is available
-./launch_validators.sh
-echo "Nothing to do!"
+# ./launch_validators.sh
+echo "Autoupdate steps complete :)"
