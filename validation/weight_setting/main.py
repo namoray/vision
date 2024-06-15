@@ -1,7 +1,7 @@
 # Schema for the db
 import asyncio
 import time
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import bittensor as bt
 import torch
@@ -48,7 +48,7 @@ class WeightSetter:
         netuid: int,
         total_hotkey_scores: Dict[str, float],
         uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
-    ) -> Tuple[Dict[str, float], List[axon_uid]]:
+    ) -> Union[Tuple[Dict[str, float], List[axon_uid]], Tuple[None, None]]:
         hotkey_to_uid = {uid_info.hotkey: uid_info.uid for uid_info in uid_to_uid_info.values()}
         weights_tensor = torch.zeros_like(metagraph.S, dtype=torch.float32)
         for hotkey, score in total_hotkey_scores.items():
