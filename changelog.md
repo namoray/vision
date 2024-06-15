@@ -1,3 +1,5 @@
+## 4.0.4
+- Hotfix to Capacities diminishing every period
 ## 4.0.3
 - Hotfix to capacities calculation
 
