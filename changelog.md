@@ -1,3 +1,8 @@
+## 4.0.3
+- Hotfix to capacities calculation
+
+## 4.0.2
+  - Hotfixes to uid period scores
 ## 4.0.1
 
 **Refactored Weights Setting**:

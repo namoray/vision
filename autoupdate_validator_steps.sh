@@ -18,7 +18,10 @@
 
 
 # pip install -e .
+#!/bin/bash
+
+# Function to run a command with sudo only if it is available
+
 dbmate --url "sqlite:vision_database.db" up
-sqlite3 "vision_database.db" "DELETE FROM uid_records;"
 ./launch_validators.sh
 echo "Nothing to do!"
