@@ -99,6 +99,7 @@ class SyntheticDataManager:
             text_prompts = synth_data[TEXT_PROMPTS]
             text = text_prompts[0]["text"]
             new_text = text + _get_random_letters(4)
+            new_text = new_text[:76]
             synth_data[TEXT_PROMPTS][0]["text"] = new_text
         elif task_config.task_type == tasks.TaskType.TEXT:
             synth_data[SEED] = random.randint(1, 1_000_000_000)
