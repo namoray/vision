@@ -73,6 +73,8 @@ class CoreValidator:
 
         _my_stake = self.metagraph.S[self.metagraph.hotkeys.index(self.public_hotkey_address)]
         self._my_prop_of_stake = (_my_stake / sum(self.metagraph.S)).item()
+        if is_testnet:
+            self._my_prop_of_stake = 1
 
         validation_utils.connect_to_external_server()
 
