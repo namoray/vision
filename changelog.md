@@ -1,5 +1,7 @@
 ## 4.0.5
 - Limiting length of synthetic generation prompts
+- Posting more to tauvision again
+- 
 ## 4.0.4
 - Hotfix to Capacities diminishing every period
 ## 4.0.3

@@ -49,7 +49,7 @@ def get_miner_cli_config() -> "bt.Config":
     parser.add_argument(
         "--netuid",
         type=int,
-        default=19 if miner_config.subtensor_network != "test" else 176,
+        default=19 if miner_config.subtensor_network != "test" else 51,
         help="The chain subnet uid.",
     )
 
@@ -95,7 +95,7 @@ def get_validator_cli_config() -> "bt.Config":
     parser.add_argument(
         "--netuid",
         type=int,
-        default=19 if validator_config.subtensor_network != "test" else 176,
+        default=19 if validator_config.subtensor_network != "test" else 51,
         help="The chain subnet uid.",
     )
 
