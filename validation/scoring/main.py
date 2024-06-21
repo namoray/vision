@@ -24,19 +24,31 @@ def _generate_uid() -> str:
     return uid
 
 
-def _get_sleep_time(consecutive_errors: float) -> float:
-    sleep_time = 0
-    if consecutive_errors == 1:
-        sleep_time = 60 * 5
-    elif consecutive_errors == 2:
-        sleep_time = 60 * 10
-    elif consecutive_errors == 3:
-        sleep_time = 60 * 15
-    elif consecutive_errors >= 4:
-        sleep_time = 60 * 20
+class Sleeper:
+    def __init__(self) -> None:
+        self.consecutive_errors = 0
 
-    bt.logging.error(f"Sleeping for {sleep_time} seconds after a http error with the orchestrator server")
-    return sleep_time
+    def _get_sleep_time(self) -> float:
+        sleep_time = 0
+        if self.consecutive_errors == 1:
+            sleep_time = 60 * 5
+        elif self.consecutive_errors == 2:
+            sleep_time = 60 * 10
+        elif self.consecutive_errors == 3:
+            sleep_time = 60 * 15
+        elif self.consecutive_errors >= 4:
+            sleep_time = 60 * 20
+
+        bt.logging.error(f"Sleeping for {sleep_time} seconds after a http error with the orchestrator server")
+        return sleep_time
+
+    async def sleep(self) -> None:
+        self.consecutive_errors += 1
+        sleep_time = self._get_sleep_time()
+        await asyncio.sleep(sleep_time)
+
+    def reset_sleep_time(self) -> None:
+        self.consecutive_errors = 0
 
 
 class Scorer:
@@ -45,6 +57,7 @@ class Scorer:
         self.validator_hotkey = validator_hotkey
         self.testnet = testnet
         self.keypair = keypair
+        self.sleeper = Sleeper()
 
     def start_scoring_results_if_not_already(self):
         if not self.am_scoring_results:
@@ -99,36 +112,58 @@ class Scorer:
                 try:
                     response = await client.post(
                         validator_config.external_server_url + "check-result",
-                        data=json.dumps(data),
+                        json=data,
                     )
                     response.raise_for_status()
+                    task_id = response.json().get("task_id")
+                    if task_id is None:
+                        bt.logging.error("No task ID returned from check-result endpoint... ")
+                        await self.sleeper.sleep()
+                        continue
+
+                    # Ping the check-task endpoint until the task is complete
+                    while True:
+                        await asyncio.sleep(1)
+                        task_response = await client.get(f"{validator_config.external_server_url}check-task/{task_id}")
+                        task_response.raise_for_status()
+                        task_response_json = task_response.json()
+
+                        if task_response_json.get("status") != "Processing":
+                            if task_response_json.get("status") == "Failed":
+                                bt.logging.error(
+                                    f"Task {task_id} failed: {task_response_json.get('error')}"
+                                    "\nTraceback: {task_status.get('traceback')}"
+                                )
+                                await self.sleeper.sleep()
+                            else:
+                                bt.logging.info(
+                                    f"Task {task_id} completed successfully: {task_response_json.get('result')}"
+                                )
+                            break
 
                 except httpx.HTTPStatusError as stat_err:
                     bt.logging.error(f"When scoring, HTTP status error occurred: {stat_err}")
-                    consecutive_errors += 1
-                    await asyncio.sleep(_get_sleep_time(consecutive_errors))
+                    await self.sleeper.sleep()
                     continue
 
                 except (httpx.RemoteProtocolError, httpx.ReadError, httpx.ReadTimeout) as read_err:
                     bt.logging.error(f"When scoring, Read timeout occurred: {read_err}")
-                    consecutive_errors += 1
-                    await asyncio.sleep(_get_sleep_time(consecutive_errors))
+                    await self.sleeper.sleep()
                     continue
 
                 except httpx.HTTPError as http_err:
-                    consecutive_errors += 1
                     bt.logging.error(f"When scoring, HTTP error occurred: {http_err}")
                     if response.status_code == 502:
                         bt.logging.error("Is your orchestrator server running?")
                     else:
                         bt.logging.error(f"Status code: {response.status_code}")
-                    await asyncio.sleep(_get_sleep_time(consecutive_errors + 1))
+                    await self.sleeper.sleep()
                     continue
 
-            consecutive_errors = 0
+            self.sleeper.reset_sleep_time()
             try:
-                response_json = response.json()
-                axon_scores = response_json["axon_scores"]
+                task_response_json.get("result").get("result")
+                axon_scores = task_response_json.get("axon_scores", {})
             except (json.JSONDecodeError, KeyError) as parse_err:
                 bt.logging.error(f"Error occurred when parsing the response: {parse_err}")
                 continue
