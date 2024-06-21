@@ -135,9 +135,7 @@ class Scorer:
                                 )
                                 await self.sleeper.sleep()
                             else:
-                                bt.logging.info(
-                                    f"Task {task_id} completed successfully: {task_response_json.get('result')}"
-                                )
+                                bt.logging.info(f"Task {task_id} completed successfully")
                             break
 
                 except httpx.HTTPStatusError as stat_err:
