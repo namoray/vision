@@ -31,13 +31,13 @@ class Sleeper:
     def _get_sleep_time(self) -> float:
         sleep_time = 0
         if self.consecutive_errors == 1:
-            sleep_time = 60 * 5
+            sleep_time = 60 * 1
         elif self.consecutive_errors == 2:
-            sleep_time = 60 * 10
+            sleep_time = 60 * 2
         elif self.consecutive_errors == 3:
-            sleep_time = 60 * 15
+            sleep_time = 60 * 4
         elif self.consecutive_errors >= 4:
-            sleep_time = 60 * 20
+            sleep_time = 60 * 5
 
         bt.logging.error(f"Sleeping for {sleep_time} seconds after a http error with the orchestrator server")
         return sleep_time
