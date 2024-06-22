@@ -125,13 +125,15 @@ class Scorer:
                                 )
                                 await asyncio.sleep(20)
                                 j += 1
-                                continue
                             else:
                                 bt.logging.error(
                                     "Checking server seems broke, please check!" f"response: {response.json()}"
                                 )
                                 await self.sleeper.sleep()
                                 break
+
+                        else:
+                            break
 
                     # Ping the check-task endpoint until the task is complete
                     while True:
