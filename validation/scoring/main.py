@@ -164,6 +164,7 @@ class Scorer:
                 task_response_json.get("result")
                 bt.logging.debug(f"Got result: {task_response_json.get('result')}")
                 axon_scores = task_response_json.get("axon_scores", {})
+                bt.logging.debug(f"Got axon scores: {axon_scores}")
             except (json.JSONDecodeError, KeyError) as parse_err:
                 bt.logging.error(f"Error occurred when parsing the response: {parse_err}")
                 continue
