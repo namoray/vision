@@ -127,7 +127,7 @@ class Scorer:
                                 continue
                             else:
                                 bt.logging.error(
-                                    "No task ID returned from check-result endpoint... " f"response: {response.json()}"
+                                    "Checking server seems broke, please check!" f"response: {response.json()}"
                                 )
                                 await self.sleeper.sleep()
                                 break
