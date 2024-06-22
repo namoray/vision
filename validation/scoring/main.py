@@ -147,7 +147,7 @@ class Scorer:
                             if task_status == "Failed":
                                 bt.logging.error(
                                     f"Task {task_id} failed: {task_response_json.get('error')}"
-                                    f"\nTraceback: {task_status.get('traceback')}"
+                                    f"\nTraceback: {task_response_json.get('traceback')}"
                                 )
                                 await self.sleeper.sleep()
                             else:
