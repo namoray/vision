@@ -137,7 +137,7 @@ class Scorer:
 
                     # Ping the check-task endpoint until the task is complete
                     while True:
-                        await asyncio.sleep(1)
+                        await asyncio.sleep(3)
                         task_response = await client.get(f"{validator_config.external_server_url}check-task/{task_id}")
                         task_response.raise_for_status()
                         task_response_json = task_response.json()
