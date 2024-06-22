@@ -107,7 +107,6 @@ class Scorer:
                 "task": task.value,
             }
             async with httpx.AsyncClient(timeout=180) as client:
-                bt.logging.info(f"\nPosting result {i} for task {task} to be scored\n")
                 try:
                     response = await client.post(
                         validator_config.external_server_url + "check-result",
@@ -116,7 +115,9 @@ class Scorer:
                     response.raise_for_status()
                     task_id = response.json().get("task_id")
                     if task_id is None:
-                        bt.logging.error("No task ID returned from check-result endpoint... ")
+                        bt.logging.error(
+                            "No task ID returned from check-result endpoint... " f"response: {response.json()}"
+                        )
                         await self.sleeper.sleep()
                         continue
 
