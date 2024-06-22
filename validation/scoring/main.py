@@ -159,7 +159,8 @@ class Scorer:
 
             self.sleeper.reset_sleep_time()
             try:
-                task_response_json.get("result").get("result")
+                task_response_json.get("result")
+                bt.logging.debug(f"Got result: {task_response_json.get('result')}")
                 axon_scores = task_response_json.get("axon_scores", {})
             except (json.JSONDecodeError, KeyError) as parse_err:
                 bt.logging.error(f"Error occurred when parsing the response: {parse_err}")
@@ -194,6 +195,7 @@ class Scorer:
                     volume=volume,
                     speed_scoring_factor=speed_scoring_factor,
                 )
+                bt.logging.info(f"Trying to store: {reward_data.dict()}")
                 uid = db_manager.insert_reward_data(reward_data)
 
                 data_to_post = reward_data.dict()
