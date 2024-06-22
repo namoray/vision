@@ -108,18 +108,29 @@ class Scorer:
             }
             async with httpx.AsyncClient(timeout=180) as client:
                 try:
-                    response = await client.post(
-                        validator_config.external_server_url + "check-result",
-                        json=data,
-                    )
-                    response.raise_for_status()
-                    task_id = response.json().get("task_id")
-                    if task_id is None:
-                        bt.logging.error(
-                            "No task ID returned from check-result endpoint... " f"response: {response.json()}"
+                    j = 0
+                    while True:
+                        response = await client.post(
+                            validator_config.external_server_url + "check-result",
+                            json=data,
                         )
-                        await self.sleeper.sleep()
-                        continue
+                        response.raise_for_status()
+                        response_json = response.json()
+                        task_id = response.json().get("task_id")
+                        if task_id is None:
+                            if "WIP" in response_json.get("status"):
+                                bt.logging.warning(
+                                    f"Attempt: {j}; There's already a task being checked, will sleep and try again..."
+                                )
+                                await asyncio.sleep(20)
+                                j += 1
+                                continue
+                            else:
+                                bt.logging.error(
+                                    "No task ID returned from check-result endpoint... " f"response: {response.json()}"
+                                )
+                                await self.sleeper.sleep()
+                                break
 
                     # Ping the check-task endpoint until the task is complete
                     while True:
