@@ -121,6 +121,7 @@ class Scorer:
                             if "WIP" in response_json.get("status"):
                                 bt.logging.warning(
                                     f"Attempt: {j}; There's already a task being checked, will sleep and try again..."
+                                    f"\nresponse: {response.json()}"
                                 )
                                 await asyncio.sleep(20)
                                 j += 1
