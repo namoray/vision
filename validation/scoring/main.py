@@ -159,6 +159,7 @@ class Scorer:
                     continue
 
             self.sleeper.reset_sleep_time()
+            bt.logging.error("here1")
             try:
                 task_response_json.get("result")
                 bt.logging.debug(f"Got result: {task_response_json.get('result')}")
