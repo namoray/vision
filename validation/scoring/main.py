@@ -195,12 +195,13 @@ class Scorer:
                     volume=volume,
                     speed_scoring_factor=speed_scoring_factor,
                 )
-                bt.logging.info(f"Trying to store: {reward_data.dict()}")
+                bt.logging.error(f"Trying to store: {reward_data.dict()}")
                 uid = db_manager.insert_reward_data(reward_data)
 
                 data_to_post = reward_data.dict()
                 data_to_post[cst.TESTNET] = self.testnet
 
+                bt.logging.error(f"Posting reward data: {data_to_post}")
                 await post_stats.post_to_tauvision(
                     data_to_post=data_to_post,
                     keypair=self.keypair,
