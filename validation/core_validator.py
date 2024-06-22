@@ -268,6 +268,8 @@ class CoreValidator:
             await self._post_miner_capacities_to_tauvision()
             self.scorer.start_scoring_results_if_not_already()
 
+            await asyncio.sleep(60 * 60)
+
             bt.logging.info("🚀 Starting to score stuff, metagraph is synced...")
             self.uid_manager = UidManager(
                 self.capacities_for_tasks,
