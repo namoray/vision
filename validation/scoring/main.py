@@ -118,7 +118,7 @@ class Scorer:
                         response_json = response.json()
                         task_id = response.json().get("task_id")
                         if task_id is None:
-                            if "WIP" in response_json.get("status"):
+                            if response_json.get("status") == "Busy":
                                 bt.logging.warning(
                                     f"Attempt: {j}; There's already a task being checked, will sleep and try again..."
                                     f"\nresponse: {response.json()}"
