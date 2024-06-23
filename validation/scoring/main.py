@@ -9,8 +9,7 @@ from validation.models import RewardData
 from validation.proxy.utils import constants as cst
 import httpx
 from config.validator_config import config as validator_config
-from models import utility_models
-from validation.proxy import validation_utils, work_and_speed_functions
+from validation.proxy import work_and_speed_functions
 import json
 from validation.db.db_management import db_manager
 from validation.db import post_stats
@@ -181,21 +180,14 @@ class Scorer:
                 bt.logging.error(f"Error occurred when parsing the response: {parse_err}")
                 continue
 
-            score_with_old_speed = await validation_utils.get_expected_score(
-                utility_models.QueryResult(**results_json), synapse, task
-            )
             volume = work_and_speed_functions.calculate_work(task=task, result=results_json, synapse=synapse)
             speed_scoring_factor = work_and_speed_functions.calculate_speed_modifier(
                 task=task, result=results_json, synapse=synapse
             )
-            for uid, score in axon_scores.items():
+            for uid, quality_score in axon_scores.items():
                 # We divide max_expected_score whilst the orchestrator is still factoring this into the score
                 # once it's removed from orchestrator, we'll remove it from here
-                bt.logging.error(f"score: {score}, score_with_old_speed: {score_with_old_speed}")
-                if score == 0 or score_with_old_speed == 0:
-                    quality_score = 0
-                else:
-                    quality_score = score / score_with_old_speed
+                bt.logging.error(f"quality_score: {quality_score}, speed_scoring_factor: {speed_scoring_factor}")
 
                 id = _generate_uid()
 
@@ -207,7 +199,7 @@ class Scorer:
                     validator_hotkey=self.validator_hotkey,  # fix
                     miner_hotkey=miner_hotkey,
                     synthetic_query=synthetic_query,
-                    response_time=results_json["response_time"] if score != 0 else None,
+                    response_time=results_json["response_time"] if quality_score != 0 else None,
                     volume=volume,
                     speed_scoring_factor=speed_scoring_factor,
                 )
