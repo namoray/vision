@@ -183,6 +183,7 @@ class Scorer:
                     bt.logging.error(
                         f"AXon scores is none; found in the response josn: {task_response_json}"
                     )
+                    continue
             except (json.JSONDecodeError, KeyError) as parse_err:
                 bt.logging.error(f"Error occurred when parsing the response: {parse_err}")
                 continue
