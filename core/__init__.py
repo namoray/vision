@@ -18,7 +18,7 @@ class Task(Enum):
 
 TASK_TO_MAX_CAPACITY: Dict[Task, int] = {
     Task.chat_mixtral: 576_000,
-    Task.chat_llama_3: 576_000,
+    Task.chat_llama_3: 1_000_000,
     Task.proteus_text_to_image: 3_600,
     Task.playground_text_to_image: 10_000,
     Task.dreamshaper_text_to_image: 3_000,

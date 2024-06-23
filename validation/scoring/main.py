@@ -153,7 +153,6 @@ class Scorer:
                             else:
                                 bt.logging.info(f"Task {task_id} completed successfully")
                             break
-
                 except httpx.HTTPStatusError as stat_err:
                     bt.logging.error(f"When scoring, HTTP status error occurred: {stat_err}")
                     await self.sleeper.sleep()
