@@ -124,7 +124,7 @@ class UidManager:
         i = 0
         tasks_in_progress = []
         while uid_record.synthetic_requests_still_to_make > 0:
-            # Random pertubation to make sure we dont burst
+            # Random perturbation to make sure we dont burst
             if i == 0:
                 await asyncio.sleep(delay_between_requests * random.random())
             else:
@@ -167,7 +167,7 @@ class UidManager:
 
         # NOTE: Do we want to do this semi regularly, to not exceed bandwidth perhaps?
         await asyncio.gather(*tasks_in_progress)
-        bt.logging.info(f"Done scoring for task: {task} and uid: {uid} and volume: {volume}")
+        bt.logging.info(f"Done synthetic querying for task: {task} and uid: {uid} and volume: {volume}")
 
     async def make_orgnanic_query(
         self, task: Task, stream: bool, synapse: bt.Synapse, outgoing_model: BaseModel

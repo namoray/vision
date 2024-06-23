@@ -216,5 +216,6 @@ class Scorer:
                     keypair=self.keypair,
                     data_type_to_post=post_stats.DataTypeToPost.REWARD_DATA,
                 )
+                bt.logging.info(f"\nPosted reward data for task: {task}, uid: {uid}")
 
             i += 1
