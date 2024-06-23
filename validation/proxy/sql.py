@@ -1,9 +1,8 @@
-# db_queries.py
-
-import sqlite3
+import aiosqlite
 from datetime import datetime, timedelta
-from contextlib import contextmanager
+from typing import Dict, List, Any, Optional
 
+from pydantic import BaseModel
 
 BALANCE = "balance"
 KEY = "key"
@@ -15,112 +14,113 @@ LOGS_TABLE = "logs"
 ENDPOINT = "endpoint"
 CREATED_AT = "created_at"
 
-
-@contextmanager
-def get_db_connection():
-    conn = sqlite3.connect("vision_database.db")
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    try:
-        yield conn
-    finally:
-        conn.close()
+DATABASE_PATH = "vision_database.db"
 
 
-def get_api_key_info(conn: sqlite3.Connection, api_key: str) -> sqlite3.Row:
-    row = conn.execute(
-        f"SELECT * FROM {API_KEYS_TABLE} WHERE {KEY} = ?", (api_key,)
-    ).fetchone()
-    return dict(row) if row else None
+async def get_db_connection():
+    conn = await aiosqlite.connect(DATABASE_PATH)
+    await conn.execute("PRAGMA foreign_keys = ON")
+    return conn
 
 
-def get_all_api_keys(conn: sqlite3.Connection):
-    return conn.execute(f"SELECT * FROM {API_KEYS_TABLE}").fetchall()
+async def get_api_key_info(conn: aiosqlite.Connection, api_key: str) -> Optional[Dict[str, Any]]:
+    async with conn.execute(
+        f"SELECT {KEY}, {BALANCE}, {RATE_LIMIT_PER_MINUTE} FROM {API_KEYS_TABLE} WHERE {KEY} = ?", (api_key,)
+    ) as cursor:
+        row = await cursor.fetchone()
+        return (
+            {
+                KEY: row[0],
+                BALANCE: row[1],
+                RATE_LIMIT_PER_MINUTE: row[2],
+            }
+            if row
+            else None
+        )
 
 
-def get_all_logs_for_key(conn: sqlite3.Connection, api_key: str):
-    return conn.execute(
-        f"SELECT * FROM {LOGS_TABLE} WHERE {KEY} = ?", (api_key,)
-    ).fetchall()
+async def get_all_api_keys(conn: aiosqlite.Connection) -> List[Dict[str, Any]]:
+    async with conn.execute(f"SELECT * FROM {API_KEYS_TABLE}") as cursor:
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
 
 
-def get_all_logs(conn: sqlite3.Connection):
-    return conn.execute(f"SELECT * FROM {LOGS_TABLE}").fetchall()
+async def get_all_logs_for_key(conn: aiosqlite.Connection, api_key: str) -> List[Dict[str, Any]]:
+    async with conn.execute(f"SELECT * FROM {LOGS_TABLE} WHERE {KEY} = ?", (api_key,)) as cursor:
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
 
 
-def add_api_key(
-    conn: sqlite3.Connection,
+async def get_all_logs(conn: aiosqlite.Connection) -> List[Dict[str, Any]]:
+    async with conn.execute(f"SELECT * FROM {LOGS_TABLE}") as cursor:
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
+
+
+async def add_api_key(
+    conn: aiosqlite.Connection,
     api_key: str,
     balance: float,
     rate_limit_per_minute: int,
     name: str,
 ) -> None:
-    conn.execute(
+    await conn.execute(
         f"INSERT INTO {API_KEYS_TABLE} VALUES (?, ?, ?, ?, ?)",
         (api_key, name, balance, rate_limit_per_minute, datetime.now()),
     )
-    conn.commit()
+    await conn.commit()
 
 
-def update_api_key_balance(conn: sqlite3.Connection, key: str, balance: float):
-    conn.execute(
-        f"UPDATE {API_KEYS_TABLE} SET {BALANCE} = ? WHERE {KEY} = ?", (balance, key)
-    )
-    conn.commit()
+async def update_api_key_balance(conn: aiosqlite.Connection, key: str, balance: float):
+    await conn.execute(f"UPDATE {API_KEYS_TABLE} SET {BALANCE} = ? WHERE {KEY} = ?", (balance, key))
+    await conn.commit()
 
 
-def update_api_key_rate_limit(conn: sqlite3.Connection, key: str, rate: int):
-    conn.execute(
+async def update_api_key_rate_limit(conn: aiosqlite.Connection, key: str, rate: int):
+    await conn.execute(
         f"UPDATE {API_KEYS_TABLE} SET {RATE_LIMIT_PER_MINUTE} = ? WHERE {KEY} = ?",
         (rate, key),
     )
-    conn.commit()
+    await conn.commit()
 
 
-def update_api_key_name(conn: sqlite3.Connection, key: str, name: str):
-    conn.execute(f"UPDATE {API_KEYS_TABLE} SET {NAME} = ? WHERE {KEY} = ?", (name, key))
-    conn.commit()
+async def update_api_key_name(conn: aiosqlite.Connection, key: str, name: str):
+    await conn.execute(f"UPDATE {API_KEYS_TABLE} SET {NAME} = ? WHERE {KEY} = ?", (name, key))
+    await conn.commit()
 
 
-def delete_api_key(conn: sqlite3.Connection, api_key: str) -> None:
-    conn.execute(f"DELETE FROM {API_KEYS_TABLE} WHERE {KEY} = ?", (api_key,))
-    conn.commit()
+async def delete_api_key(conn: aiosqlite.Connection, api_key: str) -> None:
+    await conn.execute(f"DELETE FROM {API_KEYS_TABLE} WHERE {KEY} = ?", (api_key,))
+    await conn.commit()
 
 
-def update_requests_and_credits(
-    conn: sqlite3.Connection, api_key_info: sqlite3.Row, cost: float
-) -> float:
-    conn.execute(
-        f"UPDATE api_keys SET {BALANCE} = {BALANCE} - {cost} WHERE {KEY} = ?",
-        (api_key_info[KEY],),
+async def update_requests_and_credits(conn: aiosqlite.Connection, api_key_info: Dict[str, Any], cost: float) -> None:
+    await conn.execute(
+        f"UPDATE api_keys SET {BALANCE} = {BALANCE} - ? WHERE {KEY} = ?",
+        (cost, api_key_info[KEY]),
     )
+    await conn.commit()
 
 
-def log_request(
-    conn: sqlite3.Connection, api_key_info: sqlite3.Row, path: str, cost: float
-) -> None:
-    api_key_info = get_api_key_info(conn, api_key_info[KEY])
+async def log_request(conn: aiosqlite.Connection, api_key_info: Dict[str, Any], path: str, cost: float) -> None:
     balance = api_key_info[BALANCE]
 
-    conn.execute(
-        f"INSERT INTO {LOGS_TABLE} VALUES (?, ?, ?, ?, ?)",
-        (api_key_info[KEY], path, cost, balance, datetime.now()),
+    await conn.execute(
+        f"INSERT INTO {LOGS_TABLE} ({KEY}, {ENDPOINT}, {BALANCE}, {CREATED_AT}, cost) VALUES (?, ?, ?, ?, ?)",
+        (api_key_info[KEY], path, balance, datetime.now(), cost),
     )
+    await conn.commit()
 
 
-def rate_limit_exceeded(conn: sqlite3.Connection, api_key_info: sqlite3.Row) -> bool:
+async def rate_limit_exceeded(conn: aiosqlite.Connection, api_key_info: Dict[str, Any]) -> bool:
     one_minute_ago = datetime.now() - timedelta(minutes=1)
 
-    # Prepare a SQL statement
     query = f"""
         SELECT *
-        FROM logs
+        FROM {LOGS_TABLE}
         WHERE {KEY} = ? AND {CREATED_AT} >= ?
     """
 
-    cur = conn.execute(
-        query, (api_key_info[KEY], one_minute_ago.strftime("%Y-%m-%d %H:%M:%S"))
-    )
-    recent_logs = cur.fetchall()
-
-    return len(recent_logs) >= api_key_info[RATE_LIMIT_PER_MINUTE]
+    async with conn.execute(query, (api_key_info[KEY], one_minute_ago.strftime("%Y-%m-%d %H:%M:%S"))) as cursor:
+        recent_logs = await cursor.fetchall()
+        return len(recent_logs) >= api_key_info[RATE_LIMIT_PER_MINUTE]
