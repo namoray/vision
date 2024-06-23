@@ -21,5 +21,6 @@
 #!/bin/bash
 
 # Function to run a command with sudo only if it is available
+pip install -e .
 ./launch_validators.sh
 echo "Autoupdate steps complete :)"

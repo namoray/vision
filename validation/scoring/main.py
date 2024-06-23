@@ -1,6 +1,7 @@
 # Schema for the db
 import asyncio
 import random
+from typing import Any, Dict
 
 import bittensor as bt
 import substrateinterface
@@ -9,8 +10,7 @@ from validation.models import RewardData
 from validation.proxy.utils import constants as cst
 import httpx
 from config.validator_config import config as validator_config
-from models import utility_models
-from validation.proxy import validation_utils, work_and_speed_functions
+from validation.proxy import work_and_speed_functions
 import json
 from validation.db.db_management import db_manager
 from validation.db import post_stats
@@ -24,19 +24,31 @@ def _generate_uid() -> str:
     return uid
 
 
-def _get_sleep_time(consecutive_errors: float) -> float:
-    sleep_time = 0
-    if consecutive_errors == 1:
-        sleep_time = 60 * 5
-    elif consecutive_errors == 2:
-        sleep_time = 60 * 10
-    elif consecutive_errors == 3:
-        sleep_time = 60 * 15
-    elif consecutive_errors >= 4:
-        sleep_time = 60 * 20
+class Sleeper:
+    def __init__(self) -> None:
+        self.consecutive_errors = 0
 
-    bt.logging.error(f"Sleeping for {sleep_time} seconds after a http error with the orchestrator server")
-    return sleep_time
+    def _get_sleep_time(self) -> float:
+        sleep_time = 0
+        if self.consecutive_errors == 1:
+            sleep_time = 60 * 1
+        elif self.consecutive_errors == 2:
+            sleep_time = 60 * 2
+        elif self.consecutive_errors == 3:
+            sleep_time = 60 * 4
+        elif self.consecutive_errors >= 4:
+            sleep_time = 60 * 5
+
+        bt.logging.error(f"Sleeping for {sleep_time} seconds after a http error with the orchestrator server")
+        return sleep_time
+
+    async def sleep(self) -> None:
+        self.consecutive_errors += 1
+        sleep_time = self._get_sleep_time()
+        await asyncio.sleep(sleep_time)
+
+    def reset_sleep_time(self) -> None:
+        self.consecutive_errors = 0
 
 
 class Scorer:
@@ -45,6 +57,7 @@ class Scorer:
         self.validator_hotkey = validator_hotkey
         self.testnet = testnet
         self.keypair = keypair
+        self.sleeper = Sleeper()
 
     def start_scoring_results_if_not_already(self):
         if not self.am_scoring_results:
@@ -53,11 +66,14 @@ class Scorer:
         self.am_scoring_results = True
 
     async def _score_results(self):
+        min_tasks_to_start_scoring = (
+            cst.MINIMUM_TASKS_TO_START_SCORING if self.testnet else cst.MINIMUM_TASKS_TO_START_SCORING_TESTNET
+        )
         while True:
-            tasks_and_number_of_results = db_manager.get_tasks_and_number_of_results()
+            tasks_and_number_of_results = await db_manager.get_tasks_and_number_of_results()
             total_tasks_stored = sum(tasks_and_number_of_results.values())
 
-            if total_tasks_stored < cst.MINIMUM_TASKS_TO_START_SCORING:
+            if total_tasks_stored < min_tasks_to_start_scoring:
                 await asyncio.sleep(5)
                 continue
 
@@ -71,12 +87,11 @@ class Scorer:
 
     async def _check_scores_for_task(self, task: Task) -> None:
         i = 0
-        consecutive_errors = 0
         bt.logging.info(f"Checking some results for task {task}")
         while i < cst.MAX_RESULTS_TO_SCORE_FOR_TASK:
-            data_and_hotkey = db_manager.select_and_delete_task_result(task)  # noqa
+            data_and_hotkey = await db_manager.select_and_delete_task_result(task)  # noqa
             if data_and_hotkey is None:
-                bt.logging.error(f"No data to score for task {task}")
+                bt.logging.warning(f"No data left to score for task {task}; iteration {i}")
                 return
             checking_data, miner_hotkey = data_and_hotkey
             results, synthetic_query, synapse_dict_str = (
@@ -84,7 +99,7 @@ class Scorer:
                 checking_data["synthetic_query"],
                 checking_data["synapse"],
             )
-            results_json = json.loads(results)
+            results_json: Dict[str, Any] = json.loads(results)
 
             synapse = json.loads(synapse_dict_str)
 
@@ -95,58 +110,87 @@ class Scorer:
                 "task": task.value,
             }
             async with httpx.AsyncClient(timeout=180) as client:
-                bt.logging.info(f"\nPosting result {i} for task {task} to be scored\n")
                 try:
-                    response = await client.post(
-                        validator_config.external_server_url + "check-result",
-                        data=json.dumps(data),
-                    )
-                    response.raise_for_status()
+                    j = 0
+                    while True:
+                        response = await client.post(
+                            validator_config.external_server_url + "check-result",
+                            json=data,
+                        )
+                        response.raise_for_status()
+                        response_json = response.json()
+                        task_id = response.json().get("task_id")
+                        if task_id is None:
+                            if response_json.get("status") == "Busy":
+                                bt.logging.warning(
+                                    f"Attempt: {j}; There's already a task being checked, will sleep and try again..."
+                                    f"\nresponse: {response.json()}"
+                                )
+                                await asyncio.sleep(20)
+                                j += 1
+                            else:
+                                bt.logging.error(
+                                    "Checking server seems broke, please check!" f"response: {response.json()}"
+                                )
+                                await self.sleeper.sleep()
+                                break
 
+                        else:
+                            break
+
+                    # Ping the check-task endpoint until the task is complete
+                    while True:
+                        await asyncio.sleep(3)
+                        task_response = await client.get(f"{validator_config.external_server_url}check-task/{task_id}")
+                        task_response.raise_for_status()
+                        task_response_json = task_response.json()
+
+                        if task_response_json.get("status") != "Processing":
+                            task_status = task_response_json.get("status")
+                            if task_status == "Failed":
+                                bt.logging.error(
+                                    f"Task {task_id} failed: {task_response_json.get('error')}"
+                                    f"\nTraceback: {task_response_json.get('traceback')}"
+                                )
+                                await self.sleeper.sleep()
+                            break
                 except httpx.HTTPStatusError as stat_err:
                     bt.logging.error(f"When scoring, HTTP status error occurred: {stat_err}")
-                    consecutive_errors += 1
-                    await asyncio.sleep(_get_sleep_time(consecutive_errors))
+                    await self.sleeper.sleep()
                     continue
 
                 except (httpx.RemoteProtocolError, httpx.ReadError, httpx.ReadTimeout) as read_err:
                     bt.logging.error(f"When scoring, Read timeout occurred: {read_err}")
-                    consecutive_errors += 1
-                    await asyncio.sleep(_get_sleep_time(consecutive_errors))
+                    await self.sleeper.sleep()
                     continue
 
                 except httpx.HTTPError as http_err:
-                    consecutive_errors += 1
                     bt.logging.error(f"When scoring, HTTP error occurred: {http_err}")
                     if response.status_code == 502:
                         bt.logging.error("Is your orchestrator server running?")
                     else:
                         bt.logging.error(f"Status code: {response.status_code}")
-                    await asyncio.sleep(_get_sleep_time(consecutive_errors + 1))
+                    await self.sleeper.sleep()
                     continue
 
-            consecutive_errors = 0
+            self.sleeper.reset_sleep_time()
             try:
-                response_json = response.json()
-                axon_scores = response_json["axon_scores"]
+                task_result = task_response_json.get("result", {})
+                axon_scores = task_result.get("axon_scores", {})
+                if axon_scores is None:
+                    bt.logging.error(f"AXon scores is none; found in the response josn: {task_response_json}")
+                    continue
             except (json.JSONDecodeError, KeyError) as parse_err:
                 bt.logging.error(f"Error occurred when parsing the response: {parse_err}")
                 continue
 
-            score_with_old_speed = await validation_utils.get_expected_score(
-                utility_models.QueryResult(**results_json), synapse, task
-            )
             volume = work_and_speed_functions.calculate_work(task=task, result=results_json, synapse=synapse)
             speed_scoring_factor = work_and_speed_functions.calculate_speed_modifier(
                 task=task, result=results_json, synapse=synapse
             )
-            for uid, score in axon_scores.items():
+            for uid, quality_score in axon_scores.items():
                 # We divide max_expected_score whilst the orchestrator is still factoring this into the score
                 # once it's removed from orchestrator, we'll remove it from here
-                if score == 0 or score_with_old_speed == 0:
-                    quality_score = 0
-                else:
-                    quality_score = score / score_with_old_speed
 
                 id = _generate_uid()
 
@@ -158,11 +202,11 @@ class Scorer:
                     validator_hotkey=self.validator_hotkey,  # fix
                     miner_hotkey=miner_hotkey,
                     synthetic_query=synthetic_query,
-                    response_time=results_json["response_time"] if score != 0 else None,
+                    response_time=results_json["response_time"] if quality_score != 0 else None,
                     volume=volume,
                     speed_scoring_factor=speed_scoring_factor,
                 )
-                uid = db_manager.insert_reward_data(reward_data)
+                uid = await db_manager.insert_reward_data(reward_data)
 
                 data_to_post = reward_data.dict()
                 data_to_post[cst.TESTNET] = self.testnet
@@ -172,5 +216,6 @@ class Scorer:
                     keypair=self.keypair,
                     data_type_to_post=post_stats.DataTypeToPost.REWARD_DATA,
                 )
+                bt.logging.info(f"\nPosted reward data for task: {task}, uid: {uid}")
 
             i += 1

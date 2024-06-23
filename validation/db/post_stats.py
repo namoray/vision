@@ -2,7 +2,7 @@ from core import Task
 import enum
 import json
 import time
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 import httpx
 import bittensor as bt
 from pydantic import BaseModel
@@ -22,14 +22,14 @@ BASE_URL = "https://dev.tauvision.ai/"
 
 data_type_to_url = {
     DataTypeToPost.REWARD_DATA: BASE_URL + "v1/store/reward_data",
-    DataTypeToPost.UID_RECORD: BASE_URL + "v1/store/uid_record",
+    DataTypeToPost.UID_RECORD: BASE_URL + "v1/store/uid_records",
     DataTypeToPost.MINER_CAPACITIES: BASE_URL + "v1/store/miner_capacities",
     DataTypeToPost.VALIDATOR_INFO: BASE_URL + "v1/store/validator_info",
 }
 
 # Turn off if you don't wanna post your validator info to tauvision
 
-POST_TO_TAUVISION = False
+POST_TO_TAUVISION = True
 
 
 def _sign_timestamp(keypair: Keypair, timestamp: float) -> str:
@@ -62,10 +62,10 @@ async def post_to_tauvision(
                 data=json.dumps(data_to_post),
                 headers=headers,
             )
-            bt.logging.debug(f"Resp from taovision: {resp.text} for post type {data_type_to_post}")
+            bt.logging.debug(f"Resp status code from tauvision: {resp.status_code} for post type {data_type_to_post}")
             return resp
         except Exception as e:
-            bt.logging.error(f"Error when posting to taovision to store score data: {e}")
+            bt.logging.error(f"Error when posting to tauvision to store data for {data_type_to_post}: {repr(e)}")
 
 
 class RewardDataPostBody(RewardData):
@@ -99,7 +99,7 @@ class MinerCapacitiesPostBody(BaseModel):
         ]
 
 
-class UidRecordPostBody(BaseModel):
+class UidRecordPostObject(BaseModel):
     axon_uid: int
     miner_hotkey: str
     validator_hotkey: str
@@ -109,7 +109,7 @@ class UidRecordPostBody(BaseModel):
     total_requests_made: int
     requests_429: int
     requests_500: int
-    period_score: int
+    period_score: Optional[float]
 
     def dict(self):
         return {
@@ -124,3 +124,10 @@ class UidRecordPostBody(BaseModel):
             "requests_500": self.requests_500,
             "period_score": self.period_score,
         }
+
+
+class UidRecordsPostBody(BaseModel):
+    data: List[UidRecordPostObject]
+
+    def dump(self):
+        return [ob.dict() for ob in self.data]

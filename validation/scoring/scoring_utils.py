@@ -19,7 +19,7 @@ async def adjust_uid_record_from_result(
         work = work_and_speed_functions.calculate_work(query_result.task, query_result, synapse=synapse.dict())
         uid_record.consumed_volume += work
 
-        db_manager.potentially_store_result_in_sql_lite_db(
+        await db_manager.potentially_store_result_in_sql_lite_db(
             query_result, query_result.task, synapse, synthetic_query=synthetic_query
         )
 
