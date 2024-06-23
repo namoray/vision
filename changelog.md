@@ -1,3 +1,7 @@
+## 4.0.6
+- Task basked checking to the orchestrator server
+- Async DB interactions
+
 ## 4.0.5
 - Limiting length of synthetic generation prompts
 - Posting more to tauvision again
