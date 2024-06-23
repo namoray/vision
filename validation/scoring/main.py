@@ -70,7 +70,7 @@ class Scorer:
             total_tasks_stored = sum(tasks_and_number_of_results.values())
 
             if total_tasks_stored < cst.MINIMUM_TASKS_TO_START_SCORING:
-                bt.logging.info("Not enough tasks to start scoring, sleeping...")
+                bt.logging.info(f"Not enough tasks to start scoring, {total_tasks_stored} out of {cst.MINIMUM_TASKS_TO_START_SCORING}; sleeping...")
                 await asyncio.sleep(5)
                 continue
 
