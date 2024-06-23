@@ -74,7 +74,7 @@ class CoreValidator:
         _my_stake = self.metagraph.S[self.metagraph.hotkeys.index(self.public_hotkey_address)]
         self._my_prop_of_stake = (_my_stake / sum(self.metagraph.S)).item()
         if is_testnet:
-            self._my_prop_of_stake = 1
+            self._my_prop_of_stake = 1.0
 
         validation_utils.connect_to_external_server()
 
@@ -284,8 +284,8 @@ class CoreValidator:
                 data_type_to_post=post_stats.DataTypeToPost.VALIDATOR_INFO,
             )
 
-            db_manager.delete_data_older_than_date(minutes=60 * 24 * 2)
-            db_manager.delete_tasks_older_than_date(minutes=120)
+            await db_manager.delete_data_older_than_date(minutes=60 * 24)
+            await db_manager.delete_tasks_older_than_date(minutes=120)
 
             # Wait for initial syncing of metagraph
             await self.resync_metagraph()
@@ -302,8 +302,8 @@ class CoreValidator:
             await self.uid_manager.start_synthetic_scoring()
             await self.uid_manager.collect_synthetic_scoring_results()
             self.uid_manager.calculate_period_scores_for_uids()
-            self.uid_manager.store_period_scores()
             self._post_uid_records_to_tauvision()
+            await  self.uid_manager.store_period_scores()
 
             bt.logging.info(f"Finished scoring for iteration: {iteration}. Now settings weights")
             iteration += 1

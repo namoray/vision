@@ -30,7 +30,7 @@ class WeightSetter:
         uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
         task_weights: Dict[Task, float],
     ) -> None:
-        total_hotkey_scores = calculations.calculate_scores_for_settings_weights(
+        total_hotkey_scores = await calculations.calculate_scores_for_settings_weights(
             capacities_for_tasks, uid_to_uid_info, task_weights
         )
 

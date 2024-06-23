@@ -21,8 +21,6 @@ class DatabaseManager:
         self.conn = None
         self.task_weights: Dict[Task, float] = {}
 
-        asyncio.create_task(self.initialize())
-
     async def initialize(self):
         self.conn = await aiosqlite.connect(core_cst.VISION_DB)
 
@@ -36,7 +34,7 @@ class DatabaseManager:
             row = await cursor.fetchone()
         return row[0]
 
-    def potentially_store_result_in_sql_lite_db(
+    async def potentially_store_result_in_sql_lite_db(
         self, result: utility_models.QueryResult, task: Task, synapse: bt.Synapse, synthetic_query: bool
     ) -> None:
         if task not in self.task_weights:
@@ -45,14 +43,14 @@ class DatabaseManager:
         target_percentage = self.task_weights[task]
         target_number_of_tasks_to_store = int(MAX_TASKS_IN_DB_STORE * target_percentage)
 
-        number_of_these_tasks_already_stored = db_manager._get_number_of_these_tasks_already_stored(task)
+        number_of_these_tasks_already_stored = await db_manager._get_number_of_these_tasks_already_stored(task)
         if number_of_these_tasks_already_stored <= target_number_of_tasks_to_store:
-            db_manager.insert_task_results(task.value, result, synapse, synthetic_query)
+            await db_manager.insert_task_results(task.value, result, synapse, synthetic_query)
         else:
             actual_percentage = number_of_these_tasks_already_stored / MAX_TASKS_IN_DB_STORE
             probability_to_score_again = (target_percentage / actual_percentage - target_percentage) ** 4
             if random.random() < probability_to_score_again:
-                db_manager.insert_task_results(task.value, result, synapse, synthetic_query)
+                await db_manager.insert_task_results(task.value, result, synapse, synthetic_query)
 
     async def insert_task_results(
         self, task: str, result: utility_models.QueryResult, synapse: bt.Synapse, synthetic_query: bool
@@ -117,6 +115,13 @@ class DatabaseManager:
             await self.conn.execute(sql.delete_task_by_hotkey(), (hotkey,))
             await self.conn.execute(sql.delete_reward_data_by_hotkey(), (hotkey,))
             await self.conn.execute(sql.delete_uid_data_by_hotkey(), (hotkey,))
+        await self.conn.commit()
+
+    async def delete_tasks_older_than_date(self, minutes: int) -> None:
+        cutoff_time = datetime.now() - timedelta(minutes=minutes)
+        cutoff_time_str = cutoff_time.strftime("%Y-%m-%d %H:%M:%S")
+
+        await self.conn.execute(sql.delete_task_data_older_than(), (cutoff_time_str,))
         await self.conn.commit()
 
     async def delete_data_older_than_date(self, minutes: int) -> None:

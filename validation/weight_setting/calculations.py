@@ -11,18 +11,18 @@ from validation.models import RewardData
 PERIOD_SCORE_TIME_DECAYING_FACTOR = 0.5
 
 
-def _get_reward_datas(miner_hotkey: str, task: Task) -> List[RewardData]:
-    reward_datas = db_manager.fetch_recent_most_rewards_for_uid(task, miner_hotkey)
+async def _get_reward_datas(miner_hotkey: str, task: Task) -> List[RewardData]:
+    reward_datas = await db_manager.fetch_recent_most_rewards_for_uid(task, miner_hotkey)
     return reward_datas
 
 
-def _get_period_scores(miner_hotkey: str, task: Task) -> List[PeriodScore]:
-    period_scores = db_manager.fetch_hotkey_scores_for_task(task, miner_hotkey)
+async def _get_period_scores(miner_hotkey: str, task: Task) -> List[PeriodScore]:
+    period_scores = await db_manager.fetch_hotkey_scores_for_task(task, miner_hotkey)
     return period_scores
 
 
-def _calculate_combined_quality_score(miner_hotkey: str, task: Task) -> float:
-    reward_datas = _get_reward_datas(miner_hotkey, task)
+async def _calculate_combined_quality_score(miner_hotkey: str, task: Task) -> float:
+    reward_datas = await _get_reward_datas(miner_hotkey, task)
     combined_quality_scores = [
         reward_data.quality_score * reward_data.speed_scoring_factor for reward_data in reward_datas
     ]
@@ -31,8 +31,8 @@ def _calculate_combined_quality_score(miner_hotkey: str, task: Task) -> float:
     return sum(combined_quality_scores) / len(combined_quality_scores)
 
 
-def _calculate_normalised_period_score(miner_hotkey: str, task: Task) -> float:
-    period_scores = _get_period_scores(miner_hotkey, task)
+async def _calculate_normalised_period_score(miner_hotkey: str, task: Task) -> float:
+    period_scores = await _get_period_scores(miner_hotkey, task)
     all_period_scores = [ps for ps in period_scores if ps.period_score is not None]
     normalised_period_scores = _normalise_period_scores(all_period_scores)
     return normalised_period_scores
@@ -61,11 +61,13 @@ def _normalise_period_scores(period_scores: List[PeriodScore]) -> float:
         return total_score / total_weight
 
 
-def _calculate_hotkey_effective_volume_for_task(combined_quality_score: float, normalised_period_score: float, volume: float) -> float:
+def _calculate_hotkey_effective_volume_for_task(
+    combined_quality_score: float, normalised_period_score: float, volume: float
+) -> float:
     return combined_quality_score * normalised_period_score * volume
 
 
-def calculate_scores_for_settings_weights(
+async def calculate_scores_for_settings_weights(
     capacities_for_tasks: Dict[Task, Dict[axon_uid, float]],
     uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
     task_weights: Dict[Task, float],
@@ -81,9 +83,11 @@ def calculate_scores_for_settings_weights(
 
         for uid, volume in capacities.items():
             miner_hotkey = uid_to_uid_info[uid].hotkey
-            combined_quality_score = _calculate_combined_quality_score(miner_hotkey, task)
-            normalised_period_score = _calculate_normalised_period_score(miner_hotkey, task)
-            effective_volume_for_task = _calculate_hotkey_effective_volume_for_task(combined_quality_score, normalised_period_score, volume)
+            combined_quality_score = await _calculate_combined_quality_score(miner_hotkey, task)
+            normalised_period_score = await _calculate_normalised_period_score(miner_hotkey, task)
+            effective_volume_for_task = _calculate_hotkey_effective_volume_for_task(
+                combined_quality_score, normalised_period_score, volume
+            )
             hotkey_to_effective_volumes[miner_hotkey] = effective_volume_for_task
 
         sum_of_effective_volumes = sum(hotkey_to_effective_volumes.values())

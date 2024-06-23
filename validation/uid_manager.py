@@ -62,10 +62,10 @@ class UidManager:
             for record in self.uid_records_for_tasks[task].values():
                 record.calculate_period_score()
 
-    def store_period_scores(self) -> None:
+    async def store_period_scores(self) -> None:
         for uid_records in self.uid_records_for_tasks.values():
             for uid_record in uid_records.values():
-                db_manager.insert_uid_record(uid_record, self.validator_hotkey)
+                await db_manager.insert_uid_record(uid_record, self.validator_hotkey)
 
     async def start_synthetic_scoring(self) -> None:
         self.synthetic_scoring_tasks = []

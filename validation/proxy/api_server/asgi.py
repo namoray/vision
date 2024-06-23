@@ -10,6 +10,7 @@ from validation.proxy import sql
 from fastapi.responses import JSONResponse
 from starlette import status
 from fastapi import Response
+from validation.db.db_management import db_manager
 
 app = FastAPI(debug=False)
 
@@ -19,6 +20,7 @@ app.include_router(text_router)
 
 
 async def main():
+    await db_manager.initialize()
     core_validator.start_continuous_tasks()
 
     port = validator_config.api_server_port

@@ -66,14 +66,14 @@ class Scorer:
         self.am_scoring_results = True
 
     async def _score_results(self):
+        min_tasks_to_start_scoring = (
+            cst.MINIMUM_TASKS_TO_START_SCORING if self.testnet else cst.MINIMUM_TASKS_TO_START_SCORING_TESTNET
+        )
         while True:
-            tasks_and_number_of_results = db_manager.get_tasks_and_number_of_results()
+            tasks_and_number_of_results = await db_manager.get_tasks_and_number_of_results()
             total_tasks_stored = sum(tasks_and_number_of_results.values())
 
-            if total_tasks_stored < cst.MINIMUM_TASKS_TO_START_SCORING:
-                bt.logging.info(
-                    f"Not enough tasks to start scoring, {total_tasks_stored} out of {cst.MINIMUM_TASKS_TO_START_SCORING}; sleeping..."
-                )
+            if total_tasks_stored < min_tasks_to_start_scoring:
                 await asyncio.sleep(5)
                 continue
 
@@ -89,7 +89,7 @@ class Scorer:
         i = 0
         bt.logging.info(f"Checking some results for task {task}")
         while i < cst.MAX_RESULTS_TO_SCORE_FOR_TASK:
-            data_and_hotkey = db_manager.select_and_delete_task_result(task)  # noqa
+            data_and_hotkey = await db_manager.select_and_delete_task_result(task)  # noqa
             if data_and_hotkey is None:
                 bt.logging.warning(f"No data left to score for task {task}; iteration {i}")
                 return
@@ -206,7 +206,7 @@ class Scorer:
                     volume=volume,
                     speed_scoring_factor=speed_scoring_factor,
                 )
-                uid = db_manager.insert_reward_data(reward_data)
+                uid = await db_manager.insert_reward_data(reward_data)
 
                 data_to_post = reward_data.dict()
                 data_to_post[cst.TESTNET] = self.testnet
