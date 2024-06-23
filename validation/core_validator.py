@@ -111,7 +111,7 @@ class CoreValidator:
         """
         weights = {
             Task.chat_mixtral: 0.1,
-            Task.chat_llama_3: 0.25,
+            Task.chat_llama_3: 0.1,
             Task.proteus_text_to_image: 0.2,
             Task.playground_text_to_image: 0.1,
             Task.dreamshaper_text_to_image: 0.05,
@@ -120,7 +120,7 @@ class CoreValidator:
             Task.dreamshaper_image_to_image: 0.05,
             Task.jugger_inpainting: 0.05,
             Task.clip_image_embeddings: 0.0,
-            Task.avatar: 0.05,
+            Task.avatar: 0.20,
         }
         db_manager.task_weights = weights
         return weights
@@ -246,7 +246,7 @@ class CoreValidator:
             keypair=self.keypair,
             data_type_to_post=post_stats.DataTypeToPost.MINER_CAPACITIES,
         )
-    
+
 
     def _post_uid_records_to_tauvision(self) -> None:
         data_to_post = []
