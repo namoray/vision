@@ -45,7 +45,7 @@ class DatabaseManager:
             db_manager.insert_task_results(task.value, result, synapse, synthetic_query)
         else:
             actual_percentage = number_of_these_tasks_already_stored / MAX_TASKS_IN_DB_STORE
-            probability_to_score_again = ((target_percentage / actual_percentage - target_percentage) ** 4)
+            probability_to_score_again = (target_percentage / actual_percentage - target_percentage) ** 4
             if random.random() < probability_to_score_again:
                 db_manager.insert_task_results(task.value, result, synapse, synthetic_query)
 
@@ -81,8 +81,6 @@ class DatabaseManager:
         checking_data, miner_hotkey = row
         checking_data_loaded = json.loads(checking_data)
 
-
-        # TODO: re-enable
         cursor.execute(sql.delete_specific_task(), (task.value, checking_data))
         self.conn.commit()
 
