@@ -83,7 +83,7 @@ class DatabaseManager:
 
 
         # TODO: re-enable
-        # cursor.execute(sql.delete_specific_task(), (task.value, checking_data))
+        cursor.execute(sql.delete_specific_task(), (task.value, checking_data))
         self.conn.commit()
 
         return checking_data_loaded, miner_hotkey
