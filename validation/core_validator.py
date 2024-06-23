@@ -125,8 +125,9 @@ class CoreValidator:
         db_manager.task_weights = weights
         return weights
 
-    def _correct_capacities(self) -> None:
+    async def _post_and_correct_capacities(self) -> None:
         self._correct_for_max_capacities()
+        await self._post_miner_capacities_to_tauvision()
         self._correct_capacities_for_my_stake()
 
     def _correct_capacities_for_my_stake(self) -> None:
@@ -194,9 +195,7 @@ class CoreValidator:
                         continue
                     if uid not in self.capacities_for_tasks[task]:
                         self.capacities_for_tasks[task][uid] = float(volume.volume)
-            self._correct_capacities()
-        capacities_to_log = {k.value: v for k, v in self.capacities_for_tasks.items()}
-        bt.logging.info(f"Capacities: {capacities_to_log}")
+            await self._post_and_correct_capacities()
         bt.logging.info("Done fetching available tasks!")
 
     async def resync_metagraph(self):
@@ -247,6 +246,31 @@ class CoreValidator:
             keypair=self.keypair,
             data_type_to_post=post_stats.DataTypeToPost.MINER_CAPACITIES,
         )
+    
+
+    def _post_uid_records_to_tauvision(self) -> None:
+        data_to_post = []
+        for task in self.uid_manager.uid_records_for_tasks:
+            for record in self.uid_manager.uid_records_for_tasks[task].values():
+                data_to_post.append(post_stats.UidRecordPostObject(
+                    miner_hotkey=record.hotkey,
+                    validator_hotkey=self.public_hotkey_address,
+                    axon_uid=record.axon_uid,
+                    period_score=record.period_score,
+                    declared_volume=record.declared_volume,
+                    consumed_volume=record.consumed_volume,
+                    requests_429=record.requests_429,
+                    requests_500=record.requests_500,
+                    total_requests_made=record.total_requests_made,
+                    task=task,
+                ))
+
+        post_data = post_stats.UidRecordsPostBody(data=data_to_post)
+        asyncio.create_task(post_stats.post_to_tauvision(
+            data_to_post=post_data.dump(),
+            keypair=self.keypair,
+            data_type_to_post=post_stats.DataTypeToPost.UID_RECORD,
+        ))
 
     async def run_vali(self) -> None:
         iteration = 1
@@ -265,7 +289,6 @@ class CoreValidator:
 
             # Wait for initial syncing of metagraph
             await self.resync_metagraph()
-            await self._post_miner_capacities_to_tauvision()
             self.scorer.start_scoring_results_if_not_already()
 
             bt.logging.info("🚀 Starting to score stuff, metagraph is synced...")
@@ -280,6 +303,7 @@ class CoreValidator:
             await self.uid_manager.collect_synthetic_scoring_results()
             self.uid_manager.calculate_period_scores_for_uids()
             self.uid_manager.store_period_scores()
+            self._post_uid_records_to_tauvision()
 
             bt.logging.info(f"Finished scoring for iteration: {iteration}. Now settings weights")
             iteration += 1

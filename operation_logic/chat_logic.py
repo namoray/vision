@@ -13,9 +13,8 @@ async def stream_text_from_server(body: base_models.ChatIncoming, url: str, task
     text_endpoint = url + POST_ENDPOINT
     async with httpx.AsyncClient(timeout=90) as client:  # noqa
         async with client.stream("POST", text_endpoint, json=body.dict()) as resp:
-            async for chunk in resp.aiter_bytes():
+            async for chunk in resp.aiter_lines():
                 try:
-                    chunk = chunk.decode()
                     received_event_chunks = chunk.split("\n\n")
                     for event in received_event_chunks:
                         if event == "":

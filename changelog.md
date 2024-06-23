@@ -1,3 +1,8 @@
+## 4.0.5
+- Limiting length of synthetic generation prompts
+- Posting more to tauvision again
+- Fix for miners who sometimes get partial llm lines streamed
+- Pinning Numpy version to fix version issues
 ## 4.0.4
 - Hotfix to Capacities diminishing every period
 ## 4.0.3
