@@ -1,6 +1,7 @@
 # Schema for the db
 import asyncio
 import random
+from typing import Any, Dict
 
 import bittensor as bt
 import substrateinterface
@@ -98,7 +99,7 @@ class Scorer:
                 checking_data["synthetic_query"],
                 checking_data["synapse"],
             )
-            results_json = json.loads(results)
+            results_json: Dict[str, Any] = json.loads(results)
 
             synapse = json.loads(synapse_dict_str)
 
@@ -176,13 +177,11 @@ class Scorer:
 
             self.sleeper.reset_sleep_time()
             try:
-                result = task_response_json.get("result", {})
+                task_result = task_response_json.get("result", {})
                 bt.logging.debug(f"Got result: {task_response_json.get('result')}")
-                axon_scores = result.get("axon_scores", {})
+                axon_scores = task_result.get("axon_scores", {})
                 if axon_scores is None:
-                    bt.logging.error(
-                        f"AXon scores is none; found in the response josn: {task_response_json}"
-                    )
+                    bt.logging.error(f"AXon scores is none; found in the response josn: {task_response_json}")
                     continue
             except (json.JSONDecodeError, KeyError) as parse_err:
                 bt.logging.error(f"Error occurred when parsing the response: {parse_err}")
@@ -192,10 +191,14 @@ class Scorer:
             speed_scoring_factor = work_and_speed_functions.calculate_speed_modifier(
                 task=task, result=results_json, synapse=synapse
             )
+            response_time = results_json["response_time"]
             for uid, quality_score in axon_scores.items():
                 # We divide max_expected_score whilst the orchestrator is still factoring this into the score
                 # once it's removed from orchestrator, we'll remove it from here
-                bt.logging.error(f"quality_score: {quality_score}, speed_scoring_factor: {speed_scoring_factor}")
+                bt.logging.error(
+                    f"quality_score: {quality_score}, speed_scoring_factor: {speed_scoring_factor}; volume: {volume};"
+                    f" response time: {response_time}"
+                )
 
                 id = _generate_uid()
 
@@ -211,13 +214,11 @@ class Scorer:
                     volume=volume,
                     speed_scoring_factor=speed_scoring_factor,
                 )
-                bt.logging.error(f"Trying to store: {reward_data.dict()}")
                 uid = db_manager.insert_reward_data(reward_data)
 
                 data_to_post = reward_data.dict()
                 data_to_post[cst.TESTNET] = self.testnet
 
-                bt.logging.error(f"Posting reward data: {data_to_post}")
                 await post_stats.post_to_tauvision(
                     data_to_post=data_to_post,
                     keypair=self.keypair,
