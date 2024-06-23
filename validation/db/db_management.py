@@ -81,6 +81,8 @@ class DatabaseManager:
         checking_data, miner_hotkey = row
         checking_data_loaded = json.loads(checking_data)
 
+
+        # TODO: re-enable
         cursor.execute(sql.delete_specific_task(), (task.value, checking_data))
         self.conn.commit()
 

@@ -73,6 +73,8 @@ class CoreValidator:
 
         _my_stake = self.metagraph.S[self.metagraph.hotkeys.index(self.public_hotkey_address)]
         self._my_prop_of_stake = (_my_stake / sum(self.metagraph.S)).item()
+        if is_testnet:
+            self._my_prop_of_stake = 1
 
         validation_utils.connect_to_external_server()
 
@@ -109,7 +111,7 @@ class CoreValidator:
         """
         weights = {
             Task.chat_mixtral: 0.1,
-            Task.chat_llama_3: 0.1,
+            Task.chat_llama_3: 0.25,
             Task.proteus_text_to_image: 0.2,
             Task.playground_text_to_image: 0.1,
             Task.dreamshaper_text_to_image: 0.05,
@@ -118,7 +120,7 @@ class CoreValidator:
             Task.dreamshaper_image_to_image: 0.05,
             Task.jugger_inpainting: 0.05,
             Task.clip_image_embeddings: 0.0,
-            Task.avatar: 0.2,
+            Task.avatar: 0.05,
         }
         db_manager.task_weights = weights
         return weights
@@ -258,7 +260,7 @@ class CoreValidator:
                 data_type_to_post=post_stats.DataTypeToPost.VALIDATOR_INFO,
             )
 
-            db_manager.delete_data_older_than_date(minutes=60 * 24)
+            db_manager.delete_data_older_than_date(minutes=60 * 24 * 2)
             db_manager.delete_tasks_older_than_date(minutes=120)
 
             # Wait for initial syncing of metagraph

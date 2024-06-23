@@ -3,9 +3,8 @@ import sys
 import time
 import traceback
 from typing import Optional
-from typing import Dict
 from typing import Type
-from typing import Union, Any
+from typing import Union
 from PIL import Image
 from rich.console import Console
 import bittensor as bt
@@ -18,8 +17,6 @@ import random
 from core import constants as core_cst, utils as core_utils
 from models import utility_models, base_models
 import numpy as np
-from validation.proxy import old_speed_scoring_functions
-from core.tasks import Task
 
 console = Console()
 
@@ -130,23 +127,3 @@ def alter_clip_body(
 
     body.image_b64s = new_images
     return body
-
-
-tasks_to_old_speed_scoring_function = {
-    Task.chat_mixtral: old_speed_scoring_functions.speed_scoring_chat,
-    Task.chat_llama_3: old_speed_scoring_functions.speed_scoring_chat,
-    Task.proteus_text_to_image: old_speed_scoring_functions.speed_scoring_images,
-    Task.playground_text_to_image: old_speed_scoring_functions.speed_scoring_images,
-    Task.dreamshaper_text_to_image: old_speed_scoring_functions.speed_scoring_images,
-    Task.proteus_image_to_image: old_speed_scoring_functions.speed_scoring_images,
-    Task.playground_image_to_image: old_speed_scoring_functions.speed_scoring_images,
-    Task.dreamshaper_image_to_image: old_speed_scoring_functions.speed_scoring_images,
-    Task.jugger_inpainting: old_speed_scoring_functions.speed_scoring_images,
-    Task.avatar: old_speed_scoring_functions.speed_scoring_images,
-    Task.clip_image_embeddings: old_speed_scoring_functions.speed_scoring_clip,
-}
-
-
-async def get_expected_score(result: utility_models.QueryResult, synapse: Dict[str, Any], task: str) -> float:
-    expected_score = await tasks_to_old_speed_scoring_function[task](result, synapse, task)
-    return max(expected_score, 1)

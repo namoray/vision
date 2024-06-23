@@ -58,15 +58,11 @@ def _calculate_work_clip(number_of_images: int) -> float:
     return number_of_images
 
 
-def calculate_speed_modifier(
-    task: Task, result: Union[utility_models.QueryResult, str], synapse: Dict[str, Any]
-) -> float:
+def calculate_speed_modifier(task: Task, result: Dict[str, Any], synapse: Dict[str, Any]) -> float:
     config = tasks.get_task_config(task)
 
-    response_time = result.response_time if isinstance(result, utility_models.QueryResult) else result["response_time"]
-    raw_formatted_response = (
-        result.formatted_response if isinstance(result, utility_models.QueryResult) else result["formatted_response"]
-    )
+    response_time = result["response_time"]
+    raw_formatted_response = result["formatted_response"]
 
     normalised_response_time = max(response_time - config.overhead, 0)
 

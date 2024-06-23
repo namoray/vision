@@ -9,11 +9,11 @@ TESTNET = "testnet"
 NETUID = 19
 NETWORK = "finney"
 MAX_RESULTS_TO_SCORE_FOR_TASK = 100
-MINIMUM_TASKS_TO_START_SCORING = 100
+MINIMUM_TASKS_TO_START_SCORING = 10
 
 MIN_SECONDS_BETWEEN_SYNTHETICALLY_SCORING = 5
 
-# NOTE: Make these more granular, based on the prediction of the repsonse time perhaps?
+# NOTE: Make these more granular, based on the prediction of the response time perhaps?
 OPERATION_TIMEOUTS: Dict[str, float] = {
     "AvailableTasksOperation": 30,
     "Capacity": 10,
