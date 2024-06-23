@@ -70,7 +70,9 @@ class Scorer:
             total_tasks_stored = sum(tasks_and_number_of_results.values())
 
             if total_tasks_stored < cst.MINIMUM_TASKS_TO_START_SCORING:
-                bt.logging.info(f"Not enough tasks to start scoring, {total_tasks_stored} out of {cst.MINIMUM_TASKS_TO_START_SCORING}; sleeping...")
+                bt.logging.info(
+                    f"Not enough tasks to start scoring, {total_tasks_stored} out of {cst.MINIMUM_TASKS_TO_START_SCORING}; sleeping..."
+                )
                 await asyncio.sleep(5)
                 continue
 
@@ -174,9 +176,13 @@ class Scorer:
 
             self.sleeper.reset_sleep_time()
             try:
-                result = task_response_json.get('result', {})
+                result = task_response_json.get("result", {})
                 bt.logging.debug(f"Got result: {task_response_json.get('result')}")
                 axon_scores = result.get("axon_scores", {})
+                if axon_scores is None:
+                    bt.logging.error(
+                        f"AXon scores is none; found in the response josn: {task_response_json}"
+                    )
             except (json.JSONDecodeError, KeyError) as parse_err:
                 bt.logging.error(f"Error occurred when parsing the response: {parse_err}")
                 continue
