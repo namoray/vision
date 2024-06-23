@@ -284,7 +284,7 @@ class CoreValidator:
                 data_type_to_post=post_stats.DataTypeToPost.VALIDATOR_INFO,
             )
 
-            await db_manager.delete_data_older_than_date(minutes=60 * 24)
+            await db_manager.delete_data_older_than_date(minutes=60 * 24 * 2)
             await db_manager.delete_tasks_older_than_date(minutes=120)
 
             # Wait for initial syncing of metagraph
