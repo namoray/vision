@@ -2,16 +2,17 @@ import aiosqlite
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 
-from pydantic import BaseModel
 
 BALANCE = "balance"
 KEY = "key"
 NAME = "name"
+COST = "cost"
+ENDPOINT = "endpoint"
+
 
 RATE_LIMIT_PER_MINUTE = "rate_limit_per_minute"
 API_KEYS_TABLE = "api_keys"
 LOGS_TABLE = "logs"
-ENDPOINT = "endpoint"
 CREATED_AT = "created_at"
 
 DATABASE_PATH = "vision_database.db"
@@ -40,21 +41,49 @@ async def get_api_key_info(conn: aiosqlite.Connection, api_key: str) -> Optional
 
 
 async def get_all_api_keys(conn: aiosqlite.Connection) -> List[Dict[str, Any]]:
-    async with conn.execute(f"SELECT * FROM {API_KEYS_TABLE}") as cursor:
-        rows = await cursor.fetchall()
-        return [dict(row) for row in rows]
+    async with conn.execute(f"SELECT {KEY}, {BALANCE}, {RATE_LIMIT_PER_MINUTE} FROM {API_KEYS_TABLE}") as cursor:
+        return [
+            {
+                KEY: row[0],
+                BALANCE: row[1],
+                RATE_LIMIT_PER_MINUTE: row[2],
+            }
+            if row
+            else None
+            for row in await cursor.fetchall()
+        ]
 
 
 async def get_all_logs_for_key(conn: aiosqlite.Connection, api_key: str) -> List[Dict[str, Any]]:
-    async with conn.execute(f"SELECT * FROM {LOGS_TABLE} WHERE {KEY} = ?", (api_key,)) as cursor:
+    async with conn.execute(
+        f"SELECT {KEY}, {ENDPOINT}, {COST}, {BALANCE}, {CREATED_AT} FROM {LOGS_TABLE} WHERE {KEY} = ? ORDER BY {CREATED_AT} DESC LIMIT 100", (api_key,)
+    ) as cursor:
         rows = await cursor.fetchall()
-        return [dict(row) for row in rows]
+        return [
+            {
+                KEY: row[0],
+                ENDPOINT: row[1],
+                COST: row[2],
+                BALANCE: row[3],
+                CREATED_AT: row[4],
+            }
+            for row in rows
+        ]
 
 
 async def get_all_logs(conn: aiosqlite.Connection) -> List[Dict[str, Any]]:
-    async with conn.execute(f"SELECT * FROM {LOGS_TABLE}") as cursor:
+    async with conn.execute(f"SELECT {KEY}, {ENDPOINT}, {COST}, {BALANCE}, {CREATED_AT} FROM {LOGS_TABLE}") as cursor:
         rows = await cursor.fetchall()
-        return [dict(row) for row in rows]
+        return [
+            {
+                KEY: row[0],
+                ENDPOINT: row[1],
+                COST: row[2],
+                BALANCE: row[3],
+                CREATED_AT: row[4],
+            }
+            for row in rows
+        ]
 
 
 async def add_api_key(

@@ -117,9 +117,6 @@ class UidManager:
         self.uid_records_for_tasks[task][uid] = uid_record
 
         delay_between_requests = (core_cst.SCORING_PERIOD_TIME * 0.98) // (number_of_requests)
-        bt.logging.info(
-            f"Scoring {task} for uid {uid} with {number_of_requests} requests. Delay is {delay_between_requests}."
-        )
 
         i = 0
         tasks_in_progress = []
@@ -130,7 +127,7 @@ class UidManager:
             else:
                 await asyncio.sleep(delay_between_requests * (random.random() * 0.05 + 0.95))
 
-            if i % 100 == 0:
+            if i % 100 == 0 and i > 0:
                 bt.logging.debug(
                     f"synthetic requests still to make: {uid_record.synthetic_requests_still_to_make} on iteration {i} for uid {uid_record.axon_uid} and task {task}"
                 )

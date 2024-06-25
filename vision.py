@@ -1,11 +1,14 @@
 import uuid
 
+import aiosqlite
+import anyio
 import typer
 from typing import Optional
 from rich.console import Console
 from rich.table import Table
 from config.create_config import get_config
 from validation.proxy import sql
+
 cli = typer.Typer(name="Vision CLI")
 
 
@@ -34,34 +37,34 @@ def create_key(
     name: The name for the API key.
     """
 
-    if balance is None:
-        balance = float(
-            input("Please enter initial balance for the key (1 credit = 1 image): ")
-        )
+    async def run(balance: Optional[float], rate_limit_per_minute: Optional[int], name: Optional[str]):
+        if balance is None:
+            balance = float(input("Please enter initial balance for the key (1 credit = 1 image): "))
 
-    if rate_limit_per_minute is None:
-        rate_limit_per_minute = int(input("Please enter rate limit per minute: "))
+        if rate_limit_per_minute is None:
+            rate_limit_per_minute = int(input("Please enter rate limit per minute: "))
 
-    if name is None:
-        name = input("Please enter a name for the API key: ")
+        if name is None:
+            name = input("Please enter a name for the API key: ")
 
-    api_key = str(uuid.uuid4())
-    with sql.get_db_connection() as conn:
-        sql.add_api_key(conn, api_key, balance, rate_limit_per_minute, name)
+        api_key = str(uuid.uuid4())
+        async with aiosqlite.connect(sql.DATABASE_PATH) as conn:
+            await sql.add_api_key(conn, api_key, balance, rate_limit_per_minute, name)
 
-    console = Console()
-    table = Table(show_header=True, header_style="bold magenta")
+        console = Console()
+        table = Table(show_header=True, header_style="bold magenta")
 
-    table.add_column(sql.KEY)
-    table.add_column(sql.BALANCE)
-    table.add_column(sql.RATE_LIMIT_PER_MINUTE)
-    table.add_column(sql.NAME)
+        table.add_column(sql.KEY)
+        table.add_column(sql.BALANCE)
+        table.add_column(sql.RATE_LIMIT_PER_MINUTE)
+        table.add_column(sql.NAME)
 
-    row = (api_key, balance, rate_limit_per_minute, name)
-    table.add_row(*map(str, row))
+        row = (api_key, balance, rate_limit_per_minute, name)
+        table.add_row(*map(str, row))
 
-    console.print(table)
+        console.print(table)
 
+    api_key = anyio.run(run, balance, rate_limit_per_minute, name)
     return api_key
 
 
@@ -78,13 +81,17 @@ def update_key(key: str, balance: float, rate_limit_per_minute: int, name: str):
     rate_limit_per_minute (optional): The new rate limit in requests per minute for the API key.
     name (optional): The new name for the API key.
     """
-    with sql.get_db_connection() as conn:
-        if balance is not None:
-            sql.update_api_key_balance(conn, key, balance)
-        if rate_limit_per_minute is not None:
-            sql.update_api_key_rate_limit(conn, key, rate_limit_per_minute)
-        if name is not None:
-            sql.update_api_key_name(conn, key, name)
+
+    async def run():
+        async with aiosqlite.connect(sql.DATABASE_PATH) as conn:
+            if balance is not None:
+                await sql.update_api_key_balance(conn, key, balance)
+            if rate_limit_per_minute is not None:
+                await sql.update_api_key_rate_limit(conn, key, rate_limit_per_minute)
+            if name is not None:
+                await sql.update_api_key_name(conn, key, name)
+
+    anyio.run(run)
 
 
 @cli.command()
@@ -97,8 +104,12 @@ def delete_key(key: str):
     Arguments:
         key: The API key to delete.
     """
-    with sql.get_db_connection() as conn:
-        sql.delete_api_key(conn, key)
+
+    async def run():
+        async with aiosqlite.connect(sql.DATABASE_PATH) as conn:
+            await sql.delete_api_key(conn, key)
+
+    anyio.run(run)
 
 
 @cli.command()
@@ -106,23 +117,34 @@ def list_keys():
     """
     List all API keys.
     """
-    with sql.get_db_connection() as conn:
-        rows = sql.get_all_api_keys(conn)
-    console = Console()
 
-    table = Table(show_header=True, header_style="bold magenta")
-    try:
-        keys = rows[0].keys()
-    except IndexError:
-        console.print("No keys table found - try adding a key")
-        return
-    for key in keys:
-        table.add_column(str(key))
+    async def run():
+        async with aiosqlite.connect(sql.DATABASE_PATH) as conn:
+            rows = await sql.get_all_api_keys(conn)
+        console = Console()
 
-    for row in rows:
-        table.add_row(*map(str, row))
+        table = Table(show_header=True, header_style="bold magenta")
+        try:
+            _ = rows[0].keys()
+        except IndexError:
+            console.print("No keys table found - try adding a key")
+            return
 
-    console.print(table)
+        columns_need_adding = True
+
+        for row in rows:
+            if row:
+                if columns_need_adding:
+                    for column_name in row.keys():
+                        table.add_column(column_name)
+
+                    columns_need_adding = False
+
+                table.add_row(*[str(value) for value in row.values()])
+
+        console.print(table)
+
+    anyio.run(run)
 
 
 @cli.command()
@@ -130,49 +152,48 @@ def show_key_info(key: str):
     """
     Show information about an API key.
     """
+    async def run():
+        async with aiosqlite.connect(sql.DATABASE_PATH) as conn:
+            row = sql.get_api_key_info(conn, key)
 
-    with sql.get_db_connection() as conn:
-        row = sql.get_api_key_info(conn, key)
+        console = Console()
+        table = Table(show_header=True, header_style="bold magenta")
 
-    console = Console()
-    table = Table(show_header=True, header_style="bold magenta")
+        if row:
+            for column_name in row.keys():
+                table.add_column(column_name)
 
-    with sql.get_db_connection() as conn:
-        row = sql.get_api_key_info(conn, key)
+            table.add_row(*[str(value) for value in row.values()])
+            console.print(table)
 
-    if row:
-        for column_name in row.keys():
-            table.add_column(column_name)
-
-        table.add_row(*[str(value) for value in row.values()])
-        console.print(table)
-
-
+    anyio.run(run)
+    
 @cli.command()
 def logs_for_key(key: str):
     """
     Show all logs for an API key.
     """
-    from rich.table import Table
-    from rich.console import Console
 
-    console = Console()
-    table = Table(show_header=True, header_style="bold magenta")
+    async def run():
+        console = Console()
+        table = Table(show_header=True, header_style="bold magenta")
 
-    with sql.get_db_connection() as conn:
-        logs = sql.get_all_logs_for_key(conn, key)
+        async with aiosqlite.connect(sql.DATABASE_PATH) as conn:
+            logs = await sql.get_all_logs_for_key(conn, key)
 
-    if logs:
-        for column_name in logs[0].keys():
-            table.add_column(column_name)
+        if logs:
+            for column_name in logs[0].keys():
+                table.add_column(column_name)
 
-        for log in logs:
-            log = dict(log)
-            table.add_row(*[str(value) for value in log.values()])
+            for log in logs:
+                log = dict(log)
+                table.add_row(*[str(value) for value in log.values()])
 
-        console.print(table)
-    else:
-        print(f"No logs found for key: {key}")
+            console.print(table)
+        else:
+            print(f"No logs found for key: {key}")
+
+    anyio.run(run)
 
 
 @cli.command()
@@ -180,44 +201,48 @@ def logs_summary():
     """
     Summary of all logs.
     """
-    with sql.get_db_connection() as conn:
-        keys = sql.get_all_api_keys(conn)
 
-    console = Console()
+    async def run():
+        async with aiosqlite.connect(sql.DATABASE_PATH) as conn:
+            keys = await sql.get_all_api_keys(conn)
 
-    summary_table = Table(show_header=True, header_style="bold magenta")
-    summary_table.add_column("key")
-    summary_table.add_column("Total Requests")
-    summary_table.add_column("Total Credits Used")
+        console = Console()
 
-    global_endpoint_dict = {}
+        summary_table = Table(show_header=True, header_style="bold magenta")
+        summary_table.add_column("key")
+        summary_table.add_column("Total Requests")
+        summary_table.add_column("Total Credits Used")
 
-    for key in keys:
-        key = dict(key)[sql.KEY]
-        with sql.get_db_connection() as conn:
-            logs = sql.get_all_logs_for_key(conn, key)
+        global_endpoint_dict = {}
 
-        total_requests = len(logs)
-        total_credits_used = sum([dict(log).get("cost", 0) for log in logs])
+        for key in keys:
+            key = dict(key)[sql.KEY]
+            async with aiosqlite.connect(sql.DATABASE_PATH) as conn:
+                logs = await sql.get_all_logs_for_key(conn, key)
 
-        for log in logs:
-            log = dict(log)
-            endpoint = log.get(sql.ENDPOINT, "unknown_endpoint")
-            global_endpoint_dict[endpoint] = global_endpoint_dict.get(endpoint, 0) + 1
+            total_requests = len(logs)
+            total_credits_used = sum([dict(log).get("cost", 0) for log in logs])
 
-        summary_table.add_row(key, str(total_requests), str(total_credits_used))
+            for log in logs:
+                log = dict(log)
+                endpoint = log.get(sql.ENDPOINT, "unknown_endpoint")
+                global_endpoint_dict[endpoint] = global_endpoint_dict.get(endpoint, 0) + 1
 
-    console.print(summary_table)
+            summary_table.add_row(key, str(total_requests), str(total_credits_used))
 
-    breakdown_table = Table(show_header=True, header_style="bold green")
-    breakdown_table.add_column("Endpoint")
-    breakdown_table.add_column("Count")
+        console.print(summary_table)
 
-    for endpoint, count in global_endpoint_dict.items():
-        breakdown_table.add_row(endpoint, str(count))
+        breakdown_table = Table(show_header=True, header_style="bold green")
+        breakdown_table.add_column("Endpoint")
+        breakdown_table.add_column("Count")
 
-    console.print("Endpoint Breakdown:")
-    console.print(breakdown_table)
+        for endpoint, count in global_endpoint_dict.items():
+            breakdown_table.add_row(endpoint, str(count))
+
+        console.print("Endpoint Breakdown:")
+        console.print(breakdown_table)
+    
+    anyio.run(run)
 
 
 if __name__ == "__main__":
