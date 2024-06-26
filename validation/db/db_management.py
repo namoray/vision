@@ -46,14 +46,15 @@ class DatabaseManager:
         target_percentage = self.task_weights[task]
         target_number_of_tasks_to_store = int(MAX_TASKS_IN_DB_STORE * target_percentage)
 
-        number_of_these_tasks_already_stored = await self._get_number_of_these_tasks_already_stored(task)
-        if number_of_these_tasks_already_stored <= target_number_of_tasks_to_store:
-            await self.insert_task_results(task.value, result, synapse, synthetic_query)
-        else:
-            actual_percentage = number_of_these_tasks_already_stored / MAX_TASKS_IN_DB_STORE
-            probability_to_score_again = (target_percentage / actual_percentage - target_percentage) ** 4
-            if random.random() < probability_to_score_again:
+        async with self.lock:
+            number_of_these_tasks_already_stored = await self._get_number_of_these_tasks_already_stored(task)
+            if number_of_these_tasks_already_stored <= target_number_of_tasks_to_store:
                 await self.insert_task_results(task.value, result, synapse, synthetic_query)
+            else:
+                actual_percentage = number_of_these_tasks_already_stored / MAX_TASKS_IN_DB_STORE
+                probability_to_score_again = (target_percentage / actual_percentage - target_percentage) ** 4
+                if random.random() < probability_to_score_again:
+                    await self.insert_task_results(task.value, result, synapse, synthetic_query)
 
     async def insert_task_results(
         self, task: str, result: utility_models.QueryResult, synapse: bt.Synapse, synthetic_query: bool
