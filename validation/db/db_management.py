@@ -46,34 +46,34 @@ class DatabaseManager:
         target_percentage = self.task_weights[task]
         target_number_of_tasks_to_store = int(MAX_TASKS_IN_DB_STORE * target_percentage)
 
-        async with self.lock:
-            number_of_these_tasks_already_stored = await self._get_number_of_these_tasks_already_stored(task)
-            if number_of_these_tasks_already_stored <= target_number_of_tasks_to_store:
+
+        number_of_these_tasks_already_stored = await self._get_number_of_these_tasks_already_stored(task)
+        if number_of_these_tasks_already_stored <= target_number_of_tasks_to_store:
+            await self.insert_task_results(task.value, result, synapse, synthetic_query)
+        else:
+            actual_percentage = number_of_these_tasks_already_stored / MAX_TASKS_IN_DB_STORE
+            probability_to_score_again = (target_percentage / actual_percentage - target_percentage) ** 4
+            if random.random() < probability_to_score_again:
                 await self.insert_task_results(task.value, result, synapse, synthetic_query)
-            else:
-                actual_percentage = number_of_these_tasks_already_stored / MAX_TASKS_IN_DB_STORE
-                probability_to_score_again = (target_percentage / actual_percentage - target_percentage) ** 4
-                if random.random() < probability_to_score_again:
-                    await self.insert_task_results(task.value, result, synapse, synthetic_query)
 
     async def insert_task_results(
         self, task: str, result: utility_models.QueryResult, synapse: bt.Synapse, synthetic_query: bool
     ) -> None:
         async with self.lock:
+            
             async with self.conn.execute(sql.select_count_of_rows_in_tasks()) as cursor:
                 row_count = (await cursor.fetchone())[0]
 
             if row_count >= MAX_TASKS_IN_DB_STORE + 10:
                 await self.conn.execute(sql.delete_oldest_rows_from_tasks(limit=10))
 
-        data_to_store = {
-            "result": result.json(),
-            "synapse": json.dumps(synapse.dict()),
-            "synthetic_query": synthetic_query,
-        }
-        hotkey = result.miner_hotkey
-        data = json.dumps(data_to_store)
-        async with self.lock:
+            data_to_store = {
+                "result": result.json(),
+                "synapse": json.dumps(synapse.dict()),
+                "synthetic_query": synthetic_query,
+            }
+            hotkey = result.miner_hotkey
+            data = json.dumps(data_to_store)
             await self.conn.execute(sql.insert_task(), (task, data, hotkey))
             await self.conn.commit()
 
@@ -81,13 +81,12 @@ class DatabaseManager:
         async with self.lock:
             async with self.conn.execute(sql.select_task_for_deletion(), (task.value, task.value)) as cursor:
                 row = await cursor.fetchone()
-        if row is None:
-            return None
+            if row is None:
+                return None
 
-        checking_data, miner_hotkey = row
-        checking_data_loaded = json.loads(checking_data)
+            checking_data, miner_hotkey = row
+            checking_data_loaded = json.loads(checking_data)
 
-        async with self.lock:
             await self.conn.execute(sql.delete_specific_task(), (task.value, checking_data))
             await self.conn.commit()
 
@@ -97,22 +96,23 @@ class DatabaseManager:
         self,
         reward_data: RewardData,
     ) -> str:
-        await self.conn.execute(
-            sql.insert_reward_data(),
-            (
-                reward_data.id,
-                reward_data.task,
-                reward_data.axon_uid,
-                reward_data.quality_score,
-                reward_data.validator_hotkey,
-                reward_data.miner_hotkey,
-                reward_data.synthetic_query,
-                reward_data.speed_scoring_factor,
-                reward_data.response_time,
-                reward_data.volume,
-            ),
-        )
-        await self.conn.commit()
+        async with self.lock:
+            await self.conn.execute(
+                sql.insert_reward_data(),
+                (
+                    reward_data.id,
+                    reward_data.task,
+                    reward_data.axon_uid,
+                    reward_data.quality_score,
+                    reward_data.validator_hotkey,
+                    reward_data.miner_hotkey,
+                    reward_data.synthetic_query,
+                    reward_data.speed_scoring_factor,
+                    reward_data.response_time,
+                    reward_data.volume,
+                ),
+            )
+            await self.conn.commit()
         return reward_data.id
 
     async def clean_tables_of_hotkeys(self, miner_hotkeys: List[str]) -> None:
