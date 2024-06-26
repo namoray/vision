@@ -178,7 +178,7 @@ class Scorer:
                 task_result = task_response_json.get("result", {})
                 axon_scores = task_result.get("axon_scores", {})
                 if axon_scores is None:
-                    bt.logging.error(f"AXon scores is none; found in the response josn: {task_response_json}")
+                    bt.logging.error(f"Axon scores is none; found in the response json: {task_response_json}")
                     continue
             except (json.JSONDecodeError, KeyError) as parse_err:
                 bt.logging.error(f"Error occurred when parsing the response: {parse_err}")

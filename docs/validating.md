@@ -31,56 +31,22 @@ The Orchestrator performs the checking tasks, to make sure the miners are behavi
 ## Starting the Orchestrator server
 The code for the orchestrator can be found here: https://github.com/namoray/vision-workers
 
-There are two options:
-- With baremetal, downloading and running the image manually (https://github.com/namoray/vision-workers/blob/main/validator_orchestrator/README.md) (ADVISED)
-- With vast, runpod, etc; using the template setup (below)
+Currently, a bare metal GPU is necessary for functionality, downloading and running the image manually (https://github.com/namoray/vision-workers/blob/main/validator_orchestrator/README.md)
 
-**⛔️ VALIDATORS HAVE HISTORICALLY HAD MORE SUCCESS WITH RUNNING GPU STUFF ON BARE METAL VS RUNPOD (50%) - IF YOU HAVE TROUBLES WITH RUNPOD, TRY ANOTHER PROVIDER!**
-
-## Template setup
-I'll use runpod as example, but it's the same process on any template provider 
-
-(Note on runpod there is a public template called vision-19-orchestrator, you can search for that instead, but I'll show the full steps here for completeness)
-
-
-Navigate to https://www.runpod.io/console/user/templates
-
-Create a new template
-![Create template](images/create-template.png)
-
-**Fill out the template like so**
-
-![Orchestrator template](images/orchestrator-template.png)
-
-It's very important that port 6920 is exposed here, as well as TCP port 22 ( so you can ssh in if you need to)
-
-Try to get as much storage as you can for future proofing! 500gb-1TB is ideal
-
-**Create a GPU pod with this instance**
-
-Select a machine, then configure the template 
-
-![select-template](images/select-template.png)
-
-**THIS WILL TAKE ABOUT 10-15 MINUTES TO SPIN UP AS IT DOWNLOADS ALL MODELS AN EVERYTHING FOR YOU!**
-
-#### Getting the address of the server
-Navigate to one of the pods, click 'connect', and then click the `connect to http port` button, and copy the URL in your browser
-![HTTP button](images/http-button.png)
-
+For setting up the machine and running orchestrator code, you have multiple choices : 
+- Auto machine setup + run autoupdates (which starts orchestrator container), refer to (https://github.com/namoray/vision-workers/blob/main/generic_docs/setup_bare_metal_run_autoupdates.md)
+- Auto machine setup + run orchestrator directly - without autoupdates - (https://github.com/namoray/vision-workers/blob/main/generic_docs/validator_with_autoupdates.md)
+- Manually setup the machine, then running orchestrator with/without autoupdates (https://github.com/namoray/vision-workers/blob/main/generic_docs/install_all.md) 
 
 # Proxy server setup
 
 Get a CPU VM (Digital Ocean Droplet, OVH, Vultr, etc)  - make sure you have an open port if you want to run a organic API server.
-**Note: Runpod CPU's don't seem to be the best**
-If you pick a runpod cpu, i would advise running this
-```bash
-ulimit -n 4096
-```
 
 ## Setup steps
 
-Note: if you're using a provider such as runpod or vast, make sure you expose the necessary ports first, e.g.: https://docs.runpod.io/docs/expose-ports#:~:text=If%20your%20pod%20supports%20a,address%20to%20access%20your%20service. Follow the "Symmetrical port mapping" step :)
+Note: if you're using a provider such as vast, make sure you expose the necessary ports first, e.g.: https://docs.runpod.io/docs/expose-ports#:~:text=If%20your%20pod%20supports%20a,address%20to%20access%20your%20service. Follow the "Symmetrical port mapping" step :) 
+
+**Note: Runpod CPU's don't seem to be the best**
 
 ### Clone the repo
 ```bash
@@ -90,7 +56,7 @@ cd vision
 
 ### Install system dependencies
 
-If you are in a container such as runpod, run these:
+If you are in a container, run these:
 
 ```bash
 ### Install pm2 & jq
@@ -152,7 +118,7 @@ vision create-config
 ### Creating the database
 Used to store scoring logs
 
-runpod or similar:
+Container:
 ```bash
 curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64
 chmod +x /usr/local/bin/dbmate

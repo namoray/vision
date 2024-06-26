@@ -325,7 +325,7 @@ class CoreValidator:
         if self.uid_manager is None:
             return JSONResponse(status_code=500, content={"message": "Server booting, one sec"})
 
-        return await self.uid_manager.make_orgnanic_query(
+        return await self.uid_manager.make_organic_query(
             task=task, synapse=synapse, stream=stream, outgoing_model=outgoing_model
         )
 

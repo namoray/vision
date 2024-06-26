@@ -169,7 +169,7 @@ class UidManager:
         await asyncio.gather(*tasks_in_progress)
         bt.logging.info(f"Done synthetic querying for task: {task} and uid: {uid} and volume: {volume}")
 
-    async def make_orgnanic_query(
+    async def make_organic_query(
         self, task: Task, stream: bool, synapse: bt.Synapse, outgoing_model: BaseModel
     ) -> Union[utility_models.QueryResult, AsyncGenerator]:  # noqa: F821
         if task not in self.task_to_uid_queue:
