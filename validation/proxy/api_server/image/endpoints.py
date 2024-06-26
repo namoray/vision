@@ -1,10 +1,9 @@
 from core import Task
 import fastapi
-from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from models import base_models, synapses, utility_models, request_models
 from validation.proxy import validation_utils
-from fastapi import routing
+from fastapi import HTTPException, routing
 from validation.proxy.api_server.image import utils
 from validation.core_validator import core_validator
 
@@ -113,28 +112,28 @@ async def avatar(
     return request_models.AvatarResponse(image_b64=formatted_response.image_b64)
 
 
-@router.post("/upscale")
-async def upscale(
-    body: request_models.UpscaleRequest,
-    _: None = fastapi.Depends(dependencies.get_token),
-) -> request_models.UpscaleResponse:
-    synapse = validation_utils.get_synapse_from_body(
-        body=body,
-        synapse_model=synapses.Upscale,
-    )
+# @router.post("/upscale")
+# async def upscale(
+#     body: request_models.UpscaleRequest,
+#     _: None = fastapi.Depends(dependencies.get_token),
+# ) -> request_models.UpscaleResponse:
+#     synapse = validation_utils.get_synapse_from_body(
+#         body=body,
+#         synapse_model=synapses.Upscale,
+#     )
 
-    result = await core_validator.make_organic_query(
-        synapse=synapse, outgoing_model=base_models.UpscaleOutgoing, task=Task("upscale"), stream=False
-    )
-    if isinstance(result, JSONResponse):
-        return result
-    validation_utils.handle_bad_result(result)
+#     result = await core_validator.make_organic_query(
+#         synapse=synapse, outgoing_model=base_models.UpscaleOutgoing, task=Task("upscale"), stream=False
+#     )
+#     if isinstance(result, JSONResponse):
+#         return result
+#     validation_utils.handle_bad_result(result)
 
-    formatted_response: base_models.UpscaleOutgoing = result.formatted_response
+#     formatted_response: base_models.UpscaleOutgoing = result.formatted_response
 
-    utils.do_formatted_response_image_checks(formatted_response, result)
+#     utils.do_formatted_response_image_checks(formatted_response, result)
 
-    return request_models.UpscaleResponse(image_b64=formatted_response.image_b64)
+#     return request_models.UpscaleResponse(image_b64=formatted_response.image_b64)
 
 
 @router.post("/clip-embeddings")
