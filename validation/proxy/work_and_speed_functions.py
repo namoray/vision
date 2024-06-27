@@ -61,9 +61,11 @@ def _calculate_work_clip(number_of_images: int) -> float:
 def calculate_speed_modifier(task: Task, result: Dict[str, Any], synapse: Dict[str, Any]) -> float:
     config = tasks.get_task_config(task)
 
-    response_time = result["response_time"]
-    raw_formatted_response = result["formatted_response"]
+    response_time = result.get("response_time")
+    raw_formatted_response = result.get("formatted_response")
 
+    if response_time is None or raw_formatted_response is None:
+        return 0
     normalised_response_time = max(response_time - config.overhead, 0)
 
     if config.task_type == TaskType.IMAGE:

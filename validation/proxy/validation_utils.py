@@ -29,7 +29,6 @@ def log_task_exception(task):
         tb_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
         tb_text = "".join(tb_lines)
         bt.logging.error(f"Exception occurred: \n{tb_text}")
-        asyncio.get_event_loop().stop()
 
 
 def get_synapse_from_body(

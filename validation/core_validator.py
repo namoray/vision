@@ -67,13 +67,13 @@ class CoreValidator:
         self.netuid: int = self.config.netuid if self.config.netuid is not None else 19
         self.task_weights = self._get_task_weights()
 
-        is_testnet = validator_config.subtensor_network == "test" or self.netuid != 19
+        self.is_testnet = validator_config.subtensor_network == "test" or self.netuid != 19
 
         self.public_hotkey_address = self.keypair.ss58_address
 
         _my_stake = self.metagraph.S[self.metagraph.hotkeys.index(self.public_hotkey_address)]
         self._my_prop_of_stake = (_my_stake / sum(self.metagraph.S)).item()
-        if is_testnet:
+        if self.is_testnet:
             self._my_prop_of_stake = 1.0
 
         validation_utils.connect_to_external_server()
@@ -99,7 +99,7 @@ class CoreValidator:
 
         self.results_store: Dict[str, utility_models.QueryResult] = {}
 
-        self.scorer = Scorer(validator_hotkey=self.keypair.ss58_address, testnet=is_testnet, keypair=self.keypair)
+        self.scorer = Scorer(validator_hotkey=self.keypair.ss58_address, testnet=self.is_testnet, keypair=self.keypair)
         self.weight_setter = WeightSetter(subtensor=self.subtensor, config=self.config)
         self.synthetic_data_manager = SyntheticDataManager()
         self.uid_manager = None
@@ -247,30 +247,33 @@ class CoreValidator:
             data_type_to_post=post_stats.DataTypeToPost.MINER_CAPACITIES,
         )
 
-
     def _post_uid_records_to_tauvision(self) -> None:
         data_to_post = []
         for task in self.uid_manager.uid_records_for_tasks:
             for record in self.uid_manager.uid_records_for_tasks[task].values():
-                data_to_post.append(post_stats.UidRecordPostObject(
-                    miner_hotkey=record.hotkey,
-                    validator_hotkey=self.public_hotkey_address,
-                    axon_uid=record.axon_uid,
-                    period_score=record.period_score,
-                    declared_volume=record.declared_volume,
-                    consumed_volume=record.consumed_volume,
-                    requests_429=record.requests_429,
-                    requests_500=record.requests_500,
-                    total_requests_made=record.total_requests_made,
-                    task=task,
-                ))
+                data_to_post.append(
+                    post_stats.UidRecordPostObject(
+                        miner_hotkey=record.hotkey,
+                        validator_hotkey=self.public_hotkey_address,
+                        axon_uid=record.axon_uid,
+                        period_score=record.period_score,
+                        declared_volume=record.declared_volume,
+                        consumed_volume=record.consumed_volume,
+                        requests_429=record.requests_429,
+                        requests_500=record.requests_500,
+                        total_requests_made=record.total_requests_made,
+                        task=task,
+                    )
+                )
 
         post_data = post_stats.UidRecordsPostBody(data=data_to_post)
-        asyncio.create_task(post_stats.post_to_tauvision(
-            data_to_post=post_data.dump(),
-            keypair=self.keypair,
-            data_type_to_post=post_stats.DataTypeToPost.UID_RECORD,
-        ))
+        asyncio.create_task(
+            post_stats.post_to_tauvision(
+                data_to_post=post_data.dump(),
+                keypair=self.keypair,
+                data_type_to_post=post_stats.DataTypeToPost.UID_RECORD,
+            )
+        )
 
     async def run_vali(self) -> None:
         iteration = 1
@@ -298,12 +301,13 @@ class CoreValidator:
                 uid_to_uid_info=self.uid_to_uid_info,
                 validator_hotkey=self.keypair.ss58_address,
                 synthetic_data_manager=self.synthetic_data_manager,
+                is_testnet=self.is_testnet,
             )
             await self.uid_manager.start_synthetic_scoring()
             await self.uid_manager.collect_synthetic_scoring_results()
             self.uid_manager.calculate_period_scores_for_uids()
             self._post_uid_records_to_tauvision()
-            await  self.uid_manager.store_period_scores()
+            await self.uid_manager.store_period_scores()
 
             bt.logging.info(f"Finished scoring for iteration: {iteration}. Now settings weights")
             iteration += 1

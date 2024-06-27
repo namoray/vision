@@ -113,6 +113,7 @@ class Scorer:
                 try:
                     j = 0
                     while True:
+                        bt.logging.info("Sending result to be scored...")
                         response = await client.post(
                             validator_config.external_server_url + "check-result",
                             json=data,

@@ -46,6 +46,7 @@ class UidManager:
         validator_hotkey: str,
         uid_to_uid_info: Dict[axon_uid, utility_models.UIDinfo],
         synthetic_data_manager: synthetic_generations.SyntheticDataManager,
+        is_testnet: bool,
     ) -> None:
         self.capacities_for_tasks = capacities_for_tasks
         self.dendrite = dendrite
@@ -56,6 +57,8 @@ class UidManager:
         self.synthetic_scoring_tasks: List[asyncio.Task] = []
         self.task_to_uid_queue: Dict[Task, query_utils.UIDQueue] = {}
         self.synthetic_data_manager = synthetic_data_manager
+
+        self.is_testnet = is_testnet
 
     def calculate_period_scores_for_uids(self) -> None:
         for task in self.uid_records_for_tasks:
@@ -87,6 +90,7 @@ class UidManager:
                         )
                     )
                 )
+        bt.logging.info(f"Starting querying for {len(self.synthetic_scoring_tasks)} tasks 🔥")
 
     async def collect_synthetic_scoring_results(self) -> None:
         await asyncio.gather(*self.synthetic_scoring_tasks)
@@ -127,7 +131,7 @@ class UidManager:
             else:
                 await asyncio.sleep(delay_between_requests * (random.random() * 0.05 + 0.95))
 
-            if i % 100 == 0 and i > 0:
+            if i % 100 == 0 and (i > 0 or self.is_testnet):
                 bt.logging.debug(
                     f"synthetic requests still to make: {uid_record.synthetic_requests_still_to_make} on iteration {i} for uid {uid_record.axon_uid} and task {task}"
                 )

@@ -14,25 +14,25 @@ from validation.db import sql
 from validation.models import PeriodScore, RewardData, UIDRecord
 
 MAX_TASKS_IN_DB_STORE = 1000
+db_lock = asyncio.Lock()
 
 
 class DatabaseManager:
     def __init__(self):
         self.conn = None
         self.task_weights: Dict[Task, float] = {}
-        self.lock = asyncio.Lock()
 
     async def initialize(self):
         self.conn = await aiosqlite.connect(core_cst.VISION_DB)
 
     async def get_tasks_and_number_of_results(self) -> Dict[str, int]:
-        async with self.lock:
+        async with db_lock:
             async with self.conn.execute(sql.select_tasks_and_number_of_results()) as cursor:
                 rows = await cursor.fetchall()
         return {row[0]: row[1] for row in rows}
 
     async def _get_number_of_these_tasks_already_stored(self, task: Task) -> int:
-        async with self.lock:
+        async with db_lock:
             async with self.conn.execute(sql.select_count_rows_of_task_stored_for_scoring(), (task.value,)) as cursor:
                 row = await cursor.fetchone()
         return row[0]
@@ -45,8 +45,6 @@ class DatabaseManager:
             return
         target_percentage = self.task_weights[task]
         target_number_of_tasks_to_store = int(MAX_TASKS_IN_DB_STORE * target_percentage)
-
-
         number_of_these_tasks_already_stored = await self._get_number_of_these_tasks_already_stored(task)
         if number_of_these_tasks_already_stored <= target_number_of_tasks_to_store:
             await self.insert_task_results(task.value, result, synapse, synthetic_query)
@@ -59,8 +57,7 @@ class DatabaseManager:
     async def insert_task_results(
         self, task: str, result: utility_models.QueryResult, synapse: bt.Synapse, synthetic_query: bool
     ) -> None:
-        async with self.lock:
-            
+        async with db_lock:
             async with self.conn.execute(sql.select_count_of_rows_in_tasks()) as cursor:
                 row_count = (await cursor.fetchone())[0]
 
@@ -78,7 +75,7 @@ class DatabaseManager:
             await self.conn.commit()
 
     async def select_and_delete_task_result(self, task: Task) -> Optional[Union[List[Dict[str, Any]], str]]:
-        async with self.lock:
+        async with db_lock:
             async with self.conn.execute(sql.select_task_for_deletion(), (task.value, task.value)) as cursor:
                 row = await cursor.fetchone()
             if row is None:
@@ -96,7 +93,7 @@ class DatabaseManager:
         self,
         reward_data: RewardData,
     ) -> str:
-        async with self.lock:
+        async with db_lock:
             await self.conn.execute(
                 sql.insert_reward_data(),
                 (
@@ -116,7 +113,7 @@ class DatabaseManager:
         return reward_data.id
 
     async def clean_tables_of_hotkeys(self, miner_hotkeys: List[str]) -> None:
-        async with self.lock:
+        async with db_lock:
             for hotkey in miner_hotkeys:
                 await self.conn.execute(sql.delete_task_by_hotkey(), (hotkey,))
                 await self.conn.execute(sql.delete_reward_data_by_hotkey(), (hotkey,))
@@ -127,7 +124,7 @@ class DatabaseManager:
         cutoff_time = datetime.now() - timedelta(minutes=minutes)
         cutoff_time_str = cutoff_time.strftime("%Y-%m-%d %H:%M:%S")
 
-        async with self.lock:
+        async with db_lock:
             await self.conn.execute(sql.delete_task_data_older_than(), (cutoff_time_str,))
             await self.conn.commit()
 
@@ -135,7 +132,7 @@ class DatabaseManager:
         cutoff_time = datetime.now() - timedelta(minutes=minutes)
         cutoff_time_str = cutoff_time.strftime("%Y-%m-%d %H:%M:%S")
 
-        async with self.lock:
+        async with db_lock:
             await self.conn.execute(sql.delete_reward_data_older_than(), (cutoff_time_str,))
             await self.conn.execute(sql.delete_uid_data_older_than(), (cutoff_time_str,))
             await self.conn.execute(sql.delete_task_data_older_than(), (cutoff_time_str,))
@@ -145,8 +142,7 @@ class DatabaseManager:
     async def fetch_recent_most_rewards_for_uid(
         self, task: Task, miner_hotkey: str, quality_tasks_to_fetch: int = 50
     ) -> List[RewardData]:
-
-        async with self.lock:
+        async with db_lock:
             async with self.conn.execute(
                 sql.select_recent_reward_data_for_a_task(),
                 (task.value, datetime.now().timestamp() - timedelta(hours=72).total_seconds(), miner_hotkey),
@@ -188,7 +184,7 @@ class DatabaseManager:
         uid_record: UIDRecord,
         validator_hotkey: str,
     ) -> None:
-        async with self.lock:
+        async with db_lock:
             await self.conn.execute(
                 sql.insert_uid_record(),
                 (
@@ -211,7 +207,7 @@ class DatabaseManager:
         task: Task,
         miner_hotkey: str,
     ) -> List[PeriodScore]:
-        async with self.lock:
+        async with db_lock:
             async with self.conn.execute(sql.select_uid_period_scores_for_task(), (task.value, miner_hotkey)) as cursor:
                 rows = await cursor.fetchall()
 
@@ -227,7 +223,7 @@ class DatabaseManager:
         return sorted(period_scores, key=lambda x: x.created_at, reverse=True)
 
     async def close(self):
-        async with self.lock:
+        async with db_lock:
             await self.conn.close()
 
 
