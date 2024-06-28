@@ -73,6 +73,7 @@ class CoreValidator:
 
         _my_stake = self.metagraph.S[self.metagraph.hotkeys.index(self.public_hotkey_address)]
         self._my_prop_of_stake = (_my_stake / sum(self.metagraph.S)).item()
+
         if self.is_testnet:
             self._my_prop_of_stake = 1.0
 
@@ -329,7 +330,7 @@ class CoreValidator:
         if self.uid_manager is None:
             return JSONResponse(status_code=500, content={"message": "Server booting, one sec"})
 
-        return await self.uid_manager.make_orgnanic_query(
+        return await self.uid_manager.make_organic_query(
             task=task, synapse=synapse, stream=stream, outgoing_model=outgoing_model
         )
 

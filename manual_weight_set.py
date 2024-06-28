@@ -20,6 +20,7 @@ async def main():
     await core_validator.resync_metagraph()
     await db_manager.initialize()
     total_scores = await calculations.calculate_scores_for_settings_weights(
+
         capacities_for_tasks=core_validator.capacities_for_tasks,
         uid_to_uid_info=core_validator.uid_to_uid_info,
         task_weights=core_validator.task_weights,
