@@ -29,15 +29,10 @@ The Orchestrator performs the checking tasks, to make sure the miners are behavi
 # Orchestrator setup
 
 ## Starting the Orchestrator server
-The code for the orchestrator can be found here: https://github.com/namoray/vision-workers
 
-Currently, a bare metal GPU is necessary for functionality, downloading and running the image manually (https://github.com/namoray/vision-workers/blob/main/validator_orchestrator/README.md)
+Currently, a bare metal GPU is necessary for validating the GPU models. Please see here for the full instructions!(https://github.com/namoray/vision-workers/blob/main/validator_orchestrator/README.md)
 
-For setting up the machine and running orchestrator code, you have multiple choices : 
-- Auto machine setup + run autoupdates (which starts orchestrator container), refer to (https://github.com/namoray/vision-workers/blob/main/generic_docs/setup_bare_metal_run_autoupdates.md)
-- Auto machine setup + run orchestrator directly - without autoupdates - (https://github.com/namoray/vision-workers/blob/main/generic_docs/validator_with_autoupdates.md)
-- Manually setup the machine, then running orchestrator with/without autoupdates (https://github.com/namoray/vision-workers/blob/main/generic_docs/install_all.md) 
-
+Once this is done, make a note of the IP address of that machine, and the port the orchestrator is running on (the default is 6920, if you didn't change anything)
 # Proxy server setup
 
 Get a CPU VM (Digital Ocean Droplet, OVH, Vultr, etc)  - make sure you have an open port if you want to run a organic API server.
