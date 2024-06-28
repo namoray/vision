@@ -8,6 +8,7 @@ Welcome to S19 Mining 🔥
 - [Worker server setup](#worker-server-setup)
 - [Proxy server setup](#proxy-server-setup)
 - [LLM server configs](#model-configs)
+- [Recommended compute](../recommended-compute)
 
 
 # Overview

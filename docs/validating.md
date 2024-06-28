@@ -8,6 +8,7 @@ Welcome to S19 Validating 🔥
 - [Orchestrator setup](#orchestrator-setup)
 - [Proxy server setup](#proxy-server-setup)
 - [Managing organic access](#managing-organic-access)
+- [Recommended compute](../recommended-compute)
 
 
 # Overview
@@ -33,6 +34,8 @@ The Orchestrator performs the checking tasks, to make sure the miners are behavi
 Currently, a bare metal GPU is necessary for validating the GPU models. Please see here for the full instructions!(https://github.com/namoray/vision-workers/blob/main/validator_orchestrator/README.md)
 
 Once this is done, make a note of the IP address of that machine, and the port the orchestrator is running on (the default is 6920, if you didn't change anything)
+
+
 # Proxy server setup
 
 Get a CPU VM (Digital Ocean Droplet, OVH, Vultr, etc)  - make sure you have an open port if you want to run a organic API server.
