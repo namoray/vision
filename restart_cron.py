@@ -12,7 +12,7 @@ or updates
 import time
 import os
 
-TIME_TO_SLEEP = 60 * 60 * 6.5  # 6 and a quarter hours
+TIME_TO_SLEEP = 60 * 60 * 6.5  # 6 and a half hours
 
 
 def main():
