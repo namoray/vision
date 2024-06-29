@@ -19,11 +19,11 @@ done
 
 
 
-if [[ ! "$*" == *"--without-cron"* ]]; then
+if [[ ! "$*" == *"--without-self-heal"* ]]; then
     echo "Setting up cron job with PM2..."
-    pm2 delete restart_validator_cron
-    pm2 start --name "restart_validator_cron" restart_cron.py --interpreter python3
-    echo "Cron job setup complete."
+    pm2 delete validator_self_heal
+    pm2 start --name "validator_self_heal" self_heal.py --interpreter python3
+    echo "self_heal setup complete."
 else
-    echo "Skipping cron job setup due to --without-cron flag."
+    echo "Skipping self_heal setup due to --without-self-heal flag."
 fi
