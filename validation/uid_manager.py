@@ -93,7 +93,19 @@ class UidManager:
         bt.logging.info(f"Starting querying for {len(self.synthetic_scoring_tasks)} tasks 🔥")
 
     async def collect_synthetic_scoring_results(self) -> None:
-        await asyncio.gather(*self.synthetic_scoring_tasks)
+        try:
+            await asyncio.wait_for(
+                asyncio.gather(*self.synthetic_scoring_tasks), timeout=60 * 1
+            )  # 1 hour and 10 minutes (70 mins)
+        except asyncio.TimeoutError:
+            bt.logging.error("Synthetic scoring tasks timed out after 10 minutes")
+        except Exception as e:
+            bt.logging.error(f"Error during synthetic scoring: {str(e)}")
+        finally:
+            # Cancel any remaining tasks
+            for task in self.synthetic_scoring_tasks:
+                if not task.done():
+                    task.cancel()
 
     async def handle_task_scoring_for_uid(
         self, task: Task, uid: axon_uid, volume: float, axon: bt.chain_data.AxonInfo
