@@ -1,3 +1,6 @@
+## 4.0.7
+- Cron job to auto restart validators ever X hours (currently 6.5) to stop any asyncio tasks quitely dying forever
+
 ## 4.0.6
 - Task basked checking to the orchestrator server
 - Async DB interactions
