@@ -95,7 +95,7 @@ class UidManager:
     async def collect_synthetic_scoring_results(self) -> None:
         try:
             await asyncio.wait_for(
-                asyncio.gather(*self.synthetic_scoring_tasks), timeout=60 * 1
+                asyncio.gather(*self.synthetic_scoring_tasks), timeout=60 * 70
             )  # 1 hour and 10 minutes (70 mins)
         except asyncio.TimeoutError:
             bt.logging.error("Synthetic scoring tasks timed out after 10 minutes")
