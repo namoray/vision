@@ -247,6 +247,31 @@ class CoreValidator:
             keypair=self.keypair,
             data_type_to_post=post_stats.DataTypeToPost.MINER_CAPACITIES,
         )
+    
+
+    def _post_uid_records_to_tauvision(self) -> None:
+        data_to_post = []
+        for task in self.uid_manager.uid_records_for_tasks:
+            for record in self.uid_manager.uid_records_for_tasks[task].values():
+                data_to_post.append(post_stats.UidRecordPostObject(
+                    miner_hotkey=record.hotkey,
+                    validator_hotkey=self.public_hotkey_address,
+                    axon_uid=record.axon_uid,
+                    period_score=record.period_score,
+                    declared_volume=record.declared_volume,
+                    consumed_volume=record.consumed_volume,
+                    requests_429=record.requests_429,
+                    requests_500=record.requests_500,
+                    total_requests_made=record.total_requests_made,
+                    task=task,
+                ))
+
+        post_data = post_stats.UidRecordsPostBody(data=data_to_post)
+        asyncio.create_task(post_stats.post_to_tauvision(
+            data_to_post=post_data.dump(),
+            keypair=self.keypair,
+            data_type_to_post=post_stats.DataTypeToPost.UID_RECORD,
+        ))
 
     def _post_uid_records_to_tauvision(self) -> None:
         data_to_post = []
