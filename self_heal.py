@@ -21,7 +21,7 @@ def main():
     while True:
         print(f"Restarting in {TIME_TO_SLEEP / 60 / 60:.2f} hours")
         time.sleep(TIME_TO_SLEEP)
-        os.system("./launch_validators.sh --without-cron")
+        os.system("./launch_validators.sh --without-self-heal")
 
 
 if __name__ == "__main__":
