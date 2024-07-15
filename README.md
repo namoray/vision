@@ -25,7 +25,7 @@ Miners all run open source models on any hardware they choose. They're incentivi
 They're incentivised over a range of tasks, independently of each other. Miners have the option of choosing which tasks they want to run, and the volume they want to run for each. The more volume they have, the more rewards they get!
 
 ## Decentralised Validators
-Validators operate as decentralised access points to the network. In a one-click fashion, Validators can offer up their miner access to the world, with a clear path to monetisation. 
+Validators operate as decentralised access points to the network. In a one-click fashion, Validators can offer up their miner access to the world, with a clear path to monetisation.
 
 They check and score the miners through 'Checking servers' that they run themselves on their own hardware. No centralisation to be found here.
 
@@ -45,7 +45,7 @@ All organic requests can be scored, and checked for the upmost quality. Not only
 The subnet is split into `tasks`. These `tasks` are things like:
 - Llama3 70B text generation [1]
 - Stable Diffusion text to image generation [2]
-  
+
 Each of these independent tasks have a weighting associated with them (say [1]: 60%, [2]: 40%, for example ). Note they sum to 100%!
 
 First, miners configure their servers and associate a specific capacity or volume for the task. Validators then fetch the capacities that each miner can handle for that particular task. Every 60 minutes (this interval is configurable), validators perform several critical steps for each miner.
@@ -67,3 +67,21 @@ It means a few things:
 - We can add as many tasks as we like! If there's demand for something we can add it! If not, we can remove it! No registrations or deregistrations needed, miners can just scale up and scale down their capacity as needed.
 - Miners have the ability to rate limit explicitly to validators without incurring a greater penalty. This means we can much more effectively load balance between miners, to make sure any organic requests can be always handled by a miner who is capable of performing that task!
 - There's nothing special about a synthetic or organic query. No distinction can be made on the miner side, but validators can still give preferential treatment to organics!
+
+# License
+
+## The MIT License (MIT)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+**THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.**
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+the Software.
