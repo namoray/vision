@@ -9,7 +9,7 @@ from models import base_models, utility_models
 import bittensor as bt
 
 MAX_SPEED_BONUS = 1.4  # Adjust this value as needed
-BELOW_MEAN_EXPONENT = 0.8
+BELOW_MEAN_EXPONENT = 0.4
 CHARACTER_TO_TOKEN_CONVERSION = 4.0
 
 
