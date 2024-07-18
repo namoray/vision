@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import re
 import threading
 from collections import defaultdict, deque
@@ -225,9 +226,28 @@ class CoreValidator:
                     axon=axons[i],
                     hotkey=hotkeys[i],
                 )
+        # TEMP: save uid infos
+        time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        with open(f"debugging/uid_info_{time}.json", "w") as f:
+            dict_without_models = {
+                k: {
+                    "uid": v.uid,
+                    "axon_ip": v.axon.ip,  # Convert axon to dict here
+                    "hotkey": v.hotkey,
+                }
+                for k, v in self.uid_to_uid_info.items()
+            }
+            json.dump(dict_without_models, f)
 
         bt.logging.info("Finished extraction - now to fetch the available capacities for each axon")
         await self.fetch_available_capacities_for_each_axon()
+
+        # TEMP: save capacities
+        with open(f"debugging/capacities_{time}.json", "w") as f:
+            dict_without_enums = {
+                k.value: {uid: v for uid, v in d.items()} for k, d in self.capacities_for_tasks.items()
+            }
+            json.dump(dict_without_enums, f)
 
         return
 
