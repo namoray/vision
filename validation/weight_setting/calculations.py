@@ -73,7 +73,7 @@ def _non_linear_score_transformation(effective_volume_for_task: float) -> float:
     """
     This non-linear transformation helps reward clear outstanding UIDs, encouraging top behaviour
     """
-    return effective_volume_for_task**2.5
+    return effective_volume_for_task**3
 
 
 def apply_non_linear_transformation_and_renormalise(linear_normalised_scores: Dict[str, float]) -> Dict[str, float]:
