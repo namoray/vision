@@ -70,7 +70,7 @@ async def query_individual_axon(
     response = await dendrite.forward(
         axons=axon,
         synapse=synapse,
-        connect_timeout=1.0,
+        connect_timeout=1.0 if operation_name != "Capacity" else 20,
         response_timeout=cst.OPERATION_TIMEOUTS.get(operation_name, 15),
         deserialize=deserialize,
         log_requests_and_responses=log_requests_and_responses,
