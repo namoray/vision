@@ -10,7 +10,7 @@ from models import utility_models
 from validation.models import axon_uid
 from validation.weight_setting import calculations
 
-VERSION_KEY = 40_007
+VERSION_KEY = 40_100
 
 # If 1 then only take into account the most recent. If zero then they are all equal
 PERIOD_SCORE_TIME_DECAYING_FACTOR = 0.2
