@@ -22,5 +22,5 @@
 
 # Function to run a command with sudo only if it is available
 # pip install -e .
-# ./launch_validators.sh
+./launch_validators.sh --without-self-heal
 echo "Autoupdate steps complete :)"
