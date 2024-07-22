@@ -58,13 +58,32 @@ def _normalise_period_scores(period_scores: List[PeriodScore]) -> float:
     if total_weight == 0:
         return 0
     else:
-        return total_score / total_weight
+        # Make sure UID's which are new don't instantly jump to the top
+        penalty = max(0, 1 - len(period_scores) / 8) / 4
+        return total_score / total_weight * (1 - penalty)
 
 
 def _calculate_hotkey_effective_volume_for_task(
     combined_quality_score: float, normalised_period_score: float, volume: float
 ) -> float:
     return combined_quality_score * normalised_period_score * volume
+
+
+def _non_linear_score_transformation(effective_volume_for_task: float) -> float:
+    """
+    This non-linear transformation helps reward clear outstanding UIDs, encouraging top behaviour
+    """
+    return effective_volume_for_task**3
+
+
+def apply_non_linear_transformation_and_renormalise(linear_normalised_scores: Dict[str, float]) -> Dict[str, float]:
+    transformed_scores = {
+        hotkey: _non_linear_score_transformation(score) for hotkey, score in linear_normalised_scores.items()
+    }
+
+    sum_transformed_scores = sum(transformed_scores.values())
+
+    return {hotkey: score / sum_transformed_scores for hotkey, score in transformed_scores.items()}
 
 
 async def calculate_scores_for_settings_weights(
@@ -97,6 +116,8 @@ async def calculate_scores_for_settings_weights(
             hotkey: effective_volume / sum_of_effective_volumes
             for hotkey, effective_volume in hotkey_to_effective_volumes.items()
         }
+
+        normalised_scores_for_task = apply_non_linear_transformation_and_renormalise(normalised_scores_for_task)
         for hotkey in normalised_scores_for_task:
             total_hotkey_scores[hotkey] = (
                 total_hotkey_scores.get(hotkey, 0) + normalised_scores_for_task[hotkey] * task_weight
