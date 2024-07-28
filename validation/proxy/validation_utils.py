@@ -10,6 +10,7 @@ import bittensor as bt
 import fastapi
 import httpx
 from config.validator_config import config as validator_config
+from validation.core_validator import core_validator
 from fastapi import HTTPException
 from pydantic import BaseModel
 import random
@@ -36,7 +37,8 @@ def get_synapse_from_body(
     validator_uid: int,
 ) -> bt.Synapse:
     body_dict = body.dict()
-    body_dict["seed"] = core_utils.get_seed(core_cst.SEED_CHUNK_SIZE, validator_uid)
+    # I hate using the global var of core_validator as much as you hate reading it... gone in rewrite
+    body_dict["seed"] = core_utils.get_seed(core_cst.SEED_CHUNK_SIZE, core_validator.validator_uid)
     synapse = synapse_model(**body_dict)
     return synapse
 

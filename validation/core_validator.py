@@ -3,7 +3,7 @@ import re
 import threading
 from collections import defaultdict, deque
 from typing import Dict, Tuple
-from typing import List, Any
+from typing import List
 from typing import Optional
 from typing import Set
 
@@ -20,7 +20,6 @@ from config import configuration
 from config.validator_config import config as validator_config
 from models import base_models, synapses, utility_models
 from validation.proxy import validation_utils
-import json
 
 from validation.scoring.main import Scorer
 from validation.uid_manager import UidManager
@@ -35,25 +34,6 @@ ORCHESTRATOR_VERSION = "0.1.0"
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
 _UPPER_FOLLOWING_REGEXP = re.compile("([a-z0-9])([A-Z])")
 MAX_PERIODS_TO_LOOK_FOR_SCORE = 16
-
-
-def _pascal_to_kebab(input_string: str) -> str:
-    hyphen_separated = _PASCAL_SEP_REGEXP.sub(r"\1-\2", input_string)
-    return _UPPER_FOLLOWING_REGEXP.sub(r"\1-\2", hyphen_separated).lower()
-
-
-def _load_sse_jsons(chunk: str) -> List[Dict[str, Any]]:
-    jsons = []
-    received_event_chunks = chunk.split("\n\n")
-    for event in received_event_chunks:
-        if event == "":
-            continue
-        prefix, _, data = event.partition(":")
-        if data.strip() == "[DONE]":
-            break
-        loaded_chunk = json.loads(data)
-        jsons.append(loaded_chunk)
-    return jsons
 
 
 class CoreValidator:
@@ -72,6 +52,7 @@ class CoreValidator:
         self.public_hotkey_address = self.keypair.ss58_address
 
         _my_stake = self.metagraph.S[self.metagraph.hotkeys.index(self.public_hotkey_address)]
+        self.validator_uid = self.metagraph.hotkeys.index(self.public_hotkey_address)
         self._my_prop_of_stake = (_my_stake / sum(self.metagraph.S)).item()
 
         if self.is_testnet:
@@ -102,7 +83,7 @@ class CoreValidator:
 
         self.scorer = Scorer(validator_hotkey=self.keypair.ss58_address, testnet=self.is_testnet, keypair=self.keypair)
         self.weight_setter = WeightSetter(subtensor=self.subtensor, config=self.config)
-        self.synthetic_data_manager = SyntheticDataManager()
+        self.synthetic_data_manager = SyntheticDataManager(self.validator_uid)
         self.uid_manager = None
 
     def _get_task_weights(self) -> Dict[Task, float]:
