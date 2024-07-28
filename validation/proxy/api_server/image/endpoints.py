@@ -161,7 +161,6 @@ async def clip_embeddings(
             detail="I'm sorry, no valid response was possible from the miners :/",
         )
 
-
     formatted_response: base_models.ClipEmbeddingsOutgoing = result.formatted_response
 
     return request_models.ClipEmbeddingsResponse(

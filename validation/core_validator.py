@@ -2,12 +2,14 @@ import asyncio
 import re
 import threading
 from collections import defaultdict, deque
+import time
 from typing import Dict, Tuple
 from typing import List
 from typing import Optional
 from typing import Set
 
 from fastapi.responses import JSONResponse
+import httpx
 from pydantic import BaseModel
 
 from core import Task
@@ -26,6 +28,7 @@ from validation.uid_manager import UidManager
 from validation.weight_setting.main import WeightSetter
 from validation.db import post_stats
 from validation.db.db_management import db_manager
+from core import constants as core_cst
 
 PROXY_VERSION = "4.0"
 # Change this to not be hardcoded, once the orchestrator supports is
@@ -34,6 +37,41 @@ ORCHESTRATOR_VERSION = "0.1.0"
 _PASCAL_SEP_REGEXP = re.compile("(.)([A-Z][a-z]+)")
 _UPPER_FOLLOWING_REGEXP = re.compile("([a-z0-9])([A-Z])")
 MAX_PERIODS_TO_LOOK_FOR_SCORE = 16
+
+
+def _health_check(base_url: str):
+    try:
+        response = httpx.get(base_url)
+        return response.status_code == 200
+    except httpx.RequestError:
+        print(f"Health check failed for now - can't connect to {base_url}.")
+        return False
+
+
+def _connect_to_external_server(hotkey_name: str, external_server_url: str) -> str:
+    servers = {
+        core_cst.EXTERNAL_SERVER_ADDRESS_PARAM: external_server_url,
+    }
+
+    # Check each server
+    for name, url in servers.items():
+        if url is None:
+            raise Exception(f"{hotkey_name}.{name.upper()} not set in the config")
+
+        retry_interval = 2
+        while True:
+            connected = _health_check(url)
+            if connected:
+                bt.logging.info(f"Health check successful - connected to {name} at {url}.")
+                break
+            else:
+                bt.logging.info(
+                    f"{name} at url {url} not reachable just yet- it's probably still starting. Sleeping for {retry_interval} second(s) before retrying."
+                )
+                time.sleep(retry_interval)
+                retry_interval += 5
+                if retry_interval > 15:
+                    retry_interval = 15
 
 
 class CoreValidator:
@@ -58,7 +96,7 @@ class CoreValidator:
         if self.is_testnet:
             self._my_prop_of_stake = 1.0
 
-        validation_utils.connect_to_external_server()
+        _connect_to_external_server(validator_config.hotkey_name, validator_config.external_server_url)
 
         # Make the above class variables instead
 

@@ -1,5 +1,4 @@
 import sys
-import time
 import traceback
 from typing import Optional
 from typing import Type
@@ -8,8 +7,6 @@ from PIL import Image
 from rich.console import Console
 import bittensor as bt
 import fastapi
-import httpx
-from config.validator_config import config as validator_config
 from validation.core_validator import core_validator
 from fastapi import HTTPException
 from pydantic import BaseModel
@@ -34,7 +31,6 @@ def log_task_exception(task):
 def get_synapse_from_body(
     body: BaseModel,
     synapse_model: Type[bt.Synapse],
-    validator_uid: int,
 ) -> bt.Synapse:
     body_dict = body.dict()
     # I hate using the global var of core_validator as much as you hate reading it... gone in rewrite
@@ -52,43 +48,6 @@ def handle_bad_result(result: Optional[Union[utility_models.QueryResult, str]]) 
             status_code=fastapi.status.HTTP_400_BAD_REQUEST,
             detail=message,
         )
-
-
-def health_check(base_url):
-    try:
-        response = httpx.get(base_url)
-        return response.status_code == 200
-    except httpx.RequestError:
-        print(f"Health check failed for now - can't connect to {base_url}.")
-        return False
-
-
-def connect_to_external_server() -> str:
-    hotkey_name = validator_config.hotkey_name
-
-    servers = {
-        core_cst.EXTERNAL_SERVER_ADDRESS_PARAM: validator_config.external_server_url,
-    }
-
-    # Check each server
-    for name, url in servers.items():
-        if url is None:
-            raise Exception(f"{hotkey_name}.{name.upper()} not set in the config")
-
-        retry_interval = 2
-        while True:
-            connected = health_check(url)
-            if connected:
-                bt.logging.info(f"Health check successful - connected to {name} at {url}.")
-                break
-            else:
-                bt.logging.info(
-                    f"{name} at url {url} not reachable just yet- it's probably still starting. Sleeping for {retry_interval} second(s) before retrying."
-                )
-                time.sleep(retry_interval)
-                retry_interval += 5
-                if retry_interval > 15:
-                    retry_interval = 15
 
 
 def alter_image(
