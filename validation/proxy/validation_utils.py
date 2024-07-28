@@ -33,9 +33,10 @@ def log_task_exception(task):
 def get_synapse_from_body(
     body: BaseModel,
     synapse_model: Type[bt.Synapse],
+    validator_uid: int,
 ) -> bt.Synapse:
     body_dict = body.dict()
-    body_dict["seed"] = random.randint(1, core_cst.LARGEST_SEED)
+    body_dict["seed"] = core_utils.get_seed(core_cst.SEED_CHUNK_SIZE, validator_uid)
     synapse = synapse_model(**body_dict)
     return synapse
 

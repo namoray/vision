@@ -5,7 +5,6 @@ from PIL import Image
 import cv2
 import random
 from io import BytesIO
-
 import io
 import binascii
 from mining.db.db_management import miner_db_manager
@@ -59,3 +58,10 @@ def base64_to_pil(image_b64: str) -> Image.Image:
         return image
     except binascii.Error:
         return None
+
+
+def get_seed(seed_chunk_size: int, validator_uid: int) -> int:
+    return random.randint(
+        seed_chunk_size * validator_uid,
+        seed_chunk_size * (validator_uid + 1) - 1,
+    )

@@ -6,7 +6,7 @@ import threading
 import httpx
 from typing import Dict, Any
 from config.validator_config import config as validator_config
-from core import Task, tasks
+from core import Task, tasks, constants as core_cst
 import bittensor as bt
 from core import dataclasses as dc
 from models import base_models
@@ -57,11 +57,12 @@ def _my_boy_postie() -> str:
 
 
 class SyntheticDataManager:
-    def __init__(self) -> None:
+    def __init__(self, validator_uid: int) -> None:
         self.task_to_stored_synthetic_data: Dict[Task, Dict[str, Any]] = {}
 
         thread = threading.Thread(target=self._start_async_loop, daemon=True)
         thread.start()
+        self.validator_uid = validator_uid
 
     def _start_async_loop(self):
         """Start the event loop and run the async tasks."""
@@ -94,27 +95,23 @@ class SyntheticDataManager:
 
         synth_data = self.task_to_stored_synthetic_data[task]
         task_config = tasks.get_task_config(task)
+        seed = core_utils.get_seed(core_cst.SEED_CHUNK_SIZE, self.validator_uid)
+        synth_data[SEED] = seed
         if task_config.task_type == tasks.TaskType.IMAGE:
-            synth_data[SEED] = random.randint(1, 1_000_000_000)
             text_prompts = synth_data[TEXT_PROMPTS]
             text = text_prompts[0]["text"]
             new_text = text + _get_random_letters(4)
             new_text = new_text[:76]
             synth_data[TEXT_PROMPTS][0]["text"] = new_text
         elif task_config.task_type == tasks.TaskType.TEXT:
-            synth_data[SEED] = random.randint(1, 1_000_000_000)
             synth_data[TEMPERATURE] = round(random.uniform(0, 1), 2)
-        elif task_config.task_type == tasks.TaskType.CLIP:
-            synth_model = base_models.ClipEmbeddingsIncoming(**synth_data)
-            synth_model_altered = validation_utils.alter_clip_body(synth_model)
-            synth_data = synth_model_altered.dict()
 
         return synth_data
 
     async def _update_synthetic_data_for_task(self, task: Task) -> Dict[str, Any]:
         if task == Task.avatar:
             synthetic_data = base_models.AvatarIncoming(
-                seed=random.randint(1, 1_000_000_000),
+                seed=core_utils.get_seed(core_cst.SEED_CHUNK_SIZE, self.validator_uid),
                 text_prompts=[_get_random_avatar_text_prompt()],
                 height=1280,
                 width=1280,
