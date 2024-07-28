@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 SCORING_PERIOD_TIME = 60 * 60  # 0.5
 
-SEED_CHUNK_SIZE = 1_000_000
+SEED_CHUNK_SIZE = 100_000
 
 
 TASK_CONFIG_JSON = "task_config.json"
