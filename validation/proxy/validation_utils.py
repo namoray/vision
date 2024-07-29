@@ -1,17 +1,14 @@
 import sys
 import traceback
 from typing import Optional
-from typing import Type
 from typing import Union
 from PIL import Image
 from rich.console import Console
 import bittensor as bt
 import fastapi
-from validation.core_validator import core_validator
 from fastapi import HTTPException
-from pydantic import BaseModel
 import random
-from core import constants as core_cst, utils as core_utils
+from core import utils as core_utils
 from models import utility_models, base_models
 import numpy as np
 
@@ -26,17 +23,6 @@ def log_task_exception(task):
         tb_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
         tb_text = "".join(tb_lines)
         bt.logging.error(f"Exception occurred: \n{tb_text}")
-
-
-def get_synapse_from_body(
-    body: BaseModel,
-    synapse_model: Type[bt.Synapse],
-) -> bt.Synapse:
-    body_dict = body.dict()
-    # I hate using the global var of core_validator as much as you hate reading it... gone in rewrite
-    body_dict["seed"] = core_utils.get_seed(core_cst.SEED_CHUNK_SIZE, core_validator.validator_uid)
-    synapse = synapse_model(**body_dict)
-    return synapse
 
 
 def handle_bad_result(result: Optional[Union[utility_models.QueryResult, str]]) -> None:

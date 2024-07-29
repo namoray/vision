@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from models import base_models, synapses, utility_models, request_models
-from validation.proxy import validation_utils
+from validation.proxy import get_synapse
 from starlette.responses import StreamingResponse
 from core import tasks
 from fastapi.routing import APIRouter
@@ -17,7 +17,7 @@ async def chat(
     body: request_models.ChatRequest,
     _: None = fastapi.Depends(dependencies.get_token),
 ) -> StreamingResponse:
-    synapse = validation_utils.get_synapse_from_body(
+    synapse = get_synapse.get_synapse_from_body(
         body=body,
         synapse_model=synapses.Chat,
     )
