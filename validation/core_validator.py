@@ -2,12 +2,14 @@ import asyncio
 import re
 import threading
 from collections import defaultdict, deque
+import time
 from typing import Dict, Tuple
-from typing import List, Any
+from typing import List
 from typing import Optional
 from typing import Set
 
 from fastapi.responses import JSONResponse
+import httpx
 from pydantic import BaseModel
 
 from core import Task
@@ -20,13 +22,13 @@ from config import configuration
 from config.validator_config import config as validator_config
 from models import base_models, synapses, utility_models
 from validation.proxy import validation_utils
-import json
 
 from validation.scoring.main import Scorer
 from validation.uid_manager import UidManager
 from validation.weight_setting.main import WeightSetter
 from validation.db import post_stats
 from validation.db.db_management import db_manager
+from core import constants as core_cst
 
 PROXY_VERSION = "4.0"
 # Change this to not be hardcoded, once the orchestrator supports is
@@ -37,23 +39,39 @@ _UPPER_FOLLOWING_REGEXP = re.compile("([a-z0-9])([A-Z])")
 MAX_PERIODS_TO_LOOK_FOR_SCORE = 16
 
 
-def _pascal_to_kebab(input_string: str) -> str:
-    hyphen_separated = _PASCAL_SEP_REGEXP.sub(r"\1-\2", input_string)
-    return _UPPER_FOLLOWING_REGEXP.sub(r"\1-\2", hyphen_separated).lower()
+def _health_check(base_url: str):
+    try:
+        response = httpx.get(base_url)
+        return response.status_code == 200
+    except httpx.RequestError:
+        print(f"Health check failed for now - can't connect to {base_url}.")
+        return False
 
 
-def _load_sse_jsons(chunk: str) -> List[Dict[str, Any]]:
-    jsons = []
-    received_event_chunks = chunk.split("\n\n")
-    for event in received_event_chunks:
-        if event == "":
-            continue
-        prefix, _, data = event.partition(":")
-        if data.strip() == "[DONE]":
-            break
-        loaded_chunk = json.loads(data)
-        jsons.append(loaded_chunk)
-    return jsons
+def _connect_to_external_server(hotkey_name: str, external_server_url: str) -> str:
+    servers = {
+        core_cst.EXTERNAL_SERVER_ADDRESS_PARAM: external_server_url,
+    }
+
+    # Check each server
+    for name, url in servers.items():
+        if url is None:
+            raise Exception(f"{hotkey_name}.{name.upper()} not set in the config")
+
+        retry_interval = 2
+        while True:
+            connected = _health_check(url)
+            if connected:
+                bt.logging.info(f"Health check successful - connected to {name} at {url}.")
+                break
+            else:
+                bt.logging.info(
+                    f"{name} at url {url} not reachable just yet- it's probably still starting. Sleeping for {retry_interval} second(s) before retrying."
+                )
+                time.sleep(retry_interval)
+                retry_interval += 5
+                if retry_interval > 15:
+                    retry_interval = 15
 
 
 class CoreValidator:
@@ -72,12 +90,13 @@ class CoreValidator:
         self.public_hotkey_address = self.keypair.ss58_address
 
         _my_stake = self.metagraph.S[self.metagraph.hotkeys.index(self.public_hotkey_address)]
+        self.validator_uid = self.metagraph.hotkeys.index(self.public_hotkey_address)
         self._my_prop_of_stake = (_my_stake / sum(self.metagraph.S)).item()
 
         if self.is_testnet:
             self._my_prop_of_stake = 1.0
 
-        validation_utils.connect_to_external_server()
+        _connect_to_external_server(validator_config.hotkey_name, validator_config.external_server_url)
 
         # Make the above class variables instead
 
@@ -102,7 +121,7 @@ class CoreValidator:
 
         self.scorer = Scorer(validator_hotkey=self.keypair.ss58_address, testnet=self.is_testnet, keypair=self.keypair)
         self.weight_setter = WeightSetter(subtensor=self.subtensor, config=self.config)
-        self.synthetic_data_manager = SyntheticDataManager()
+        self.synthetic_data_manager = SyntheticDataManager(self.validator_uid)
         self.uid_manager = None
 
     def _get_task_weights(self) -> Dict[Task, float]:

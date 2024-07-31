@@ -2,7 +2,7 @@ from core import Task
 import fastapi
 from fastapi.responses import JSONResponse
 from models import base_models, synapses, utility_models, request_models
-from validation.proxy import validation_utils
+from validation.proxy import get_synapse, validation_utils
 from fastapi import HTTPException, routing
 from validation.proxy.api_server.image import utils
 from validation.core_validator import core_validator
@@ -17,7 +17,7 @@ async def text_to_image(
     body: request_models.TextToImageRequest,
     _: None = fastapi.Depends(dependencies.get_token),
 ) -> request_models.TextToImageResponse:
-    synapse: synapses.TextToImage = validation_utils.get_synapse_from_body(
+    synapse: synapses.TextToImage = get_synapse.get_synapse_from_body(
         body=body,
         synapse_model=synapses.TextToImage,
     )
@@ -43,7 +43,7 @@ async def image_to_image(
     body: request_models.ImageToImageRequest,
     _: None = fastapi.Depends(dependencies.get_token),
 ) -> request_models.ImageToImageResponse:
-    synapse: synapses.ImageToImage = validation_utils.get_synapse_from_body(
+    synapse: synapses.ImageToImage = get_synapse.get_synapse_from_body(
         body=body,
         synapse_model=synapses.ImageToImage,
     )
@@ -69,7 +69,7 @@ async def inpaint(
     body: request_models.InpaintRequest,
     _: None = fastapi.Depends(dependencies.get_token),
 ) -> request_models.InpaintResponse:
-    synapse = validation_utils.get_synapse_from_body(
+    synapse = get_synapse.get_synapse_from_body(
         body=body,
         synapse_model=synapses.Inpaint,
     )
@@ -93,7 +93,7 @@ async def avatar(
     body: request_models.AvatarRequest,
     _: None = fastapi.Depends(dependencies.get_token),
 ) -> request_models.AvatarResponse:
-    synapse = validation_utils.get_synapse_from_body(
+    synapse = get_synapse.get_synapse_from_body(
         body=body,
         synapse_model=synapses.Avatar,
     )
@@ -117,7 +117,7 @@ async def avatar(
 #     body: request_models.UpscaleRequest,
 #     _: None = fastapi.Depends(dependencies.get_token),
 # ) -> request_models.UpscaleResponse:
-#     synapse = validation_utils.get_synapse_from_body(
+#     synapse = get_synapse.get_synapse_from_body(
 #         body=body,
 #         synapse_model=synapses.Upscale,
 #     )
@@ -142,7 +142,7 @@ async def clip_embeddings(
     _: None = fastapi.Depends(dependencies.get_token),
 ) -> request_models.ClipEmbeddingsResponse:
     altered_clip_body = validation_utils.alter_clip_body(body)
-    synapse = validation_utils.get_synapse_from_body(
+    synapse = get_synapse.get_synapse_from_body(
         body=altered_clip_body,
         synapse_model=synapses.ClipEmbeddings,
     )
@@ -160,7 +160,6 @@ async def clip_embeddings(
             status_code=fastapi.status.HTTP_400_BAD_REQUEST,
             detail="I'm sorry, no valid response was possible from the miners :/",
         )
-
 
     formatted_response: base_models.ClipEmbeddingsOutgoing = result.formatted_response
 

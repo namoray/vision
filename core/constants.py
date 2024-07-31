@@ -3,6 +3,8 @@ from typing import List, Tuple
 
 SCORING_PERIOD_TIME = 60 * 60  # 0.5
 
+SEED_CHUNK_SIZE = 100_000
+
 
 TASK_CONFIG_JSON = "task_config.json"
 TASK_CONCURRENCY_CONFIG_JSON = "task_concurrency_config.json"
